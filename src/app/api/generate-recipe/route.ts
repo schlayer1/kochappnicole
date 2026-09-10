@@ -52,9 +52,43 @@ WICHTIG: Antworte AUSSCHLIESSLICH mit dem reinen JSON-Objekt.`;
 
     const userMessage = `Benutzer-Wunsch: ${prompt || 'Ein ausgewogenes, budgetfreundliches Gericht nach Nicoles Vorgaben'}`;
 
-    // 1. GROQ CLOUD API (Llama 3.1 8B Instant & Fallback - Ultraschnell & 100% Free)
+    // 1. GROQ CLOUD API (Dynamische Modellerkennung & Fallback - Ultraschnell & 100% Free)
     if (provider === 'groq' && effectiveGroqKey) {
-      const groqModels = ['llama-3.1-8b-instant', 'llama-3.3-70b-versatile', 'llama3-8b-8192'];
+      let groqModels = [
+        'openai/gpt-oss-20b',
+        'openai/gpt-oss-120b',
+        'qwen/qwen3.6-27b',
+        'meta-llama/llama-4-scout-17b-16e-instruct',
+        'meta-llama/llama-4-maverick-17b-128e-instruct',
+        'llama-3.3-70b-versatile',
+        'llama-3.1-8b-instant',
+      ];
+
+      // Frage in Echtzeit die genau für diesen Key aktiven Modelle bei Groq ab
+      try {
+        const modelsRes = await fetch('https://api.groq.com/openai/v1/models', {
+          headers: { Authorization: `Bearer ${effectiveGroqKey}` },
+        });
+        if (modelsRes.ok) {
+          const listData = await modelsRes.json();
+          if (Array.isArray(listData.data) && listData.data.length > 0) {
+            const activeIds = listData.data
+              .map((m: any) => m.id)
+              .filter(
+                (id: string) =>
+                  !id.toLowerCase().includes('guard') &&
+                  !id.toLowerCase().includes('whisper') &&
+                  !id.toLowerCase().includes('audio')
+              );
+            if (activeIds.length > 0) {
+              groqModels = Array.from(new Set([...activeIds, ...groqModels]));
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Could not fetch Groq models list:', err);
+      }
+
       let lastErr = '';
 
       for (const model of groqModels) {
@@ -79,7 +113,7 @@ WICHTIG: Antworte AUSSCHLIESSLICH mit dem reinen JSON-Objekt.`;
           if (!groqRes.ok) {
             const err = await groqRes.text();
             lastErr = `${model}: ${err}`;
-            continue; // Try next model in list
+            continue; // Try next available model
           }
 
           const groqData = await groqRes.json();
