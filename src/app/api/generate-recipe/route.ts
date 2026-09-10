@@ -17,40 +17,76 @@ export async function POST(req: NextRequest) {
     const effectiveGroqKey = groqApiKey || (provider === 'groq' ? userApiKey : '') || process.env.GROQ_API_KEY;
     const effectiveGeminiKey = geminiApiKey || (provider === 'gemini' ? userApiKey : '') || process.env.GEMINI_API_KEY;
 
-    const systemPrompt = `Du bist ein hochqualifizierter Ernährungs- und Rezept-Assistent für Nicole Keller.
-Ihre strikten Vorgaben aus der Ernährungsanalyse:
-- Tägliches Ziel: 1508 kcal, max. 44g Fett (sehr strikt!), mind. 103g Protein, 25g Ballaststoffe, 165g KH.
-- Mahlzeiten-Prinzip "Der gesunde Teller": 50% Gemüse, 25% mageres Eiweiß, 25% vollwertige Kohlenhydrate, sparsam gesunde Fette (nur 1 TL Olivenöl, Leinsamen, Mandelmus).
-- Keine schweren Sahnen/Schmand -> stattdessen Cremefine 7% oder Magerquark.
-- Absolutes No-Go: Schweinefleisch, Frittiertes, Zuckerbäckerei.
-- Zutaten müssen in normalen Supermärkten (REWE) und Discountern (Aldi/Lidl) günstig erhältlich sein.
-- Verpackungs-Synergien beachten (kein Wegwerfen angebrochener Packungen).
+    const systemPrompt = `Du bist der professionelle Chefkoch und Ernährungsberater der App "fit und healthy".
+Deine Aufgabe ist es, exklusive Rezepte für Nicole Keller zu kreieren, die in Stil, Nährwerten, Zutaten-Struktur und Zubereitungsschritten EXAKT dem festen Kochbuch der App (160 kuratierte Rezepte) entsprechen.
 
-Generiere ein Rezept als valides JSON entsprechend dem folgenden Schema:
+STRIKTE ERNÄHRUNGS-LEITPLANKEN (aus der Ernährungstagebuch-Analyse):
+1. FETTOBERGRENZE (Höchste Priorität - Tagesbudget max. 44g!):
+   - Frühstück: max. 7–9g Fett
+   - Mittag- & Abendessen: max. 9–12g Fett (Streng maximal 1 TL Olivenöl zum Anbraten!)
+   - Snack: max. 3–5g Fett
+2. EIWEISSZIEL: Mind. 103g pro Tag!
+   - Jedes Hauptgericht MUSS 38–48g mageres Protein liefern.
+   - Frühstück: 30–35g Protein.
+   - Snacks: 15–20g Protein.
+3. PRINZIP "DER GESUNDE TELLER" (bei Mittag & Abendessen):
+   - 50% Gemüse (Zucchini, Paprika, Brokkoli, Champignons, Spinat, Tomaten, Möhren, Blumenkohl)
+   - 25% mageres Eiweiß (Hähnchenbrust, Putenbrust, Lachs, Seelachs, mageres Rinder-Tatar <5%, Eier, Garnelen, Thunfisch im eigenen Saft)
+   - 25% vollwertige Kohlenhydrate (Kartoffeln, Naturreis, Protein-Pasta, Vollkornpenne, Quinoa)
+4. STRIKTE ZUTATEN-REGELN:
+   - 100% Sahne-/Schmand-Verbot -> IMMER "Rama Cremefine 7%" (50–80ml) oder Magerquark/Kräuterquark light!
+   - KEIN Schweinefleisch, kein Frittiertes, kein Weißmehl, kein zugesetzter Haushaltszucker.
+   - 100% REWE & Discounter-tauglich (Aldi/Lidl), budgetfreundliche Standardpackungen, keine teuren Exoten.
+   - Mengenangaben IMMER mit präzisen Einheiten: z. B. "170g Hähnchenbrustfilet", "60ml Rama Cremefine 7%", "1 TL Olivenöl", "8 Cocktailtomaten".
+
+ZUTATEN-KATEGORIEN (Verwende EXAKT diese 5 Schlüssel im ingredients-Objekt, damit der Einkaufslisten-Aggregator sie bündeln kann):
+- "Kühlregal" (Skyr, Magerquark, Eier, Cremefine 7%, Feta light, Mozzarella light, Geflügelaufschnitt, Körniger Frischkäse light)
+- "Frischetheke & Obst" (Zucchini, Paprika, Brokkoli, Champignons, Möhren, Gurke, Tomaten, Kartoffeln, Äpfel, Zwiebeln & Knoblauch)
+- "Geflügel & Fisch" (Hähnchenbrustfilet, Putenbrustfilet, Lachsfilet, Seelachsfilet, Tatar <5%, Garnelen, Thunfisch)
+- "Tiefkühl" (TK-Beeren, TK-Blattspinat, TK-Erbsen, TK-Asia-Gemüse)
+- "Vorrat & Gewürze" (Haferflocken, Vollkornreis, Vollkornpasta, Vollkornbrot, Quinoa, Kichererbsen, Mandelmus, Leinsamen, Nüsse, Gewürze & Kräuter, 1 TL Olivenöl)
+
+DIE 4 KOCHBUCH-SCHRITTE (instructions):
+1. Vorbereitung & Schnitt: Gemüse waschen und mundgerecht schneiden, Fleisch/Fisch tupfen und würfeln.
+2. Anbraten & Rösten: Pfanne mit maximal 1 TL Olivenöl erhitzen, Eiweißquelle rundum scharf anbraten.
+3. Gemüse garen & Sauce: Gemüse zugeben, kurz andünsten, mit Cremefine 7% (oder Brühe) ablöschen und würzen.
+4. Anrichten & Servieren: Auf einem großen Teller anrichten (50% Gemüse, 25% Protein, 25% Carbs) und warm genießen.
+
+ANTWORTE AUSSCHLIESSLICH IM FOLGENDEN VALIDE JSON-FORMAT:
 {
-  "title": "string (Appetitlicher deutscher Name)",
-  "subtitle": "string (Kurzer Untertitel)",
+  "title": "Klarer, appetitlicher Name (z. B. Hähnchenbrust auf Zucchini-Paprika-Gemüse mit Cremefine 7%)",
+  "subtitle": "z. B. 20-Minuten-Feierabendküche",
   "mealType": "${mealType}",
-  "category": "${mealType === 'breakfast' ? 'Frühstück 2.0' : mealType === 'snack' ? 'Snacks & Dessert' : 'Gesunder Teller'}",
+  "category": "${mealType === 'breakfast' ? 'Frühstück 2.0' : mealType === 'snack' ? 'Snacks & Dessert' : 'Der gesunde Teller'}",
   "prepMins": 20,
-  "kcal": 420,
-  "protein": 45,
-  "fat": 8,
-  "carbs": 40,
+  "kcal": 440,
+  "protein": 44,
+  "fat": 9,
+  "carbs": 42,
   "fiber": 7,
-  "tags": ["KI-Kreation", "High-Protein", "REWE/Discounter"],
-  "whyNicole": "Begründung bezüglich Nicoles Nährwerten (Fettgrenze, Proteinziel, Gemüseanteil)",
-  "ingredients": {
-    "Frischetheke & Obst": ["..."],
-    "Geflügel & Fisch": ["..."],
-    "Kühlregal": ["..."],
-    "Vorrat & Gewürze": ["..."]
+  "plateRatio": {
+    "veggiesPercent": ${mealType === 'breakfast' ? 40 : mealType === 'snack' ? 30 : 50},
+    "proteinPercent": ${mealType === 'breakfast' ? 35 : mealType === 'snack' ? 30 : 25},
+    "carbsPercent": ${mealType === 'breakfast' ? 25 : mealType === 'snack' ? 40 : 25}
   },
-  "instructions": ["Schritt 1", "Schritt 2", "Schritt 3"]
+  "tags": ["High-Protein", "Unter 10g Fett", "Budget-Friendly", "REWE/Discounter"],
+  "whyNicole": "Erfüllt exakt den gesunden Teller: 50% Gemüseanteil, 44g mageres Eiweiß und dank Cremefine 7% & nur 1 TL Öl streng unter 10g Fett.",
+  "ingredients": {
+    "Frischetheke & Obst": ["1 Zucchini gewürfelt", "1 Paprika rot in Streifen"],
+    "Geflügel & Fisch": ["170g Hähnchenbrustfilet"],
+    "Kühlregal": ["60ml Rama Cremefine 7%"],
+    "Vorrat & Gewürze": ["45g Vollkornreis (ungekocht)", "1 TL Olivenöl", "Kräuter der Provence, Salz & Pfeffer"]
+  },
+  "instructions": [
+    "Gemüse waschen und in mundgerechte Stücke schneiden. Hähnchenbrust trocken tupfen und in Streifen schneiden.",
+    "1 TL Olivenöl in einer beschichteten Pfanne erhitzen. Hähnchenstreifen 4–5 Min. anbraten, dann herausnehmen.",
+    "Gemüse in die gleiche Pfanne geben, 5 Min. bissfest dünsten. Mit Cremefine 7% ablöschen und mit Salz, Pfeffer und Kräutern abschmecken.",
+    "Hähnchen wieder zugeben, kurz durchschwenken und mit gekochtem Vollkornreis auf einem Teller anrichten."
+  ]
 }
-WICHTIG: Antworte AUSSCHLIESSLICH mit dem reinen JSON-Objekt.`;
+WICHTIG: Antworte NUR mit dem reinen JSON-Objekt, ohne Markdown-Fences (\`\`\`json) und ohne Begleittext.`;
 
-    const userMessage = `Benutzer-Wunsch: ${prompt || 'Ein ausgewogenes, budgetfreundliches Gericht nach Nicoles Vorgaben'}`;
+    const userMessage = `Benutzer-Wunsch für diese Mahlzeit: ${prompt || 'Ein ausgewogenes, budgetfreundliches Gericht nach Nicoles Vorgaben'}`;
 
     // 1. GROQ CLOUD API (Dynamische Modellerkennung & Fallback - Ultraschnell & 100% Free)
     if (provider === 'groq' && effectiveGroqKey) {
@@ -96,35 +132,37 @@ WICHTIG: Antworte AUSSCHLIESSLICH mit dem reinen JSON-Objekt.`;
           const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
             method: 'POST',
             headers: {
-              'Authorization': `Bearer ${effectiveGroqKey}`,
               'Content-Type': 'application/json',
+              Authorization: `Bearer ${effectiveGroqKey}`,
             },
             body: JSON.stringify({
-              model: model,
+              model,
               messages: [
                 { role: 'system', content: systemPrompt },
                 { role: 'user', content: userMessage },
               ],
+              temperature: 0.2,
               response_format: { type: 'json_object' },
-              temperature: 0.3,
             }),
           });
 
           if (!groqRes.ok) {
-            const err = await groqRes.text();
-            lastErr = `${model}: ${err}`;
+            const errText = await groqRes.text();
+            lastErr = `${model}: ${errText}`;
             continue; // Try next available model
           }
 
           const groqData = await groqRes.json();
-          const content = groqData.choices?.[0]?.message?.content;
-          const recipeData = JSON.parse(content);
+          let rawText = groqData.choices?.[0]?.message?.content || '';
+          // Strip any accidental markdown formatting
+          rawText = rawText.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
+          const recipeData = JSON.parse(rawText);
 
           const fullRecipe: Recipe = {
             ...recipeData,
             id: 'ai-recipe-groq-' + Date.now(),
             isAiGenerated: true,
-            plateRatio: { veggiesPercent: 50, proteinPercent: 25, carbsPercent: 25 },
+            plateRatio: recipeData.plateRatio || { veggiesPercent: 50, proteinPercent: 25, carbsPercent: 25 },
           };
 
           return NextResponse.json({ recipe: fullRecipe, source: `groq-${model}` });
@@ -163,14 +201,15 @@ WICHTIG: Antworte AUSSCHLIESSLICH mit dem reinen JSON-Objekt.`;
       }
 
       const data = await geminiRes.json();
-      const rawJson = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      let rawJson = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      rawJson = rawJson.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
       const recipeData = JSON.parse(rawJson);
 
       const fullRecipe: Recipe = {
         ...recipeData,
         id: 'ai-recipe-gemini-' + Date.now(),
         isAiGenerated: true,
-        plateRatio: { veggiesPercent: 50, proteinPercent: 25, carbsPercent: 25 },
+        plateRatio: recipeData.plateRatio || { veggiesPercent: 50, proteinPercent: 25, carbsPercent: 25 },
       };
 
       return NextResponse.json({ recipe: fullRecipe, source: 'gemini-1.5-flash' });
