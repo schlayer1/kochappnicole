@@ -1,0 +1,3730 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#059669">
+    <meta name="description" content="Veggi & Fit - Dein smarter Alltags- und Wochen-Kochplaner mit 200+ Rezepten, digitalem Kochbuch, intelligenter Einkaufsliste und Vollbild-Kochmodus.">
+    <title>Veggi & Fit • Smarter Kochplaner & Kochbuch</title>
+    
+    <!-- PWA & Mobile Web App Meta Tags -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Veggi&Fit">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='128' fill='%23059669'/%3E%3Cpath d='M235 427A150 150 0 0 1 209 130C331 107 363 96 406 43c21 43 43 89 43 171 0 118-102 213-214 213Z' fill='%23ffffff' opacity='0.95'/%3E%3Cpath d='M43 448c0-64 40-114 109-128 52-10 105-43 126-64' stroke='%23059669' stroke-width='32' stroke-linecap='round' fill='none'/%3E%3C/svg%3E">
+
+    <!-- Google Fonts: Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+
+    <style>
+        /* ==========================================================================
+           MODERN DESIGN SYSTEM & TOKENS
+           ========================================================================== */
+        :root {
+            --primary: #059669;
+            --primary-hover: #047857;
+            --primary-light: #ecfdf5;
+            --primary-glow: rgba(5, 150, 105, 0.2);
+            --primary-border: #a7f3d0;
+            
+            --accent: #f59e0b;
+            --accent-light: #fef3c7;
+            --accent-dark: #b45309;
+            
+            --danger: #ef4444;
+            --danger-light: #fee2e2;
+            
+            --stone-50: #f8fafc;
+            --stone-100: #f1f5f9;
+            --stone-200: #e2e8f0;
+            --stone-300: #cbd5e1;
+            --stone-400: #94a3b8;
+            --stone-500: #64748b;
+            --stone-600: #475569;
+            --stone-700: #334155;
+            --stone-800: #1e293b;
+            --stone-900: #0f172a;
+            
+            --card-bg: #ffffff;
+            --glass-bg: rgba(255, 255, 255, 0.88);
+            --glass-header: rgba(5, 150, 105, 0.95);
+            
+            --radius-sm: 8px;
+            --radius-md: 14px;
+            --radius-lg: 20px;
+            --radius-full: 9999px;
+            
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+            --shadow-md: 0 4px 12px -2px rgba(0,0,0,0.08), 0 2px 6px -2px rgba(0,0,0,0.04);
+            --shadow-lg: 0 12px 28px -4px rgba(0,0,0,0.12), 0 4px 10px -2px rgba(0,0,0,0.05);
+            --shadow-card: 0 3px 10px rgba(15, 23, 42, 0.05);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+            background-color: var(--stone-50);
+            color: var(--stone-800);
+            min-height: 100vh;
+            padding-bottom: 100px;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Container Utilities */
+        .app-container {
+            max-width: 44rem;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+
+        /* ==========================================================================
+           HEADER & CONTROL BAR
+           ========================================================================== */
+        header {
+            background: var(--glass-header);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            color: white;
+            padding: 1rem 1.25rem;
+            border-bottom-left-radius: var(--radius-lg);
+            border-bottom-right-radius: var(--radius-lg);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: var(--shadow-md);
+            transition: all 0.3s ease;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .brand-box {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            cursor: pointer;
+        }
+
+        .brand-icon {
+            width: 2.25rem;
+            height: 2.25rem;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 1px 1px rgba(255,255,255,0.4);
+        }
+
+        .brand-title {
+            font-size: 1.35rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            margin: 0;
+            line-height: 1.1;
+        }
+
+        .brand-sub {
+            font-size: 0.75rem;
+            opacity: 0.9;
+            font-weight: 500;
+        }
+
+        .header-quick-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+        }
+
+        .portion-ctrl {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            background: rgba(0, 0, 0, 0.15);
+            padding: 0.25rem 0.4rem;
+            border-radius: var(--radius-full);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .portion-btn {
+            background: white;
+            color: var(--primary);
+            border: none;
+            width: 1.6rem;
+            height: 1.6rem;
+            border-radius: 50%;
+            font-weight: 800;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            transition: transform 0.1s, background 0.2s;
+        }
+
+        .portion-btn:active {
+            transform: scale(0.9);
+        }
+
+        .portion-label {
+            font-size: 0.78rem;
+            font-weight: 700;
+            min-width: 2.8rem;
+            text-align: center;
+        }
+
+        .icon-btn-header {
+            background: rgba(255, 255, 255, 0.18);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            color: white;
+            width: 2.1rem;
+            height: 2.1rem;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+        }
+
+        .icon-btn-header:active {
+            transform: scale(0.93);
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Expandable Filter Drawer */
+        .filter-drawer {
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease, margin-top 0.3s ease;
+        }
+
+        .filter-drawer.open {
+            max-height: 380px;
+            opacity: 1;
+            margin-top: 0.85rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.18);
+        }
+
+        .filter-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+            align-items: center;
+        }
+
+        .diet-select-wrap {
+            position: relative;
+            flex: 1;
+            min-width: 140px;
+        }
+
+        .diet-select-wrap select {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 0.45rem 1.8rem 0.45rem 0.75rem;
+            border-radius: var(--radius-full);
+            font-size: 0.8rem;
+            font-weight: 700;
+            outline: none;
+            cursor: pointer;
+            appearance: none;
+            font-family: inherit;
+        }
+
+        .diet-select-wrap select option {
+            color: var(--stone-800);
+            background: white;
+        }
+
+        .diet-select-wrap .select-arrow {
+            position: absolute;
+            right: 0.65rem;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+            font-size: 0.7rem;
+            opacity: 0.8;
+        }
+
+        .toggle-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.8rem;
+            font-weight: 700;
+            background: rgba(255, 255, 255, 0.15);
+            padding: 0.45rem 0.85rem;
+            border-radius: var(--radius-full);
+            cursor: pointer;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.2s;
+            color: white;
+        }
+
+        .toggle-pill.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4);
+        }
+
+        .fast-days-wrap {
+            width: 100%;
+            margin-top: 0.4rem;
+        }
+
+        .fast-days-title {
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            opacity: 0.9;
+            margin-bottom: 0.35rem;
+            display: block;
+        }
+
+        .day-pills {
+            display: flex;
+            gap: 0.35rem;
+            width: 100%;
+        }
+
+        .day-pill {
+            flex: 1;
+            height: 32px;
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            color: white;
+            border-radius: var(--radius-sm);
+            font-size: 0.72rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .day-pill.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            box-shadow: 0 2px 6px rgba(245, 158, 11, 0.35);
+        }
+
+        /* ==========================================================================
+           MAIN DASHBOARD & MACRO TRACKER
+           ========================================================================== */
+        .actions-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 1.25rem 0 0.85rem 0;
+        }
+
+        .section-heading {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: var(--stone-900);
+            letter-spacing: -0.01em;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-action-group {
+            display: flex;
+            gap: 0.4rem;
+        }
+
+        .btn-primary-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.78rem;
+            font-weight: 700;
+            padding: 0.45rem 0.9rem;
+            border-radius: var(--radius-full);
+            background: var(--primary-light);
+            color: var(--primary);
+            border: 1px solid var(--primary-border);
+            cursor: pointer;
+            box-shadow: var(--shadow-sm);
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .btn-primary-pill:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-roulette-pill {
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            color: var(--accent-dark);
+            border-color: #fcd34d;
+        }
+
+        .btn-roulette-pill:hover {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+            margin-bottom: 0.85rem;
+        }
+
+        .dash-card {
+            background: white;
+            border-radius: var(--radius-md);
+            padding: 0.9rem;
+            border: 1px solid var(--stone-200);
+            box-shadow: var(--shadow-card);
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .dash-header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--stone-500);
+            letter-spacing: 0.04em;
+        }
+
+        .dash-main-val {
+            font-size: 1.35rem;
+            font-weight: 800;
+            color: var(--stone-800);
+            display: flex;
+            align-items: baseline;
+            gap: 0.25rem;
+        }
+
+        .dash-sub-unit {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--stone-500);
+        }
+
+        .dash-progress-bg {
+            height: 5px;
+            background: var(--stone-100);
+            border-radius: var(--radius-full);
+            margin-top: 0.35rem;
+            overflow: hidden;
+        }
+
+        .dash-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), #34d399);
+            border-radius: var(--radius-full);
+            transition: width 0.5s ease;
+        }
+
+        /* Macro Breakdown Widget */
+        .macro-card {
+            background: white;
+            border-radius: var(--radius-md);
+            padding: 0.9rem 1rem;
+            border: 1px solid var(--stone-200);
+            box-shadow: var(--shadow-card);
+            margin-bottom: 1rem;
+        }
+
+        .macro-title-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.75rem;
+            font-weight: 800;
+            color: var(--stone-700);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-bottom: 0.6rem;
+        }
+
+        .macro-bar-stacked {
+            display: flex;
+            height: 10px;
+            border-radius: var(--radius-full);
+            overflow: hidden;
+            margin-bottom: 0.65rem;
+            background: var(--stone-100);
+        }
+
+        .macro-bar-seg {
+            height: 100%;
+            transition: width 0.5s ease;
+        }
+        .macro-seg-prot { background: #059669; }
+        .macro-seg-carb { background: #f59e0b; }
+        .macro-seg-fat  { background: #8b5cf6; }
+
+        .macro-legend-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .macro-legend-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0.35rem 0.2rem;
+            background: var(--stone-50);
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--stone-200);
+        }
+
+        .macro-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 4px;
+        }
+
+        /* Fridge Box */
+        .fridge-widget {
+            background: white;
+            border-radius: var(--radius-md);
+            padding: 0.85rem 1rem;
+            margin-bottom: 1.25rem;
+            border: 1px solid var(--stone-200);
+            box-shadow: var(--shadow-card);
+        }
+
+        .fridge-title {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: var(--stone-700);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .fridge-input-group {
+            display: flex;
+            gap: 0.4rem;
+        }
+
+        .fridge-input {
+            flex: 1;
+            padding: 0.55rem 0.85rem;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--stone-200);
+            font-size: 0.85rem;
+            font-family: inherit;
+            background: var(--stone-50);
+            outline: none;
+            transition: border-color 0.2s, background 0.2s;
+        }
+
+        .fridge-input:focus {
+            border-color: var(--primary);
+            background: white;
+        }
+
+        .fridge-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: var(--radius-sm);
+            padding: 0 1rem;
+            font-weight: 700;
+            font-size: 0.82rem;
+            cursor: pointer;
+            transition: background 0.2s;
+            font-family: inherit;
+        }
+
+        .fridge-btn:hover {
+            background: var(--primary-hover);
+        }
+
+        /* ==========================================================================
+           DRAGGABLE 3D RECIPE CARDS (WOCHENPLAN)
+           ========================================================================== */
+        .card-wrapper {
+            position: relative;
+            z-index: 1;
+            perspective: 1500px;
+            margin-bottom: 0.85rem;
+            cursor: pointer;
+            transition: transform 0.2s, opacity 0.2s;
+        }
+
+        .card-wrapper.dragging {
+            opacity: 0.4;
+            transform: scale(0.97);
+        }
+
+        .card-wrapper.drag-over {
+            transform: translateY(4px);
+            box-shadow: 0 0 0 2px var(--accent);
+            border-radius: var(--radius-md);
+        }
+
+        .drag-handle {
+            position: absolute;
+            bottom: 0.45rem;
+            right: 0.45rem;
+            color: var(--stone-400);
+            font-size: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            cursor: grab;
+            padding: 2px 4px;
+            background: var(--stone-50);
+            border-radius: 4px;
+            border: 1px solid var(--stone-200);
+        }
+
+        .flip-inner {
+            position: relative;
+            transition: transform 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-style: preserve-3d;
+            transform-origin: center;
+        }
+
+        .card-wrapper.is-flipped .flip-inner {
+            transform: rotateY(180deg);
+        }
+
+        /* FRONT CARD */
+        .flip-front {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 132px;
+            display: flex;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            background-color: white;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-card);
+            border: 1px solid var(--stone-200);
+            transition: opacity 0.25s, box-shadow 0.2s;
+            z-index: 10;
+            overflow: hidden;
+        }
+
+        .flip-front:hover {
+            box-shadow: var(--shadow-md);
+            border-color: var(--stone-300);
+        }
+
+        .card-wrapper.is-flipped .flip-front {
+            opacity: 0;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .front-media {
+            position: relative;
+            width: 36%;
+            height: 100%;
+            flex-shrink: 0;
+            background: linear-gradient(135deg, var(--emerald-50), var(--stone-100));
+            overflow: hidden;
+        }
+
+        .front-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .card-wrapper:hover .front-img {
+            transform: scale(1.04);
+        }
+
+        .front-fallback {
+            position: absolute;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.2rem;
+            background: linear-gradient(135deg, #d1fae5, #fef3c7);
+        }
+
+        .fav-heart-btn {
+            position: absolute;
+            top: 0.45rem;
+            right: 0.45rem;
+            width: 32px;
+            height: 32px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(4px);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--stone-400);
+            box-shadow: var(--shadow-sm);
+            z-index: 15;
+            transition: all 0.2s;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .fav-heart-btn.active {
+            color: var(--danger);
+            background: #fff1f2;
+            border-color: #fecdd3;
+        }
+
+        .fav-heart-btn:active {
+            transform: scale(1.25);
+        }
+
+        .front-info {
+            width: 64%;
+            padding: 0.65rem 0.85rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 100%;
+            position: relative;
+        }
+
+        .front-header-meta {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-right: 2rem;
+        }
+
+        .day-tag {
+            font-size: 0.68rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 0.15rem 0.45rem;
+            border-radius: var(--radius-sm);
+        }
+
+        .day-tag.green {
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+
+        .day-tag.orange {
+            background: var(--accent-light);
+            color: var(--accent-dark);
+        }
+
+        .front-title {
+            font-size: 0.92rem;
+            font-weight: 700;
+            color: var(--stone-900);
+            line-height: 1.25;
+            margin: 0.2rem 0;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .nutrition-badges {
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: var(--stone-600);
+        }
+
+        .nutrition-badges span {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.15rem;
+        }
+
+        .front-tags-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.25rem;
+            overflow: hidden;
+            max-height: 22px;
+        }
+
+        .front-chip {
+            font-size: 0.65rem;
+            background-color: var(--stone-100);
+            color: var(--stone-600);
+            padding: 0.1rem 0.35rem;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        /* BACK CARD */
+        .flip-back {
+            width: 100%;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            transform: rotateY(180deg);
+            background-color: white;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            border: 2px solid var(--primary);
+            overflow: hidden;
+            transition: max-height 0.45s ease-in-out;
+            min-height: 132px;
+            max-height: 132px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card-wrapper.is-flipped .flip-back {
+            max-height: 3500px;
+        }
+
+        .back-body {
+            padding: 1.15rem;
+            background: linear-gradient(180deg, #f0fdf4 0%, #ffffff 100%);
+            flex: 1;
+        }
+
+        .back-top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--primary-border);
+        }
+
+        .back-day-name {
+            font-weight: 800;
+            color: var(--primary);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .close-card-btn {
+            color: var(--stone-500);
+            background: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: 1px solid var(--stone-200);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .back-recipe-title {
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: var(--stone-900);
+            margin-bottom: 0.85rem;
+            line-height: 1.25;
+        }
+
+        .btn-cook-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+            color: white;
+            padding: 0.85rem 1rem;
+            border-radius: var(--radius-md);
+            font-weight: 800;
+            width: 100%;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            font-size: 0.95rem;
+            box-shadow: 0 4px 12px var(--primary-glow);
+            transition: transform 0.1s, box-shadow 0.2s;
+            font-family: inherit;
+        }
+
+        .btn-cook-primary:active {
+            transform: scale(0.98);
+        }
+
+        .info-card-box {
+            background: white;
+            border-radius: var(--radius-md);
+            padding: 0.9rem;
+            border: 1px solid var(--stone-200);
+            margin-bottom: 0.85rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .box-title-sm {
+            font-weight: 800;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            margin-bottom: 0.4rem;
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .ingredients-ul {
+            list-style: none;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0.35rem;
+            font-size: 0.85rem;
+            color: var(--stone-700);
+        }
+
+        .ingredients-ul li {
+            position: relative;
+            padding-left: 1.1rem;
+            line-height: 1.4;
+        }
+
+        .ingredients-ul li::before {
+            content: '•';
+            position: absolute;
+            left: 0.2rem;
+            color: var(--primary);
+            font-weight: 900;
+        }
+
+        .step-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.55rem;
+        }
+
+        .step-item {
+            display: flex;
+            gap: 0.65rem;
+            font-size: 0.85rem;
+            color: var(--stone-700);
+            background: white;
+            padding: 0.75rem;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--stone-200);
+        }
+
+        .step-badge-num {
+            font-weight: 800;
+            color: white;
+            background: var(--primary);
+            width: 1.5rem;
+            height: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            flex-shrink: 0;
+            font-size: 0.75rem;
+        }
+
+        .step-body-text {
+            line-height: 1.5;
+            margin: 0;
+        }
+
+        /* Swap Grid in Back Footer */
+        .back-footer-swap {
+            padding: 0.85rem 1rem;
+            background: white;
+            border-top: 1px solid var(--stone-200);
+        }
+
+        .swap-heading {
+            text-align: center;
+            font-size: 0.7rem;
+            font-weight: 800;
+            color: var(--stone-500);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .swap-buttons-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.4rem;
+        }
+
+        .btn-swap-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.15rem;
+            font-size: 0.72rem;
+            padding: 0.45rem 0.2rem;
+            border-radius: var(--radius-sm);
+            font-weight: 700;
+            border: 1px solid var(--stone-200);
+            cursor: pointer;
+            transition: background 0.15s, transform 0.1s;
+            font-family: inherit;
+        }
+
+        .btn-swap-item:active {
+            transform: scale(0.95);
+        }
+
+        .swap-veggi { background: #f0fdf4; color: #166534; border-color: #bbf7d0; }
+        .swap-huhn { background: #fff7ed; color: #9a3412; border-color: #fed7aa; }
+        .swap-rind { background: #fef2f2; color: #991b1b; border-color: #fecaca; }
+        .swap-schwein { background: #faf5ff; color: #6b21a8; border-color: #e9d5ff; }
+
+        /* ==========================================================================
+           KOCHBUCH (RECIPE BOOK / LIBRARY)
+           ========================================================================== */
+        .cookbook-search-box {
+            background: white;
+            border-radius: var(--radius-md);
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.85rem;
+            border: 1px solid var(--stone-200);
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .cookbook-search-input {
+            flex: 1;
+            border: none;
+            outline: none;
+            font-size: 0.9rem;
+            font-family: inherit;
+            color: var(--stone-800);
+            background: transparent;
+        }
+
+        .cookbook-filters-scroll {
+            display: flex;
+            gap: 0.4rem;
+            overflow-x: auto;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1rem;
+            scrollbar-width: none;
+        }
+        .cookbook-filters-scroll::-webkit-scrollbar { display: none; }
+
+        .cb-filter-pill {
+            white-space: nowrap;
+            background: white;
+            border: 1px solid var(--stone-200);
+            color: var(--stone-600);
+            padding: 0.4rem 0.85rem;
+            border-radius: var(--radius-full);
+            font-size: 0.78rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .cb-filter-pill.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            box-shadow: 0 2px 8px var(--primary-glow);
+        }
+
+        .cookbook-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .cookbook-card {
+            background: white;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--stone-200);
+            box-shadow: var(--shadow-card);
+            display: flex;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+
+        .cookbook-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .cb-media {
+            width: 32%;
+            position: relative;
+            background: var(--stone-100);
+        }
+
+        .cb-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .cb-info {
+            width: 68%;
+            padding: 0.75rem 0.85rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .cb-title {
+            font-size: 0.95rem;
+            font-weight: 800;
+            color: var(--stone-900);
+            line-height: 1.25;
+            margin-bottom: 0.25rem;
+        }
+
+        .cb-meta {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: var(--stone-500);
+            margin-bottom: 0.4rem;
+        }
+
+        .cb-actions-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 0.35rem;
+        }
+
+        .btn-use-plan {
+            background: var(--primary-light);
+            color: var(--primary);
+            border: 1px solid var(--primary-border);
+            font-size: 0.72rem;
+            font-weight: 800;
+            padding: 0.25rem 0.6rem;
+            border-radius: var(--radius-full);
+            cursor: pointer;
+            transition: all 0.15s;
+            font-family: inherit;
+        }
+
+        .btn-use-plan:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* Day Picker Modal */
+        .day-picker-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .btn-picker-day {
+            background: var(--stone-50);
+            border: 1px solid var(--stone-200);
+            padding: 0.75rem 1rem;
+            border-radius: var(--radius-md);
+            font-weight: 800;
+            color: var(--stone-800);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.15s;
+            font-family: inherit;
+        }
+
+        .btn-picker-day:hover {
+            background: var(--primary-light);
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        /* ==========================================================================
+           SHOPPING LIST & CATEGORIES
+           ========================================================================== */
+        .shopping-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 1.25rem 0 0.85rem 0;
+        }
+
+        .shopping-actions {
+            display: flex;
+            gap: 0.4rem;
+        }
+
+        .filter-select-box {
+            background: white;
+            border-radius: var(--radius-md);
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.85rem;
+            border: 1px solid var(--stone-200);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .custom-select-wrap {
+            position: relative;
+            margin-top: 0.35rem;
+        }
+
+        .custom-select-wrap select {
+            width: 100%;
+            background: var(--stone-50);
+            border: 1px solid var(--stone-200);
+            color: var(--stone-800);
+            border-radius: var(--radius-sm);
+            padding: 0.6rem 2rem 0.6rem 0.75rem;
+            font-size: 0.85rem;
+            font-weight: 700;
+            appearance: none;
+            outline: none;
+            font-family: inherit;
+        }
+
+        .custom-select-wrap .arrow {
+            position: absolute;
+            right: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+            color: var(--stone-400);
+        }
+
+        .progress-card {
+            background: white;
+            border-radius: var(--radius-md);
+            padding: 0.9rem 1rem;
+            margin-bottom: 1rem;
+            border: 1px solid var(--stone-200);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .cat-group {
+            background: white;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-card);
+            border: 1px solid var(--stone-200);
+            margin-bottom: 1rem;
+            overflow: hidden;
+        }
+
+        .cat-group-header {
+            background: var(--stone-50);
+            padding: 0.6rem 1rem;
+            border-bottom: 1px solid var(--stone-200);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .cat-group-title {
+            font-weight: 800;
+            color: var(--stone-700);
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .item-row {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--stone-100);
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .item-row:last-child {
+            border-bottom: none;
+        }
+
+        .item-row.checked {
+            background: var(--stone-50);
+            opacity: 0.6;
+        }
+
+        .item-row.checked .item-name {
+            text-decoration: line-through;
+            color: var(--stone-400);
+        }
+
+        .item-name {
+            font-size: 0.88rem;
+            flex: 1;
+            color: var(--stone-800);
+            font-weight: 500;
+        }
+
+        .pantry-icon-btn {
+            color: var(--stone-400);
+            background: transparent;
+            border: none;
+            padding: 0.3rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border-radius: var(--radius-sm);
+            transition: all 0.15s;
+        }
+
+        .pantry-icon-btn:hover {
+            background: var(--stone-100);
+            color: var(--primary);
+        }
+
+        .del-item-btn {
+            color: var(--danger);
+            background: var(--danger-light);
+            border: none;
+            border-radius: var(--radius-sm);
+            padding: 0.25rem 0.4rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .manual-add-box {
+            display: flex;
+            gap: 0.4rem;
+            padding: 0.85rem 1rem;
+            background: var(--stone-50);
+            border-top: 1px solid var(--stone-200);
+        }
+
+        .manual-add-input {
+            flex: 1;
+            padding: 0.6rem 0.75rem;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--stone-200);
+            font-size: 0.85rem;
+            font-family: inherit;
+            outline: none;
+        }
+
+        .manual-add-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: var(--radius-sm);
+            padding: 0 1rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        /* ==========================================================================
+           FULLSCREEN COOK MODE & LIVE TIMER
+           ========================================================================== */
+        .cook-modal {
+            position: fixed;
+            inset: 0;
+            background: white;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease;
+        }
+
+        .cook-modal.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .cook-modal-header {
+            padding: 1.25rem 1.5rem;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .cook-header-title {
+            font-weight: 800;
+            font-size: 1.2rem;
+            line-height: 1.2;
+        }
+
+        .cook-progress-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 5px;
+            background: #34d399;
+            transition: width 0.3s ease;
+        }
+
+        .cook-modal-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 1.5rem;
+            background: var(--stone-50);
+            text-align: center;
+            overflow-y: auto;
+        }
+
+        .cook-step-badge {
+            background: var(--primary-light);
+            color: var(--primary);
+            font-weight: 800;
+            font-size: 0.85rem;
+            padding: 0.3rem 0.8rem;
+            border-radius: var(--radius-full);
+            margin-bottom: 1.25rem;
+            border: 1px solid var(--primary-border);
+        }
+
+        .cook-step-text-main {
+            font-size: 1.55rem;
+            font-weight: 700;
+            color: var(--stone-900);
+            line-height: 1.45;
+            max-width: 34rem;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Live In-Cook Timer Widget */
+        .step-timer-box {
+            background: white;
+            border: 2px solid var(--accent);
+            border-radius: var(--radius-lg);
+            padding: 1rem 1.5rem;
+            box-shadow: 0 8px 20px rgba(245, 158, 11, 0.18);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+            animation: popIn 0.3s ease;
+        }
+
+        @keyframes popIn {
+            from { transform: scale(0.9); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .step-timer-digits {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: var(--accent-dark);
+            font-family: monospace;
+            letter-spacing: 2px;
+        }
+
+        .step-timer-ctrls {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .timer-btn-action {
+            background: var(--accent);
+            color: white;
+            border: none;
+            font-weight: 800;
+            font-size: 0.82rem;
+            padding: 0.45rem 0.9rem;
+            border-radius: var(--radius-full);
+            cursor: pointer;
+            transition: all 0.15s;
+            font-family: inherit;
+        }
+
+        .timer-btn-action:active {
+            transform: scale(0.95);
+        }
+
+        .timer-btn-reset {
+            background: var(--stone-100);
+            color: var(--stone-600);
+            border: 1px solid var(--stone-200);
+        }
+
+        .cook-modal-footer {
+            padding: 1.25rem 1.5rem;
+            background: white;
+            border-top: 1px solid var(--stone-200);
+            display: flex;
+            gap: 1rem;
+        }
+
+        .cook-nav-btn {
+            flex: 1;
+            padding: 1.1rem;
+            font-size: 1.15rem;
+            font-weight: 800;
+            border-radius: var(--radius-md);
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .cook-btn-back {
+            background: var(--stone-100);
+            color: var(--stone-700);
+        }
+
+        .cook-btn-forward {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 4px 12px var(--primary-glow);
+        }
+
+        /* ==========================================================================
+           MODALS (SETTINGS, ROULETTE, RECIPE DETAILS, DAY PICKER)
+           ========================================================================== */
+        .overlay-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease;
+        }
+
+        .overlay-modal.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-sheet {
+            background: white;
+            width: 100%;
+            max-width: 44rem;
+            max-height: 88vh;
+            border-top-left-radius: var(--radius-lg);
+            border-top-right-radius: var(--radius-lg);
+            padding: 1.5rem;
+            overflow-y: auto;
+            transform: translateY(100%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .overlay-modal.open .modal-sheet {
+            transform: translateY(0);
+        }
+
+        .modal-header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.25rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--stone-200);
+        }
+
+        .modal-title {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: var(--stone-900);
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--stone-700);
+            margin-bottom: 0.35rem;
+        }
+
+        .form-input, .form-textarea, .form-select {
+            width: 100%;
+            padding: 0.65rem 0.85rem;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--stone-200);
+            font-size: 0.88rem;
+            font-family: inherit;
+            outline: none;
+            background: var(--stone-50);
+            transition: border-color 0.2s;
+        }
+
+        .form-input:focus, .form-textarea:focus, .form-select:focus {
+            border-color: var(--primary);
+            background: white;
+        }
+
+        .form-row-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+        }
+
+        .chips-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            margin-top: 0.4rem;
+        }
+
+        .blacklist-chip {
+            background: var(--stone-100);
+            border: 1px solid var(--stone-300);
+            color: var(--stone-700);
+            font-size: 0.78rem;
+            font-weight: 700;
+            padding: 0.3rem 0.65rem;
+            border-radius: var(--radius-full);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .blacklist-chip.active {
+            background: var(--danger-light);
+            border-color: #fca5a5;
+            color: var(--danger);
+        }
+
+        .btn-modal-submit {
+            background: var(--primary);
+            color: white;
+            width: 100%;
+            padding: 0.9rem;
+            border-radius: var(--radius-md);
+            font-weight: 800;
+            border: none;
+            font-size: 0.95rem;
+            cursor: pointer;
+            margin-top: 1rem;
+            font-family: inherit;
+            box-shadow: 0 4px 12px var(--primary-glow);
+        }
+
+        /* Roulette Spinner Box */
+        .roulette-box {
+            text-align: center;
+            padding: 1.5rem 0.5rem;
+        }
+
+        .roulette-icon-spin {
+            font-size: 3.5rem;
+            display: inline-block;
+            transition: transform 0.8s cubic-bezier(0.1, 0.9, 0.2, 1);
+        }
+
+        .roulette-icon-spin.spinning {
+            animation: spinDice 0.6s infinite linear;
+        }
+
+        @keyframes spinDice {
+            0% { transform: rotate(0deg) scale(1.1); }
+            50% { transform: rotate(180deg) scale(0.9); }
+            100% { transform: rotate(360deg) scale(1.1); }
+        }
+
+        .roulette-card-result {
+            background: var(--stone-50);
+            border: 2px solid var(--accent);
+            border-radius: var(--radius-md);
+            padding: 1rem;
+            margin-top: 1rem;
+            text-align: left;
+            box-shadow: var(--shadow-sm);
+        }
+
+        /* ==========================================================================
+           BOTTOM NAVIGATION
+           ========================================================================== */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-top: 1px solid var(--stone-200);
+            padding: 0.5rem 1rem calc(0.5rem + env(safe-area-inset-bottom));
+            z-index: 100;
+        }
+
+        .nav-grid {
+            max-width: 32rem;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+        }
+
+        .nav-tab-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.2rem;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--stone-400);
+            padding: 0.3rem 0.6rem;
+            border-radius: var(--radius-md);
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .nav-tab-btn.active {
+            color: var(--primary);
+        }
+
+        .nav-icon-container {
+            padding: 0.35rem 0.75rem;
+            border-radius: var(--radius-full);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+
+        .nav-tab-btn.active .nav-icon-container {
+            background-color: var(--primary-light);
+        }
+
+        .nav-btn-text {
+            font-size: 0.72rem;
+            font-weight: 700;
+        }
+
+        .nav-badge-dot {
+            position: absolute;
+            top: 2px;
+            right: 4px;
+            width: 9px;
+            height: 9px;
+            background-color: var(--accent);
+            border-radius: 50%;
+            border: 2px solid white;
+            display: none;
+        }
+
+        /* Toast Feedback */
+        .toast-notification {
+            position: fixed;
+            bottom: 85px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: var(--stone-900);
+            color: white;
+            padding: 0.65rem 1.25rem;
+            border-radius: var(--radius-full);
+            font-weight: 700;
+            font-size: 0.85rem;
+            z-index: 10000;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .toast-notification.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* SVG Icons Utility */
+        svg {
+            width: 1.25rem;
+            height: 1.25rem;
+            stroke-width: 2.2;
+            stroke: currentColor;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            pointer-events: none;
+        }
+
+        /* ==========================================================================
+           PRINT STYLES
+           ========================================================================== */
+        @media print {
+            header, .bottom-nav, .actions-bar, .fav-heart-btn, .fridge-widget, .dashboard-grid, .macro-card, .btn-cook-primary, .back-footer-swap, .manual-add-box, .pantry-icon-btn, .del-item-btn, .cookbook-search-box, .cookbook-filters-scroll, .btn-use-plan, .drag-handle {
+                display: none !important;
+            }
+            body {
+                background: white !important;
+                color: black !important;
+                padding-bottom: 0 !important;
+            }
+            .app-container {
+                max-width: 100% !important;
+                padding: 0 !important;
+            }
+            .card-wrapper {
+                page-break-inside: avoid;
+                margin-bottom: 1.5rem;
+            }
+            .flip-front {
+                position: static !important;
+                height: auto !important;
+                border: 1px solid #ccc !important;
+            }
+            .cat-group {
+                border: 1px solid #ddd !important;
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ==================== HEADER ==================== -->
+    <header>
+        <div class="app-container">
+            <div class="header-top">
+                <div class="brand-box" onclick="toggleFilterDrawer()">
+                    <div class="brand-icon">
+                        <svg viewBox="0 0 24 24"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>
+                    </div>
+                    <div>
+                        <h1 class="brand-title">Veggi & Fit</h1>
+                        <p class="brand-sub">200+ Rezepte & Planer</p>
+                    </div>
+                </div>
+
+                <div class="header-quick-actions">
+                    <div class="portion-ctrl">
+                        <button class="portion-btn" onclick="changePortions(-1)" aria-label="Portion verringern">-</button>
+                        <span class="portion-label"><span id="port-val">3</span> Pers.</span>
+                        <button class="portion-btn" onclick="changePortions(1)" aria-label="Portion erhöhen">+</button>
+                    </div>
+
+                    <button class="icon-btn-header" onclick="openRouletteModal()" title="Zufalls-Rezept Roulette">
+                        🎲
+                    </button>
+
+                    <button class="icon-btn-header" onclick="toggleFilterDrawer()" title="Filter & Wochentage anpassen" id="btn-toggle-filters">
+                        <svg viewBox="0 0 24 24"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+                    </button>
+
+                    <button class="icon-btn-header" onclick="openSettingsModal()" title="Einstellungen & Nährwertziele">
+                        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Expandable Options -->
+            <div id="filter-drawer" class="filter-drawer">
+                <div class="filter-grid">
+                    <div class="diet-select-wrap">
+                        <select id="diet-select" onchange="changeDiet(this.value)">
+                            <option value="veggi">🌱 Nur Vegetarisch (50 Rezepte)</option>
+                            <option value="huhn">🍗 Mix mit Hähnchen (100 Rezepte)</option>
+                            <option value="rind">🥩 Mix mit Rind (100 Rezepte)</option>
+                            <option value="schwein">🥓 Mix mit Schwein (100 Rezepte)</option>
+                        </select>
+                        <span class="select-arrow">▼</span>
+                    </div>
+
+                    <button id="mealprep-btn" class="toggle-pill" onclick="toggleMealPrep()">🍱 Meal-Prep (Aus)</button>
+                    <button class="toggle-pill" onclick="openCustomRecipeModal()">➕ Eigenes Rezept</button>
+                </div>
+
+                <div class="fast-days-wrap">
+                    <span class="fast-days-title">⏱️ 10-Minuten Express-Tage:</span>
+                    <div class="day-pills" id="fast-days-container"></div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div id="toast" class="toast-notification">Aktion ausgeführt!</div>
+
+    <!-- ==================== FULLSCREEN COOK MODAL & TIMER ==================== -->
+    <div id="cook-modal" class="cook-modal">
+        <div class="cook-progress-bar" id="cook-progress"></div>
+        <div class="cook-modal-header">
+            <div>
+                <span style="font-size:0.75rem; opacity:0.85; text-transform:uppercase; font-weight:700;">Kochmodus aktiv</span>
+                <h2 class="cook-header-title" id="cook-title">Rezept Name</h2>
+            </div>
+            <button class="icon-btn-header" style="border-radius:50%;" onclick="closeCookMode()"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+        </div>
+        
+        <div class="cook-modal-body">
+            <div class="cook-step-badge" id="cook-step-badge">Schritt 1 von 4</div>
+            <div class="cook-step-text-main" id="cook-step-text">Zubereitungsschritt laden...</div>
+            
+            <!-- Dynamic In-Step Cook Timer -->
+            <div id="step-timer-container" style="display:none;"></div>
+        </div>
+
+        <div class="cook-modal-footer">
+            <button class="cook-nav-btn cook-btn-back" onclick="prevCookStep(event)">Zurück</button>
+            <button class="cook-nav-btn cook-btn-forward" id="cook-btn-next" onclick="nextCookStep(event)">Weiter</button>
+        </div>
+    </div>
+
+    <!-- ==================== ROULETTE MODAL (WAS KOCHE ICH HEUTE?) ==================== -->
+    <div id="roulette-modal" class="overlay-modal" onclick="if(event.target===this) closeRouletteModal()">
+        <div class="modal-sheet" style="text-align:center;">
+            <div class="modal-header-row">
+                <h2 class="modal-title">🎲 Was koche ich heute?</h2>
+                <button class="close-card-btn" onclick="closeRouletteModal()"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+            </div>
+            
+            <div class="roulette-box">
+                <div id="roulette-spinner-icon" class="roulette-icon-spin">🍲</div>
+                <div id="roulette-content-box">
+                    <p style="font-size:0.95rem; color:var(--stone-600); margin:0.85rem 0;">Lass den Zufall entscheiden – perfekt abgestimmt auf deine Ernährungsform!</p>
+                    <button class="btn-modal-submit" style="background:var(--accent); color:var(--stone-900);" onclick="spinRouletteWheel()">🎲 Rezept Auswürfeln!</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== SETTINGS, GOALS & BACKUP MODAL ==================== -->
+    <div id="settings-modal" class="overlay-modal" onclick="if(event.target===this) closeSettingsModal()">
+        <div class="modal-sheet">
+            <div class="modal-header-row">
+                <h2 class="modal-title">⚙️ Einstellungen & Backup</h2>
+                <button class="close-card-btn" onclick="closeSettingsModal()"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Tagesziele pro Person</label>
+                <div class="form-row-2">
+                    <div>
+                        <label style="font-size:0.72rem; color:var(--stone-500); font-weight:600;">Kalorienziel (kcal)</label>
+                        <input type="number" id="target-kcal" class="form-input" value="500" step="50">
+                    </div>
+                    <div>
+                        <label style="font-size:0.72rem; color:var(--stone-500); font-weight:600;">Proteinziel (g)</label>
+                        <input type="number" id="target-prot" class="form-input" value="35" step="5">
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">🚫 Zutaten-Ausschluss (Allergien / Abneigungen)</label>
+                <p style="font-size:0.75rem; color:var(--stone-500); margin-bottom:0.4rem;">Gerichte mit diesen Zutaten werden bei der Wochenplanung automatisch vermieden.</p>
+                <div class="chips-container" id="blacklist-chips"></div>
+                <div style="display:flex; gap:0.4rem; margin-top:0.6rem;">
+                    <input type="text" id="custom-blacklist-input" class="form-input" placeholder="Eigene Zutat ausschließen (z.B. Senf, Laktose)" onkeypress="if(event.key==='Enter') addCustomBlacklist()">
+                    <button class="btn-primary-pill" onclick="addCustomBlacklist()">Hinzufügen</button>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-top:1.5rem; padding-top:1rem; border-top:1px solid var(--stone-200);">
+                <label class="form-label">💾 Datensicherung & Übertragen</label>
+                <p style="font-size:0.75rem; color:var(--stone-500); margin-bottom:0.6rem;">Sichere deinen Wochenplan und eigene Rezepte als Datei oder übertrage sie auf dein Smartphone / Partner-Handy.</p>
+                <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+                    <button class="btn-primary-pill" onclick="exportBackupJson()">📥 Backup Herunterladen</button>
+                    <label class="btn-primary-pill" style="cursor:pointer; margin:0;">
+                        📤 Backup Wiederherstellen
+                        <input type="file" id="import-backup-file" accept=".json" style="display:none;" onchange="importBackupJson(event)">
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-top:1rem; padding-top:1rem; border-top:1px solid var(--stone-200);">
+                <label class="form-label">Daten zurücksetzen</label>
+                <button class="btn-primary-pill" style="color:var(--danger); border-color:#fca5a5; background:#fff1f2;" onclick="resetAllData()">⚠️ Alle Daten auf Werkseinstellungen zurücksetzen</button>
+            </div>
+
+            <button class="btn-modal-submit" onclick="saveSettingsAndClose()">Einstellungen Speichern</button>
+        </div>
+    </div>
+
+    <!-- ==================== DAY PICKER MODAL (KOCHBUCH -> PLAN) ==================== -->
+    <div id="day-picker-modal" class="overlay-modal" onclick="if(event.target===this) closeDayPickerModal()">
+        <div class="modal-sheet">
+            <div class="modal-header-row">
+                <h2 class="modal-title">📅 In Wochenplan einfügen</h2>
+                <button class="close-card-btn" onclick="closeDayPickerModal()"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+            </div>
+            <p style="font-size:0.85rem; color:var(--stone-600); margin-bottom:0.5rem;">Wähle den Wochentag für <b id="picker-recipe-title">Gericht</b>:</p>
+            <div class="day-picker-grid" id="day-picker-container"></div>
+        </div>
+    </div>
+
+    <!-- ==================== CUSTOM RECIPE MODAL ==================== -->
+    <div id="recipe-modal" class="overlay-modal" onclick="if(event.target===this) closeCustomRecipeModal()">
+        <div class="modal-sheet">
+            <div class="modal-header-row">
+                <h2 class="modal-title">➕ Eigenes Rezept erstellen</h2>
+                <button class="close-card-btn" onclick="closeCustomRecipeModal()"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Rezept-Titel</label>
+                <input type="text" id="new-rec-title" class="form-input" placeholder="z.B. Cremiges Kichererbsen-Curry">
+            </div>
+
+            <div class="form-row-2">
+                <div class="form-group">
+                    <label class="form-label">Kategorie</label>
+                    <select id="new-rec-diet" class="form-select">
+                        <option value="veggi">🌱 Vegetarisch</option>
+                        <option value="huhn">🍗 Hähnchen</option>
+                        <option value="rind">🥩 Rind</option>
+                        <option value="schwein">🥓 Schwein</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Dauer (Minuten)</label>
+                    <input type="number" id="new-rec-mins" class="form-input" value="20" min="5" max="180">
+                </div>
+            </div>
+
+            <div class="form-row-2">
+                <div class="form-group">
+                    <label class="form-label">Kalorien (kcal)</label>
+                    <input type="number" id="new-rec-kcal" class="form-input" value="480">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Protein (g)</label>
+                    <input type="number" id="new-rec-protein" class="form-input" value="28">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Zutaten für 3 Personen (Zeilenweise mit Kategorie)</label>
+                <textarea id="new-rec-ingredients" class="form-textarea" rows="4" placeholder="Frisch: 2 Zucchini, 1 Paprika&#10;Vorrat: 1 Pck Reis&#10;Kühlregal: 1 Pck Feta"></textarea>
+                <small style="color:var(--stone-400); font-size:0.72rem;">Format: Kategorie: Zutat 1, Zutat 2 (Kategorien: Frisch, Vorrat, Kühlregal, Konserven, TK, Fleisch)</small>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Zubereitungsschritte (Zeilenweise)</label>
+                <textarea id="new-rec-prep" class="form-textarea" rows="4" placeholder="Gemüse waschen und würfeln.&#10;Reis nach Packungsanleitung kochen.&#10;Gemüse in der Pfanne anbraten und würzen."></textarea>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Warum es passt / Reste-Tipp (Optional)</label>
+                <input type="text" id="new-rec-why" class="form-input" placeholder="z.B. Schnelles Feierabend-Gericht, perfekt für Meal-Prep.">
+            </div>
+
+            <button class="btn-modal-submit" onclick="saveCustomRecipe()">Rezept Speichern & Einbinden 🎉</button>
+        </div>
+    </div>
+
+    <!-- ==================== MAIN CONTENT CONTAINER ==================== -->
+    <main id="app-root" class="app-container mt-2"></main>
+
+    <!-- ==================== BOTTOM NAVBAR ==================== -->
+    <nav class="bottom-nav">
+        <div class="nav-grid">
+            <button class="nav-tab-btn active" onclick="switchTab('plan')" id="nav-plan">
+                <div class="nav-icon-container">
+                    <svg viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+                </div>
+                <span class="nav-btn-text">Wochenplan</span>
+            </button>
+            <button class="nav-tab-btn" onclick="switchTab('cookbook')" id="nav-cookbook">
+                <div class="nav-icon-container">
+                    <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                </div>
+                <span class="nav-btn-text">Kochbuch</span>
+            </button>
+            <button class="nav-tab-btn" onclick="switchTab('shopping')" id="nav-shopping">
+                <div class="nav-icon-container">
+                    <svg viewBox="0 0 24 24"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
+                    <div class="nav-badge-dot" id="shop-dot"></div>
+                </div>
+                <span class="nav-btn-text">Einkaufsliste</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Load external 200 Recipe Database if present -->
+    <script src="recipes.js"></script>
+
+    <!-- ==================== APP CONTROLLER & LOGIC ==================== -->
+    <script>
+        const DAYS = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'];
+        const DEFAULT_BLACKLIST_PRESETS = ['Pilze', 'Koriander', 'Nüsse', 'Schweinefleisch', 'Laktose', 'Zwiebeln', 'Fisch'];
+
+        // --- APP STATE ---
+        let currentTab = 'plan';
+        let filterDay = 'Alle';
+        let cookbookFilter = 'all';
+        let cookbookSearch = '';
+        let pendingPickerRecipe = null;
+        let draggedDayIndex = null;
+
+        let weeklyPlan = [];
+        let checkedItems = {};
+        let manualItems = [];
+        let pantryItems = []; 
+        let customRecipes = [];
+        let blacklistedIngredients = [];
+        let targetKcal = 500;
+        let targetProt = 35;
+        let portions = 3;
+        let currentDiet = 'veggi';
+        let fastDays = [false, false, false, false, false, false, false];
+        let isMealPrep = false; 
+
+        let activeCookRecipe = null;
+        let cookStepIdx = 0;
+        let wakeLock = null;
+
+        // Cook Timer State
+        let cookTimerSeconds = 0;
+        let cookTimerInitial = 0;
+        let cookTimerInterval = null;
+        let cookTimerRunning = false;
+
+        // --- AUDIO CHIME (WEB AUDIO API) ---
+        function playTimerChime() {
+            try {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtx) return;
+                const ctx = new AudioCtx();
+                
+                const now = ctx.currentTime;
+                const playTone = (freq, start, duration) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, start);
+                    
+                    gain.gain.setValueAtTime(0, start);
+                    gain.gain.linearRampToValueAtTime(0.3, start + 0.05);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+                    
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(start);
+                    osc.stop(start + duration);
+                };
+
+                // Pleasant 3-Tone Gong Chime (C5, E5, G5)
+                playTone(523.25, now, 0.4);
+                playTone(659.25, now + 0.25, 0.4);
+                playTone(783.99, now + 0.5, 0.8);
+
+                if ('vibrate' in navigator) {
+                    navigator.vibrate([200, 100, 200, 100, 400]);
+                }
+            } catch (e) {
+                console.warn('Audio chime error:', e);
+            }
+        }
+
+        // --- IMAGE FINDER HELPER ---
+        function getImageForRecipe(recipeOrTitle) {
+            if (typeof recipeOrTitle === 'object' && recipeOrTitle) {
+                if (recipeOrTitle.image) return recipeOrTitle.image;
+                const poolMatch = getFullPool().find(r => r.title === recipeOrTitle.title);
+                if (poolMatch && poolMatch.image) return poolMatch.image;
+            }
+            const t = (typeof recipeOrTitle === 'string' ? recipeOrTitle : (recipeOrTitle && recipeOrTitle.title ? recipeOrTitle.title : '')).toLowerCase();
+            
+            // Highly specific culinary theme matchers
+            if (t.includes('suppe') || t.includes('eintopf') || t.includes('ramen') || t.includes('dal') || t.includes('gulasch')) return 'https://images.unsplash.com/photo-1547592180-85f173990554?w=600&q=80'; 
+            if (t.includes('tomate') || t.includes('bolognese') || t.includes('shakshuka')) return 'https://images.unsplash.com/photo-1590412200988-a436970781fa?w=600&q=80'; 
+            if (t.includes('pasta') || t.includes('nudel') || t.includes('macaroni') || t.includes('spätzle') || t.includes('penne')) return 'https://images.unsplash.com/photo-1598866594230-a7c12756260f?w=600&q=80'; 
+            if (t.includes('carbonara') || t.includes('rahm') || t.includes('stroganoff')) return 'https://images.unsplash.com/photo-1612874742237-6526221588e3?w=600&q=80'; 
+            if (t.includes('gnocchi')) return 'https://images.unsplash.com/photo-1551183053-bf91a1d81141?w=600&q=80'; 
+            if (t.includes('steak') || t.includes('rumpsteak') || t.includes('rind')) return 'https://images.unsplash.com/photo-1558030006-450675393462?w=600&q=80'; 
+            if (t.includes('burger') || t.includes('patties') || t.includes('bifteki') || t.includes('hack')) return 'https://images.unsplash.com/photo-1520072959219-c595dc870360?w=600&q=80'; 
+            if (t.includes('chili') || t.includes('taco') || t.includes('burrito') || t.includes('quesadilla')) return 'https://images.unsplash.com/photo-1552611052-33e04de081de?w=600&q=80'; 
+            if (t.includes('wrap')) return 'https://images.unsplash.com/photo-1626844131082-256783844137?w=600&q=80'; 
+            if (t.includes('hähnchen') || t.includes('huhn') || t.includes('chicken') || t.includes('fajita') || t.includes('gyros')) return 'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=600&q=80'; 
+            if (t.includes('schwein') || t.includes('filet') || t.includes('medaillon')) return 'https://images.unsplash.com/photo-1602491453631-e2a5ad90a131?w=600&q=80'; 
+            if (t.includes('flammkuchen') || t.includes('toast')) return 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=600&q=80'; 
+            if (t.includes('bratwurst') || t.includes('sauerkraut') || t.includes('schupfnudel') || t.includes('speck')) return 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=600&q=80'; 
+            if (t.includes('curry') || t.includes('tikka') || t.includes('kokos')) return 'https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=600&q=80'; 
+            if (t.includes('kartoffel') || t.includes('gratin') || t.includes('blech') || t.includes('auflauf') || t.includes('lasagne')) return 'https://images.unsplash.com/photo-1518977672816-c9878dc2dbfa?w=600&q=80'; 
+            if (t.includes('kichererbsen') || t.includes('feta') || t.includes('halloumi')) return 'https://images.unsplash.com/photo-1515543237350-b3eea1ec8082?w=600&q=80'; 
+            if (t.includes('omelett') || t.includes('ei') || t.includes('bauer') || t.includes('frittata') || t.includes('pancake')) return 'https://images.unsplash.com/photo-1510693042738-eb4dbde971ba?w=600&q=80'; 
+            if (t.includes('tofu') || t.includes('wok') || t.includes('teriyaki') || t.includes('edamame')) return 'https://images.unsplash.com/photo-1512058564366-18510be2db19?w=600&q=80'; 
+            if (t.includes('salat') || t.includes('bowl') || t.includes('quinoa')) return 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=600&q=80'; 
+            if (t.includes('risotto') || t.includes('reis')) return 'https://images.unsplash.com/photo-1633964913295-ceb43826e7c9?w=600&q=80'; 
+            return 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=600&q=80'; 
+        }
+
+        // --- SVGS ---
+        const ICONS = {
+            clock: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
+            rotate: '<svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>',
+            flame: '<svg viewBox="0 0 24 24"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>',
+            chef: '<svg viewBox="0 0 24 24"><path d="M6 13.87A4 4 0 0 1 7.41 6a5.11 5.11 0 0 1 1.05-1.54 5 5 0 0 1 7.08 0A5.11 5.11 0 0 1 16.59 6 4 4 0 0 1 18 13.87V21H6Z"/><line x1="6" x2="18" y1="17" y2="17"/></svg>',
+            cart: '<svg viewBox="0 0 24 24"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>',
+            check: '<svg viewBox="0 0 24 24" style="color:var(--primary)"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>',
+            circle: '<svg viewBox="0 0 24 24" style="color:var(--stone-300)"><circle cx="12" cy="12" r="10"/></svg>',
+            filter: '<svg viewBox="0 0 24 24"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>',
+            down: '<svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>',
+            close: '<svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>',
+            heart: '<svg viewBox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>',
+            copy: '<svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>',
+            share: '<svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/></svg>',
+            plus: '<svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
+            trash: '<svg viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>',
+            box: '<svg viewBox="0 0 24 24"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>',
+            play: '<svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>',
+            book: '<svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>',
+            search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>',
+            drag: '<svg viewBox="0 0 24 24"><circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/></svg>'
+        };
+
+        // --- STORAGE & INITIALIZATION ---
+        function loadState() {
+            try {
+                const p = localStorage.getItem('vfit_plan');
+                const c = localStorage.getItem('vfit_checks');
+                const m = localStorage.getItem('vfit_manual');
+                const pt = localStorage.getItem('vfit_portions');
+                const dt = localStorage.getItem('vfit_diet');
+                const fd = localStorage.getItem('vfit_fast');
+                const mp = localStorage.getItem('vfit_mealprep');
+                const pa = localStorage.getItem('vfit_pantry');
+                const cr = localStorage.getItem('vfit_custom_recipes');
+                const bl = localStorage.getItem('vfit_blacklist');
+                const tk = localStorage.getItem('vfit_target_kcal');
+                const tp = localStorage.getItem('vfit_target_prot');
+                
+                if (p) weeklyPlan = JSON.parse(p);
+                if (c) checkedItems = JSON.parse(c);
+                if (m) manualItems = JSON.parse(m);
+                if (pt) portions = parseInt(pt) || 3;
+                if (dt) currentDiet = dt;
+                if (fd) fastDays = JSON.parse(fd);
+                if (mp) isMealPrep = mp === 'true';
+                if (pa) pantryItems = JSON.parse(pa);
+                if (cr) customRecipes = JSON.parse(cr);
+                if (bl) blacklistedIngredients = JSON.parse(bl);
+                if (tk) targetKcal = parseInt(tk) || 500;
+                if (tp) targetProt = parseInt(tp) || 35;
+                
+            } catch(e) { console.warn('LocalStorage Load Error:', e); }
+            
+            document.getElementById('diet-select').value = currentDiet;
+            document.getElementById('port-val').innerText = portions;
+            updateMealPrepBtn();
+
+            if (!weeklyPlan || weeklyPlan.length !== 7 || weeklyPlan.includes(null)) {
+                generateNewWeek();
+            } else {
+                renderAll();
+            }
+        }
+        
+        function saveState() {
+            try {
+                localStorage.setItem('vfit_plan', JSON.stringify(weeklyPlan));
+                localStorage.setItem('vfit_checks', JSON.stringify(checkedItems));
+                localStorage.setItem('vfit_manual', JSON.stringify(manualItems));
+                localStorage.setItem('vfit_portions', portions);
+                localStorage.setItem('vfit_diet', currentDiet);
+                localStorage.setItem('vfit_fast', JSON.stringify(fastDays));
+                localStorage.setItem('vfit_mealprep', isMealPrep);
+                localStorage.setItem('vfit_pantry', JSON.stringify(pantryItems));
+                localStorage.setItem('vfit_custom_recipes', JSON.stringify(customRecipes));
+                localStorage.setItem('vfit_blacklist', JSON.stringify(blacklistedIngredients));
+                localStorage.setItem('vfit_target_kcal', targetKcal);
+                localStorage.setItem('vfit_target_prot', targetProt);
+            } catch(e) { console.warn('LocalStorage Save Error:', e); }
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 2200);
+        }
+
+        function toggleFilterDrawer() {
+            const d = document.getElementById('filter-drawer');
+            d.classList.toggle('open');
+        }
+
+        // --- RECIPE POOLS & BLACKLIST FILTERING ---
+        function getRawPools() {
+            const v = window.VEGGI_POOL || [];
+            const c = window.CHICKEN_POOL || [];
+            const b = window.BEEF_POOL || [];
+            const p = window.PORK_POOL || [];
+            return { v, c, b, p };
+        }
+
+        function getFullPool() {
+            const { v, c, b, p } = getRawPools();
+            return [...v, ...c, ...b, ...p, ...customRecipes];
+        }
+
+        function isRecipeAllowed(recipe) {
+            if (!recipe || blacklistedIngredients.length === 0) return true;
+            const fullText = (recipe.title + ' ' + (recipe.tags||[]).join(' ') + ' ' + Object.values(recipe.ingredients||{}).flat().join(' ')).toLowerCase();
+            return !blacklistedIngredients.some(b => fullText.includes(b.toLowerCase()));
+        }
+
+        function getPoolForDiet() {
+            const { v, c, b, p } = getRawPools();
+            let pool = [];
+            if (currentDiet === 'veggi') {
+                pool = [...v, ...customRecipes.filter(r => r.diet === 'veggi')];
+            } else if (currentDiet === 'huhn') {
+                pool = [...c, ...v, ...customRecipes.filter(r => r.diet === 'huhn' || r.diet === 'veggi')];
+            } else if (currentDiet === 'rind') {
+                pool = [...b, ...v, ...customRecipes.filter(r => r.diet === 'rind' || r.diet === 'veggi')];
+            } else if (currentDiet === 'schwein') {
+                pool = [...p, ...v, ...customRecipes.filter(r => r.diet === 'schwein' || r.diet === 'veggi')];
+            } else {
+                pool = getFullPool();
+            }
+            return pool.filter(isRecipeAllowed);
+        }
+
+        // --- SMART QUANTITY SCALING & AGGREGATION ---
+        function formatScaledNumber(num) {
+            if (Number.isInteger(num)) return num;
+            return parseFloat(num.toFixed(1)).toString().replace('.', ',');
+        }
+
+        function scaleStr(str, factor) {
+            if (factor === 1 || !str) return str;
+            
+            let eggMatch = str.match(/^(\d+)\s*(Eier|Ei)\b/i);
+            if (eggMatch) {
+                let count = Math.max(1, Math.round(parseInt(eggMatch[1]) * factor));
+                return `${count} ${eggMatch[2]}`;
+            }
+
+            let gramMatch = str.match(/^(\d+)\s*g\s+(.*)/i);
+            if (gramMatch) {
+                let g = Math.round((parseInt(gramMatch[1]) * factor) / 25) * 25;
+                return `${g}g ${gramMatch[2]}`;
+            }
+
+            return str.replace(/^(\d+(?:[.,]\d+)?)(?:\s*-\s*(\d+(?:[.,]\d+)?))?\s*/, (match, p1, p2) => {
+                let n1 = parseFloat(p1.replace(',', '.'));
+                let scaled1 = n1 * factor;
+                if (scaled1 < 5) scaled1 = Math.round(scaled1 * 2) / 2;
+                let res = formatScaledNumber(scaled1);
+                
+                if (p2) {
+                    let n2 = parseFloat(p2.replace(',', '.'));
+                    let scaled2 = n2 * factor;
+                    if (scaled2 < 5) scaled2 = Math.round(scaled2 * 2) / 2;
+                    res += '-' + formatScaledNumber(scaled2);
+                }
+                return res + ' ';
+            });
+        }
+
+        function changePortions(delta) {
+            if (portions + delta >= 1 && portions + delta <= 12) {
+                portions += delta;
+                document.getElementById('port-val').innerText = portions;
+                saveState();
+                renderAll();
+            }
+        }
+
+        // --- FILTER & DIET LOGIC ---
+        function changeDiet(val) {
+            currentDiet = val;
+            saveState();
+            generateNewWeek(true); 
+            showToast("🌱 Neuer Plan für " + val.toUpperCase() + " erstellt!");
+        }
+
+        function toggleMealPrep() {
+            isMealPrep = !isMealPrep;
+            saveState();
+            updateMealPrepBtn();
+            generateNewWeek(true);
+            showToast(isMealPrep ? "🍱 Meal-Prep aktiviert! (Tage gekoppelt)" : "Meal-Prep deaktiviert");
+        }
+
+        function updateMealPrepBtn() {
+            const btn = document.getElementById('mealprep-btn');
+            if (isMealPrep) {
+                btn.classList.add('active');
+                btn.innerText = '🍱 Meal-Prep (An)';
+            } else {
+                btn.classList.remove('active');
+                btn.innerText = '🍱 Meal-Prep (Aus)';
+            }
+        }
+
+        function toggleFastDay(idx) {
+            fastDays[idx] = !fastDays[idx];
+            saveState();
+            let currentCat = weeklyPlan[idx] ? (weeklyPlan[idx].diet || currentDiet) : currentDiet;
+            swapDay(idx, currentCat, null);
+            if (fastDays[idx]) showToast(DAYS[idx] + ": Nur Express-Rezepte ⚡");
+            else showToast(DAYS[idx] + ": Alle Rezepte erlaubt 🍲");
+        }
+
+        function toggleLock(idx, event) {
+            event.stopPropagation(); 
+            if (weeklyPlan[idx]) {
+                weeklyPlan[idx].locked = !weeklyPlan[idx].locked;
+                saveState();
+                renderAll();
+                if (weeklyPlan[idx].locked) showToast("Gericht für neue Pläne fixiert ❤️");
+            }
+        }
+
+        function getSynergyIndices(availableIndices) {
+            const pairs = [[0,2], [1,3], [2,4], [3,5], [4,6], [0,1], [1,2], [4,5], [5,6]];
+            pairs.sort(() => 0.5 - Math.random());
+            for (let pair of pairs) {
+                if (availableIndices.includes(pair[0]) && availableIndices.includes(pair[1])) return pair;
+            }
+            return null;
+        }
+
+        function generateNewWeek(ignoreLocks = false) {
+            let newPlan = new Array(7).fill(null);
+            let takenTitles = [];
+
+            for (let i=0; i<7; i++) {
+                if (!ignoreLocks && weeklyPlan[i] && weeklyPlan[i].locked) {
+                    let isVeggi = weeklyPlan[i].diet === 'veggi';
+                    let matchesDiet = weeklyPlan[i].diet === currentDiet || isVeggi;
+                    if (matchesDiet && isRecipeAllowed(weeklyPlan[i])) {
+                        newPlan[i] = weeklyPlan[i];
+                        takenTitles.push(weeklyPlan[i].title);
+                    }
+                }
+            }
+
+            let availablePool = getPoolForDiet().filter(r => !takenTitles.includes(r.title));
+            if (availablePool.length === 0) availablePool = getPoolForDiet();
+
+            if (isMealPrep) {
+                const mpPairs = [[0,1], [2,3], [4,5]];
+                mpPairs.forEach(pair => {
+                    let src = pair[0]; let dest = pair[1];
+                    if (!newPlan[src]) {
+                        let poolToUse = availablePool.filter(r => fastDays[src] ? r.time === 'Schnell' : true);
+                        if (poolToUse.length === 0) poolToUse = availablePool;
+                        let r = poolToUse[Math.floor(Math.random() * poolToUse.length)];
+                        newPlan[src] = { ...r, day: DAYS[src], locked: false, isMealPrepMaster: true };
+                        availablePool = availablePool.filter(x => x.title !== r.title);
+                    }
+                    if (!newPlan[dest]) {
+                        newPlan[dest] = { ...newPlan[src], day: DAYS[dest], locked: false, isMealPrepCopy: true };
+                        newPlan[dest].prep = ["🍱 Meal-Prep Tag! Du hast dieses Gericht am Vortag vorbereitet. Einfach aufwärmen & genießen!"];
+                        newPlan[dest].time = 'Schnell';
+                        newPlan[dest].mins = 5;
+                    }
+                });
+            } else {
+                const perishableIngredients = ['Feta', 'Spinat', 'Champignons', 'Mozzarella', 'Magerquark', 'Räuchertofu', 'Kokosmilch', 'Kichererbsen', 'Hähnchenbrust', 'Rinderhack', 'Speck'];
+                perishableIngredients.sort(() => 0.5 - Math.random());
+
+                for (let focus of perishableIngredients) {
+                    let freeIndices = [];
+                    for (let i=0; i<7; i++) if (!newPlan[i] && !fastDays[i]) freeIndices.push(i);
+                    if (freeIndices.length < 2) break; 
+                    let pair = getSynergyIndices(freeIndices);
+                    
+                    if (pair) {
+                        let focusRecipes = availablePool.filter(r =>
+                            r.ingredients && Object.values(r.ingredients).some(cat => cat.some(i => i.includes(focus)))
+                        );
+                        if (focusRecipes.length >= 2) {
+                            focusRecipes.sort(() => 0.5 - Math.random());
+                            newPlan[pair[0]] = { ...focusRecipes[0], day: DAYS[pair[0]], locked: false };
+                            newPlan[pair[1]] = { ...focusRecipes[1], day: DAYS[pair[1]], locked: false };
+                            availablePool = availablePool.filter(x => x.title !== focusRecipes[0].title && x.title !== focusRecipes[1].title);
+                        }
+                    }
+                }
+            }
+
+            for (let i=0; i<7; i++) {
+                if (!newPlan[i]) {
+                    if (availablePool.length === 0) availablePool = [...getPoolForDiet()];
+                    let poolToUse = availablePool;
+                    if (fastDays[i]) poolToUse = poolToUse.filter(r => r.time === 'Schnell');
+                    
+                    let preferred = poolToUse.filter(r => r.diet === currentDiet);
+                    if (preferred.length > 0 && Math.random() > 0.3) poolToUse = preferred;
+
+                    if (poolToUse.length === 0) {
+                        poolToUse = getPoolForDiet().filter(r => fastDays[i] ? r.time === 'Schnell' : true);
+                        if (poolToUse.length === 0) poolToUse = (window.VEGGI_POOL||[]).filter(r => fastDays[i] ? r.time === 'Schnell' : true);
+                    }
+
+                    let r = poolToUse[Math.floor(Math.random() * poolToUse.length)];
+                    newPlan[i] = { ...r, day: DAYS[i], locked: false };
+                    availablePool = availablePool.filter(x => x.title !== r.title);
+                }
+            }
+
+            weeklyPlan = newPlan;
+            let newChecks = {};
+            manualItems.forEach(item => { if (checkedItems[item]) newChecks[item] = true; });
+            checkedItems = newChecks;
+            filterDay = 'Alle';
+            
+            document.querySelectorAll('.card-wrapper').forEach(el => { el.classList.remove('is-flipped'); el.style.zIndex = "1"; });
+            saveState();
+            renderAll();
+        }
+
+        // --- DRAG & DROP FOR DAYS ---
+        function handleDragStart(e, idx) {
+            draggedDayIndex = idx;
+            e.currentTarget.classList.add('dragging');
+            e.dataTransfer.setData('text/plain', idx);
+            e.dataTransfer.effectAllowed = 'move';
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            const card = e.currentTarget.closest('.card-wrapper');
+            if (card) card.classList.add('drag-over');
+        }
+
+        function handleDragLeave(e) {
+            const card = e.currentTarget.closest('.card-wrapper');
+            if (card) card.classList.remove('drag-over');
+        }
+
+        function handleDrop(e, targetIdx) {
+            e.preventDefault();
+            const card = e.currentTarget.closest('.card-wrapper');
+            if (card) card.classList.remove('drag-over');
+            
+            if (draggedDayIndex !== null && draggedDayIndex !== targetIdx) {
+                swapDaysInPlan(draggedDayIndex, targetIdx);
+            }
+            draggedDayIndex = null;
+        }
+
+        function handleDragEnd(e) {
+            document.querySelectorAll('.card-wrapper').forEach(c => {
+                c.classList.remove('dragging', 'drag-over');
+            });
+            draggedDayIndex = null;
+        }
+
+        function swapDaysInPlan(srcIdx, destIdx) {
+            if (!weeklyPlan[srcIdx] || !weeklyPlan[destIdx]) return;
+            
+            let temp = { ...weeklyPlan[srcIdx] };
+            weeklyPlan[srcIdx] = { ...weeklyPlan[destIdx], day: DAYS[srcIdx] };
+            weeklyPlan[destIdx] = { ...temp, day: DAYS[destIdx] };
+            
+            saveState();
+            showToast(`🔄 ${DAYS[srcIdx]} & ${DAYS[destIdx]} getauscht!`);
+            renderAll();
+        }
+
+        // --- FRIDGE / INGREDIENT SEARCH ---
+        function useFridgeItem() {
+            const inputEl = document.getElementById('fridge-input');
+            if (!inputEl) return;
+            const input = inputEl.value.trim().toLowerCase();
+            if (!input) return;
+
+            let pool = getPoolForDiet();
+            let matchingRecipes = pool.filter(r => {
+                if (!r.ingredients) return false;
+                return Object.values(r.ingredients).some(cat => 
+                    cat.some(ing => ing.toLowerCase().includes(input))
+                );
+            });
+
+            matchingRecipes = matchingRecipes.filter(m => !weeklyPlan.some(w => w && w.title === m.title));
+
+            if (matchingRecipes.length === 0) {
+                showToast("Kein freies Rezept mit \"" + input + "\" gefunden.");
+                return;
+            }
+
+            matchingRecipes.sort(() => 0.5 - Math.random());
+            let inserted = 0;
+
+            for (let i=0; i<7; i++) {
+                if (inserted >= 1) break;
+                if (weeklyPlan[i] && (weeklyPlan[i].locked || weeklyPlan[i].isMealPrepCopy)) continue;
+                
+                let r = matchingRecipes.pop();
+                replaceDayWith(i, r);
+                inserted++;
+            }
+
+            if (inserted > 0) {
+                showToast(`Rezept mit "${input}" für die Woche eingeplant! ❄️`);
+                inputEl.value = '';
+                saveState();
+                renderAll(); 
+            } else {
+                showToast("Alle Tage sind gesperrt oder durch Meal-Prep belegt.");
+            }
+        }
+
+        function replaceDayWith(idx, recipe) {
+            weeklyPlan[idx] = { ...recipe, day: DAYS[idx], locked: true }; 
+            if (isMealPrep && (idx === 0 || idx === 2 || idx === 4)) {
+                let destIdx = idx + 1;
+                weeklyPlan[destIdx] = { ...recipe, day: DAYS[destIdx], locked: true, isMealPrepCopy: true };
+                weeklyPlan[destIdx].prep = ["🍱 Meal-Prep Tag! Du hast dieses Essen gestern schon vorbereitet. Einfach warm machen!"];
+                weeklyPlan[destIdx].time = 'Schnell';
+                weeklyPlan[destIdx].mins = 5;
+            }
+        }
+
+        function swapDay(idx, targetDiet, event) {
+            if (event) event.stopPropagation();
+            
+            if (isMealPrep && weeklyPlan[idx] && weeklyPlan[idx].isMealPrepCopy) {
+                showToast("🍱 Meal-Prep Kopien tauschen automatisch mit dem Haupt-Tag!");
+                return;
+            }
+
+            const { v, c, b, p } = getRawPools();
+            let strictPool = [];
+            if (targetDiet === 'veggi') strictPool = [...v, ...customRecipes.filter(r=>r.diet==='veggi')];
+            else if (targetDiet === 'huhn') strictPool = [...c, ...customRecipes.filter(r=>r.diet==='huhn')];
+            else if (targetDiet === 'rind') strictPool = [...b, ...customRecipes.filter(r=>r.diet==='rind')];
+            else if (targetDiet === 'schwein') strictPool = [...p, ...customRecipes.filter(r=>r.diet==='schwein')];
+            else strictPool = v;
+
+            strictPool = strictPool.filter(isRecipeAllowed);
+
+            let cands = strictPool.filter(p => !weeklyPlan.some(w => w && w.title === p.title));
+            if (fastDays[idx]) cands = cands.filter(r => r.time === 'Schnell');
+
+            if (cands.length === 0) {
+                cands = strictPool.filter(r => fastDays[idx] ? r.time === 'Schnell' : true);
+                if (cands.length === 0) cands = v.filter(r => fastDays[idx] ? r.time === 'Schnell' : true);
+            }
+            
+            let newR = { ...cands[Math.floor(Math.random() * cands.length)], day: DAYS[idx], locked: false };
+            weeklyPlan[idx] = newR;
+
+            if (isMealPrep && (idx === 0 || idx === 2 || idx === 4)) {
+                let destIdx = idx + 1;
+                weeklyPlan[destIdx] = { ...newR, day: DAYS[destIdx], locked: false, isMealPrepCopy: true };
+                weeklyPlan[destIdx].prep = ["🍱 Meal-Prep Tag! Du hast dieses Essen gestern schon vorbereitet. Einfach warm machen!"];
+                weeklyPlan[destIdx].time = 'Schnell';
+                weeklyPlan[destIdx].mins = 5;
+            }
+            
+            document.querySelectorAll('.card-wrapper').forEach(el => { el.classList.remove('is-flipped'); el.style.zIndex = "1"; });
+            saveState();
+            setTimeout(renderAll, 15);
+        }
+
+        function toggleFlip(el, ev) {
+            if (ev.target.closest('button') || ev.target.closest('a') || ev.target.closest('.fav-heart-btn') || ev.target.closest('.day-pill') || ev.target.closest('.drag-handle')) return;
+            document.querySelectorAll('.card-wrapper').forEach(c => {
+                if (c !== el) { c.classList.remove('is-flipped'); c.style.zIndex = "1"; }
+            });
+            const isFlipped = el.classList.toggle('is-flipped');
+            el.style.zIndex = isFlipped ? "50" : "1";
+        }
+
+        function switchTab(tab) {
+            currentTab = tab;
+            document.getElementById('nav-plan').classList.toggle('active', tab === 'plan');
+            document.getElementById('nav-cookbook').classList.toggle('active', tab === 'cookbook');
+            document.getElementById('nav-shopping').classList.toggle('active', tab === 'shopping');
+            renderAll();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function getFutureUsesHtml(dayIndex) {
+            if (!weeklyPlan[dayIndex]) return '';
+            
+            let todayIngs = [];
+            if (weeklyPlan[dayIndex].ingredients) {
+                Object.values(weeklyPlan[dayIndex].ingredients).forEach(arr => todayIngs.push(...arr.map(s => s.toLowerCase())));
+            }
+            
+            let foundSynergies = [];
+            const keywords = ['Feta', 'Hirtenkäse', 'Spinat', 'Champignons', 'Mozzarella', 'Magerquark', 'Räuchertofu', 'Kokosmilch', 'Kichererbsen', 'Wraps', 'Passierte Tomaten', 'Brokkoli', 'Zucchini', 'Paprika', 'Bohnen', 'Mais', 'Sojahack', 'Sojaschnetzel', 'Sauerkraut', 'Hähnchen', 'Rinderhack', 'Speck'];
+            
+            for (let j = dayIndex + 1; j < 7; j++) {
+                if (!weeklyPlan[j] || !weeklyPlan[j].ingredients || weeklyPlan[j].isMealPrepCopy) continue;
+                
+                let futureIngs = [];
+                Object.values(weeklyPlan[j].ingredients).forEach(arr => futureIngs.push(...arr.map(s => s.toLowerCase())));
+                
+                keywords.forEach(kw => {
+                    const kwLow = kw.toLowerCase();
+                    if (todayIngs.some(i => i.includes(kwLow)) && futureIngs.some(i => i.includes(kwLow))) {
+                        let displayName = kw === 'Hirtenkäse' ? 'Feta/Hirtenkäse' : (kw === 'Sojaschnetzel' ? 'Sojahack' : kw);
+                        foundSynergies.push(`<b>${displayName}</b> (am ${weeklyPlan[j].day})`);
+                    }
+                });
+            }
+            
+            if (foundSynergies.length === 0) return '';
+            let uniqueSynergies = [...new Set(foundSynergies)];
+            
+            return `
+            <div style="margin-bottom: 0.85rem; padding: 0.75rem; background-color: #fffbeb; border-radius: var(--radius-md); border: 1px solid #fde68a; font-size: 0.82rem; color: #92400e;">
+                <strong style="display:flex; align-items:center; gap:6px; margin-bottom:3px; font-size: 0.85rem;">
+                    ${ICONS.flame} Resteverwertung beachten!
+                </strong>
+                Hebe Reste von ${uniqueSynergies.join(', ')} auf, sie werden in den nächsten Tagen wiederverwendet.
+            </div>
+            `;
+        }
+
+        // --- FULLSCREEN COOK MODE & TIMERS ---
+        async function openCookModeForRecipe(recipe, event) {
+            if (event) event.stopPropagation();
+            if (!recipe) return;
+            activeCookRecipe = recipe;
+            cookStepIdx = 0;
+            resetStepTimer();
+
+            document.getElementById('cook-title').innerText = recipe.title;
+            updateCookStepUI();
+            
+            document.getElementById('cook-modal').classList.add('open');
+            
+            if ('wakeLock' in navigator) {
+                try { wakeLock = await navigator.wakeLock.request('screen'); } 
+                catch (err) { console.warn('WakeLock:', err); }
+            }
+        }
+
+        function openCookMode(idx, event) {
+            openCookModeForRecipe(weeklyPlan[idx], event);
+        }
+
+        function closeCookMode() {
+            resetStepTimer();
+            document.getElementById('cook-modal').classList.remove('open');
+            if (wakeLock !== null) {
+                wakeLock.release().then(() => { wakeLock = null; });
+            }
+        }
+
+        function extractTimerMinutes(text) {
+            if (!text) return null;
+            // Matches e.g. "15 Min", "20 Minuten", "10-15 Min"
+            const match = text.match(/(\d+)(?:\s*-\s*\d+)?\s*(?:Minuten|Minute|Min\b)/i);
+            if (match) {
+                return parseInt(match[1]);
+            }
+            return null;
+        }
+
+        function updateCookStepUI() {
+            if (!activeCookRecipe) return;
+            const steps = activeCookRecipe.prep || ['Guten Appetit!'];
+            const curStepText = steps[cookStepIdx];
+            
+            document.getElementById('cook-step-badge').innerText = `Schritt ${cookStepIdx + 1} von ${steps.length}`;
+            document.getElementById('cook-step-text').innerText = curStepText;
+            
+            const progress = ((cookStepIdx + 1) / steps.length) * 100;
+            document.getElementById('cook-progress').style.width = `${progress}%`;
+
+            const btnNext = document.getElementById('cook-btn-next');
+            btnNext.innerText = (cookStepIdx === steps.length - 1) ? "Fertig! 🎉" : "Weiter";
+
+            // Check if step contains a timer duration
+            resetStepTimer();
+            const mins = extractTimerMinutes(curStepText);
+            const timerContainer = document.getElementById('step-timer-container');
+            
+            if (mins && mins > 0) {
+                cookTimerInitial = mins * 60;
+                cookTimerSeconds = mins * 60;
+                timerContainer.style.display = 'block';
+                renderStepTimerUI();
+            } else {
+                timerContainer.style.display = 'none';
+            }
+        }
+
+        function renderStepTimerUI() {
+            const container = document.getElementById('step-timer-container');
+            const m = Math.floor(cookTimerSeconds / 60);
+            const s = cookTimerSeconds % 60;
+            const formatted = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+
+            container.innerHTML = `
+            <div class="step-timer-box">
+                <span style="font-size:0.75rem; font-weight:800; color:var(--accent-dark); text-transform:uppercase;">⏱️ Timer für diesen Schritt</span>
+                <div class="step-timer-digits" id="timer-display">${formatted}</div>
+                <div class="step-timer-ctrls">
+                    <button class="timer-btn-action" onclick="toggleStepTimer()">${cookTimerRunning ? '⏸️ Pause' : '▶️ Start'}</button>
+                    <button class="timer-btn-action timer-btn-reset" onclick="resetStepTimer(true)">🔄 Reset</button>
+                </div>
+            </div>`;
+        }
+
+        function toggleStepTimer() {
+            if (cookTimerRunning) {
+                clearInterval(cookTimerInterval);
+                cookTimerRunning = false;
+                renderStepTimerUI();
+            } else {
+                if (cookTimerSeconds <= 0) cookTimerSeconds = cookTimerInitial;
+                cookTimerRunning = true;
+                renderStepTimerUI();
+                
+                cookTimerInterval = setInterval(() => {
+                    if (cookTimerSeconds > 0) {
+                        cookTimerSeconds--;
+                        const m = Math.floor(cookTimerSeconds / 60);
+                        const s = cookTimerSeconds % 60;
+                        const d = document.getElementById('timer-display');
+                        if (d) d.innerText = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+                    } else {
+                        clearInterval(cookTimerInterval);
+                        cookTimerRunning = false;
+                        renderStepTimerUI();
+                        playTimerChime();
+                        showToast("⏱️ Zeit abgelaufen! Der Schritt ist fertig! 🎉");
+                    }
+                }, 1000);
+            }
+        }
+
+        function resetStepTimer(keepVisible = false) {
+            if (cookTimerInterval) clearInterval(cookTimerInterval);
+            cookTimerRunning = false;
+            cookTimerSeconds = cookTimerInitial;
+            if (keepVisible) renderStepTimerUI();
+        }
+
+        function nextCookStep(event) {
+            if (event) event.stopPropagation();
+            if (!activeCookRecipe) return;
+            const steps = activeCookRecipe.prep || [];
+            if (cookStepIdx < steps.length - 1) {
+                cookStepIdx++;
+                updateCookStepUI();
+            } else {
+                closeCookMode();
+                showToast("Guten Appetit & lass es dir schmecken! 🍽️");
+            }
+        }
+
+        function prevCookStep(event) {
+            if (event) event.stopPropagation();
+            if (cookStepIdx > 0) {
+                cookStepIdx--;
+                updateCookStepUI();
+            }
+        }
+
+        // --- ROULETTE (WAS KOCHE ICH HEUTE?) ---
+        function openRouletteModal() {
+            document.getElementById('roulette-modal').classList.add('open');
+            const icon = document.getElementById('roulette-spinner-icon');
+            icon.className = 'roulette-icon-spin';
+            icon.innerText = '🎲';
+            
+            document.getElementById('roulette-content-box').innerHTML = `
+                <p style="font-size:0.95rem; color:var(--stone-600); margin:0.85rem 0;">Lass den Zufall entscheiden – abgestimmt auf deine aktuelle Kategorie (<b>${currentDiet.toUpperCase()}</b>)!</p>
+                <button class="btn-modal-submit" style="background:var(--accent); color:var(--stone-900);" onclick="spinRouletteWheel()">🎲 Jetzt Auswürfeln!</button>
+            `;
+        }
+
+        function closeRouletteModal() {
+            document.getElementById('roulette-modal').classList.remove('open');
+        }
+
+        function spinRouletteWheel() {
+            const icon = document.getElementById('roulette-spinner-icon');
+            icon.className = 'roulette-icon-spin spinning';
+            
+            let pool = getPoolForDiet();
+            if (pool.length === 0) pool = getFullPool();
+            
+            const randomRecipe = pool[Math.floor(Math.random() * pool.length)];
+
+            setTimeout(() => {
+                icon.className = 'roulette-icon-spin';
+                icon.innerText = '🍲';
+
+                document.getElementById('roulette-content-box').innerHTML = `
+                    <div class="roulette-card-result">
+                        <span style="font-size:0.7rem; font-weight:800; color:var(--primary); text-transform:uppercase;">Empfehlung:</span>
+                        <h3 style="font-size:1.15rem; font-weight:800; color:var(--stone-900); margin:0.25rem 0 0.5rem 0;">${randomRecipe.title}</h3>
+                        <div style="font-size:0.78rem; color:var(--stone-600); font-weight:700; margin-bottom:0.75rem;">
+                            🔥 ${randomRecipe.kcal} kcal • 💪 ${randomRecipe.protein}g Protein • ⏱️ ${randomRecipe.mins || 20} Min
+                        </div>
+                        <p style="font-size:0.82rem; color:var(--stone-700); margin-bottom:1rem; line-height:1.4;">${randomRecipe.why || ''}</p>
+                        
+                        <div style="display:flex; flex-direction:column; gap:0.5rem;">
+                            <button class="btn-cook-primary" style="margin:0;" onclick="closeRouletteModal(); openCookModeForRecipe(getFullPool().find(x=>x.title==='${randomRecipe.title.replace(/'/g, "\\'")}'))">👨‍🍳 Jetzt Kochen</button>
+                            <button class="btn-primary-pill" style="justify-content:center; padding:0.65rem;" onclick="assignRouletteToToday('${randomRecipe.title.replace(/'/g, "\\'")}')">📅 Für Heute (${DAYS[0]}) einplanen</button>
+                            <button class="btn-primary-pill btn-roulette-pill" style="justify-content:center; padding:0.65rem;" onclick="spinRouletteWheel()">🎲 Nochmal drehen</button>
+                        </div>
+                    </div>
+                `;
+            }, 600);
+        }
+
+        function assignRouletteToToday(title) {
+            const rec = getFullPool().find(r => r.title === title);
+            if (rec) {
+                replaceDayWith(0, rec);
+                saveState();
+                closeRouletteModal();
+                showToast(`"${rec.title}" für Montag eingeplant! 📅`);
+                renderAll();
+            }
+        }
+
+        // --- BACKUP JSON EXPORT & IMPORT ---
+        function exportBackupJson() {
+            const backupData = {
+                version: "2.1",
+                exportDate: new Date().toISOString(),
+                weeklyPlan,
+                checkedItems,
+                manualItems,
+                pantryItems,
+                customRecipes,
+                blacklistedIngredients,
+                portions,
+                currentDiet,
+                fastDays,
+                isMealPrep,
+                targetKcal,
+                targetProt
+            };
+
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `veggi_fit_backup_${new Date().toISOString().slice(0,10)}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+
+            showToast("Backup erfolgreich heruntergeladen! 💾");
+        }
+
+        function importBackupJson(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (data.weeklyPlan) weeklyPlan = data.weeklyPlan;
+                    if (data.checkedItems) checkedItems = data.checkedItems;
+                    if (data.manualItems) manualItems = data.manualItems;
+                    if (data.pantryItems) pantryItems = data.pantryItems;
+                    if (data.customRecipes) customRecipes = data.customRecipes;
+                    if (data.blacklistedIngredients) blacklistedIngredients = data.blacklistedIngredients;
+                    if (data.portions) portions = data.portions;
+                    if (data.currentDiet) currentDiet = data.currentDiet;
+                    if (data.fastDays) fastDays = data.fastDays;
+                    if (data.isMealPrep !== undefined) isMealPrep = data.isMealPrep;
+                    if (data.targetKcal) targetKcal = data.targetKcal;
+                    if (data.targetProt) targetProt = data.targetProt;
+
+                    saveState();
+                    closeSettingsModal();
+                    renderAll();
+                    showToast("Backup erfolgreich wiederhergestellt! 🎉");
+                } catch (err) {
+                    alert("Ungültige Backup-Datei. Bitte wähle eine gültige Veggi & Fit JSON-Datei.");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // --- KOCHBUCH ACTIONS ---
+        function setCookbookFilter(cat) {
+            cookbookFilter = cat;
+            renderCookbookOnly();
+        }
+
+        function handleCookbookSearch(val) {
+            cookbookSearch = val.toLowerCase().trim();
+            renderCookbookOnly();
+        }
+
+        function openDayPickerForRecipe(recipeTitle, event) {
+            if (event) event.stopPropagation();
+            const pool = getFullPool();
+            const rec = pool.find(r => r.title === recipeTitle);
+            if (!rec) return;
+
+            pendingPickerRecipe = rec;
+            document.getElementById('picker-recipe-title').innerText = rec.title;
+            
+            const container = document.getElementById('day-picker-container');
+            container.innerHTML = DAYS.map((d, i) => `
+                <button class="btn-picker-day" onclick="assignRecipeToDay(${i})">
+                    <span>${d}</span>
+                    <span style="font-size:0.75rem; color:var(--stone-400); font-weight:normal;">Aktuell: ${weeklyPlan[i] ? weeklyPlan[i].title : 'Leer'}</span>
+                </button>
+            `).join('');
+
+            document.getElementById('day-picker-modal').classList.add('open');
+        }
+
+        function closeDayPickerModal() {
+            document.getElementById('day-picker-modal').classList.remove('open');
+            pendingPickerRecipe = null;
+        }
+
+        function assignRecipeToDay(dayIdx) {
+            if (!pendingPickerRecipe) return;
+            replaceDayWith(dayIdx, pendingPickerRecipe);
+            saveState();
+            closeDayPickerModal();
+            showToast(`"${pendingPickerRecipe.title}" für ${DAYS[dayIdx]} eingeplant! 📅`);
+            switchTab('plan');
+        }
+
+        // --- SHOPPING LIST & SMART AGGREGATION ---
+        function toggleItem(itemStr) {
+            const item = decodeURIComponent(itemStr);
+            checkedItems[item] = !checkedItems[item];
+            saveState();
+            renderShoppingListOnly();
+        }
+
+        function changeFilter(val) {
+            filterDay = val;
+            renderShoppingListOnly();
+        }
+
+        function togglePantry(itemStr, event) {
+            if (event) event.stopPropagation();
+            const item = decodeURIComponent(itemStr);
+            
+            if (pantryItems.includes(item)) {
+                pantryItems = pantryItems.filter(i => i !== item);
+                showToast("Zutat zurück auf Einkaufsliste gesetzt!");
+            } else {
+                pantryItems.push(item);
+                showToast("In deine Vorratskammer verschoben 📦");
+            }
+            saveState();
+            renderShoppingListOnly();
+        }
+
+        function getShoppingList() {
+            const planToUse = filterDay === 'Alle' ? weeklyPlan : weeklyPlan.filter(d => d && d.day === filterDay);
+            const lists = {};
+            const mealPrepFactor = isMealPrep ? 2 : 1;
+            
+            planToUse.forEach((day) => {
+                if (day && day.ingredients && !day.isMealPrepCopy) {
+                    const isMaster = isMealPrep && (day.day === 'Montag' || day.day === 'Mittwoch' || day.day === 'Freitag');
+                    const itemFactor = isMaster ? mealPrepFactor : 1;
+
+                    Object.entries(day.ingredients).forEach(([rawCat, items]) => {
+                        let cat = rawCat.trim();
+                        if (cat.toLowerCase().includes('vorrat')) cat = 'Vorrat & Trockenware';
+                        else if (cat.toLowerCase().includes('frisch')) cat = 'Frisch & Gemüse';
+                        else if (cat.toLowerCase().includes('kühl')) cat = 'Kühlregal & Molkerei';
+                        else if (cat.toLowerCase().includes('konserv')) cat = 'Konserven & Saucen';
+                        else if (cat.toLowerCase().includes('tk') || cat.toLowerCase().includes('tiefkühl')) cat = 'Tiefkühl (TK)';
+                        else if (cat.toLowerCase().includes('fleisch')) cat = 'Fleisch & Fisch';
+
+                        if (!lists[cat]) lists[cat] = new Map();
+                        items.forEach(i => {
+                            let current = lists[cat].get(i) || 0;
+                            lists[cat].set(i, current + itemFactor);
+                        });
+                    });
+                }
+            });
+
+            let result = [];
+            Object.entries(lists).forEach(([cat, map]) => {
+                let itemsArr = [];
+                map.forEach((multi, item) => { itemsArr.push({ name: item, multi: multi }); });
+                if (itemsArr.length > 0) result.push({ cat, items: itemsArr.sort((a,b) => a.name.localeCompare(b.name)) });
+            });
+            return result;
+        }
+
+        function addManualItem() {
+            const input = document.getElementById('manual-input');
+            const val = input.value.trim();
+            if (val && !manualItems.includes(val)) {
+                manualItems.push(val);
+                saveState();
+                input.value = '';
+                renderShoppingListOnly();
+            }
+        }
+        
+        function removeManualItem(itemStr, ev) {
+            if (ev) ev.stopPropagation();
+            const item = decodeURIComponent(itemStr);
+            manualItems = manualItems.filter(i => i !== item);
+            delete checkedItems[item];
+            saveState();
+            renderShoppingListOnly();
+        }
+
+        function generateShoppingListText() {
+            let text = `🛒 Veggi & Fit Einkaufszettel\n(Skaliert für ${portions} Personen • ${filterDay})\n\n`;
+            const factor = portions / 3;
+            const rawList = getShoppingList();
+            
+            rawList.forEach(c => {
+                let activeItems = c.items.filter(obj => !pantryItems.includes(obj.name));
+                if (activeItems.length > 0) {
+                    text += `📌 ${c.cat}:\n`;
+                    activeItems.forEach(obj => {
+                        let mark = checkedItems[obj.name] ? '✅' : '⬜';
+                        text += `  ${mark} ${scaleStr(obj.name, factor * obj.multi)}\n`;
+                    });
+                    text += '\n';
+                }
+            });
+            
+            if (manualItems.length > 0) {
+                text += `📌 Eigene Artikel:\n`;
+                manualItems.forEach(i => {
+                    let mark = checkedItems[i] ? '✅' : '⬜';
+                    text += `  ${mark} ${i}\n`;
+                });
+            }
+            return text;
+        }
+
+        async function shareOrCopyShoppingList() {
+            const text = generateShoppingListText();
+            if (navigator.share) {
+                try {
+                    await navigator.share({
+                        title: 'Mein Einkaufszettel (Veggi & Fit)',
+                        text: text
+                    });
+                    showToast('Einkaufsliste geteilt! 🚀');
+                    return;
+                } catch(err) {
+                    console.log('Share dismissed / error:', err);
+                }
+            }
+            
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            showToast('Einkaufsliste in die Zwischenablage kopiert!');
+        }
+
+        // --- SETTINGS & BLACKLIST MODAL ---
+        function openSettingsModal() {
+            document.getElementById('target-kcal').value = targetKcal;
+            document.getElementById('target-prot').value = targetProt;
+            renderBlacklistChips();
+            document.getElementById('settings-modal').classList.add('open');
+        }
+
+        function closeSettingsModal() {
+            document.getElementById('settings-modal').classList.remove('open');
+        }
+
+        function renderBlacklistChips() {
+            const cont = document.getElementById('blacklist-chips');
+            const allPresets = [...new Set([...DEFAULT_BLACKLIST_PRESETS, ...blacklistedIngredients])];
+            
+            cont.innerHTML = allPresets.map(p => {
+                const isSelected = blacklistedIngredients.includes(p);
+                return `
+                <button class="blacklist-chip ${isSelected ? 'active' : ''}" onclick="toggleBlacklist('${p}')">
+                    ${isSelected ? '✕' : '+'} ${p}
+                </button>`;
+            }).join('');
+        }
+
+        function toggleBlacklist(item) {
+            if (blacklistedIngredients.includes(item)) {
+                blacklistedIngredients = blacklistedIngredients.filter(i => i !== item);
+            } else {
+                blacklistedIngredients.push(item);
+            }
+            renderBlacklistChips();
+        }
+
+        function addCustomBlacklist() {
+            const inp = document.getElementById('custom-blacklist-input');
+            const val = inp.value.trim();
+            if (val && !blacklistedIngredients.includes(val)) {
+                blacklistedIngredients.push(val);
+                inp.value = '';
+                renderBlacklistChips();
+            }
+        }
+
+        function saveSettingsAndClose() {
+            targetKcal = parseInt(document.getElementById('target-kcal').value) || 500;
+            targetProt = parseInt(document.getElementById('target-prot').value) || 35;
+            saveState();
+            closeSettingsModal();
+            renderAll();
+            showToast('Einstellungen gespeichert!');
+        }
+
+        function resetAllData() {
+            if (confirm('Möchtest du wirklich alle Daten, gespeicherten Rezepte und den Wochenplan zurücksetzen?')) {
+                localStorage.clear();
+                location.reload();
+            }
+        }
+
+        // --- CUSTOM RECIPE CREATOR ---
+        function openCustomRecipeModal() {
+            document.getElementById('recipe-modal').classList.add('open');
+        }
+
+        function closeCustomRecipeModal() {
+            document.getElementById('recipe-modal').classList.remove('open');
+        }
+
+        function saveCustomRecipe() {
+            const title = document.getElementById('new-rec-title').value.trim();
+            const diet = document.getElementById('new-rec-diet').value;
+            const mins = parseInt(document.getElementById('new-rec-mins').value) || 20;
+            const kcal = parseInt(document.getElementById('new-rec-kcal').value) || 450;
+            const protein = parseInt(document.getElementById('new-rec-protein').value) || 25;
+            const rawIngs = document.getElementById('new-rec-ingredients').value.trim();
+            const rawPrep = document.getElementById('new-rec-prep').value.trim();
+            const why = document.getElementById('new-rec-why').value.trim() || 'Dein eigenes Lieblingsrezept!';
+
+            if (!title || !rawIngs || !rawPrep) {
+                alert('Bitte fülle mindestens Titel, Zutaten und Zubereitungsschritte aus!');
+                return;
+            }
+
+            const ingredients = {};
+            rawIngs.split('\n').forEach(line => {
+                if (line.includes(':')) {
+                    const [cat, itemsStr] = line.split(':');
+                    const items = itemsStr.split(',').map(s => s.trim()).filter(Boolean);
+                    ingredients[cat.trim()] = items;
+                } else if (line.trim()) {
+                    if (!ingredients['Frisch']) ingredients['Frisch'] = [];
+                    ingredients['Frisch'].push(line.trim());
+                }
+            });
+
+            const prep = rawPrep.split('\n').map(s => s.trim()).filter(Boolean);
+
+            const newRecipe = {
+                title,
+                diet,
+                time: mins <= 15 ? 'Schnell' : 'Normal',
+                mins,
+                kcal,
+                protein,
+                tags: ['Eigenes Rezept', diet === 'veggi' ? 'Veggi' : 'Fleisch'],
+                why,
+                synergy: 'Individuelle Zutatenkombination',
+                prep,
+                ingredients
+            };
+
+            customRecipes.push(newRecipe);
+            saveState();
+            closeCustomRecipeModal();
+            
+            document.getElementById('new-rec-title').value = '';
+            document.getElementById('new-rec-ingredients').value = '';
+            document.getElementById('new-rec-prep').value = '';
+
+            showToast(`Rezept "${title}" erfolgreich gespeichert! 🎉`);
+            renderAll();
+        }
+
+        // --- RENDERERS ---
+        function renderAll() {
+            document.getElementById('port-val').innerText = portions;
+            if (currentTab === 'plan') {
+                renderPlanOnly();
+            } else if (currentTab === 'cookbook') {
+                renderCookbookOnly();
+            } else {
+                renderShoppingListOnly();
+            }
+        }
+
+        function renderPlanOnly() {
+            const root = document.getElementById('app-root');
+            const factor = portions / 3;
+
+            const fastDaysHtml = DAYS.map((d, i) => `
+                <button class="day-pill ${fastDays[i] ? 'active' : ''}" onclick="toggleFastDay(${i})">${d.substring(0,2)}</button>
+            `).join('');
+            document.getElementById('fast-days-container').innerHTML = fastDaysHtml;
+
+            let totalKcal = 0; let totalProt = 0; let validDays = 0;
+            weeklyPlan.forEach(d => {
+                if (d) {
+                    totalKcal += (d.kcal || 450);
+                    totalProt += (d.protein || 30);
+                    validDays++;
+                }
+            });
+            let avgKcal = validDays ? Math.round(totalKcal / validDays) : 0;
+            let avgProt = validDays ? Math.round(totalProt / validDays) : 0;
+
+            // Estimated Macros based on avg calories & protein
+            let protCal = avgProt * 4;
+            let remCal = Math.max(0, avgKcal - protCal);
+            let carbGrams = Math.round((remCal * 0.60) / 4);
+            let fatGrams = Math.round((remCal * 0.40) / 9);
+            let carbCal = carbGrams * 4;
+            let fatCal = fatGrams * 9;
+            let calcTotalCal = protCal + carbCal + fatCal || 1;
+
+            let protPct = Math.round((protCal / calcTotalCal) * 100);
+            let carbPct = Math.round((carbCal / calcTotalCal) * 100);
+            let fatPct = Math.max(0, 100 - protPct - carbPct);
+
+            let kcalProg = Math.min(100, Math.round((avgKcal / targetKcal) * 100));
+            let protProg = Math.min(100, Math.round((avgProt / targetProt) * 100));
+
+            let html = `
+            <div class="actions-bar">
+                <h2 class="section-heading">Speiseplan</h2>
+                <div class="btn-action-group">
+                    <button class="btn-primary-pill btn-roulette-pill" onclick="openRouletteModal()">🎲 Roulette</button>
+                    <button class="btn-primary-pill" onclick="generateNewWeek()">${ICONS.rotate} Neue Woche</button>
+                </div>
+            </div>
+
+            <!-- STATS & GOALS DASHBOARD -->
+            <div class="dashboard-grid">
+                <div class="dash-card">
+                    <div class="dash-header-row">
+                        <span>Ø Kalorien</span>
+                        <span>Ziel: ${targetKcal}</span>
+                    </div>
+                    <div class="dash-main-val">🔥 ${avgKcal} <span class="dash-sub-unit">kcal</span></div>
+                    <div class="dash-progress-bg"><div class="dash-progress-fill" style="width: ${kcalProg}%"></div></div>
+                </div>
+                <div class="dash-card">
+                    <div class="dash-header-row">
+                        <span>Ø Protein</span>
+                        <span>Ziel: ${targetProt}g</span>
+                    </div>
+                    <div class="dash-main-val">💪 ${avgProt} <span class="dash-sub-unit">g</span></div>
+                    <div class="dash-progress-bg"><div class="dash-progress-fill" style="width: ${protProg}%"></div></div>
+                </div>
+            </div>
+
+            <!-- MAKRONÄHRSTOFF-TRACKER (FEATURE 5) -->
+            <div class="macro-card">
+                <div class="macro-title-row">
+                    <span>📊 Ø Makro-Verteilung (Tagesdurchschnitt)</span>
+                    <span style="color:var(--primary);">${avgKcal} kcal</span>
+                </div>
+                <div class="macro-bar-stacked">
+                    <div class="macro-bar-seg macro-seg-prot" style="width: ${protPct}%;" title="Protein: ${protPct}%"></div>
+                    <div class="macro-bar-seg macro-seg-carb" style="width: ${carbPct}%;" title="Kohlenhydrate: ${carbPct}%"></div>
+                    <div class="macro-bar-seg macro-seg-fat" style="width: ${fatPct}%;" title="Fett: ${fatPct}%"></div>
+                </div>
+                <div class="macro-legend-grid">
+                    <div class="macro-legend-item">
+                        <span style="color:#059669;"><span class="macro-dot" style="background:#059669;"></span>Eiweiß</span>
+                        <span style="font-weight:800; font-size:0.85rem;">${avgProt}g <span style="font-weight:600; font-size:0.7rem; color:var(--stone-400);">(${protPct}%)</span></span>
+                    </div>
+                    <div class="macro-legend-item">
+                        <span style="color:#d97706;"><span class="macro-dot" style="background:#f59e0b;"></span>Carbs</span>
+                        <span style="font-weight:800; font-size:0.85rem;">${carbGrams}g <span style="font-weight:600; font-size:0.7rem; color:var(--stone-400);">(${carbPct}%)</span></span>
+                    </div>
+                    <div class="macro-legend-item">
+                        <span style="color:#7c3aed;"><span class="macro-dot" style="background:#8b5cf6;"></span>Fett</span>
+                        <span style="font-weight:800; font-size:0.85rem;">${fatGrams}g <span style="font-weight:600; font-size:0.7rem; color:var(--stone-400);">(${fatPct}%)</span></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FRIDGE LEFTOVER FILTER -->
+            <div class="fridge-widget">
+                <div class="fridge-title">❄️ Kühlschrank-Reste verwerten:</div>
+                <div class="fridge-input-group">
+                    <input type="text" id="fridge-input" class="fridge-input" placeholder="z.B. Feta, Paprika, Reis..." onkeypress="if(event.key==='Enter') useFridgeItem()">
+                    <button class="fridge-btn" onclick="useFridgeItem()">Finden</button>
+                </div>
+            </div>
+            `;
+            
+            weeklyPlan.forEach((day, i) => {
+                if (!day) return;
+                const isFast = day.time === 'Schnell';
+                const dayCol = isFast ? 'orange' : 'green';
+                
+                const tagsHtml = (day.tags||[]).slice(0,3).map(t => `<span class="front-chip">${t}</span>`).join('');
+                const prepHtml = (day.prep||[]).map((s, idx) => `
+                    <div class="step-item">
+                        <div class="step-badge-num">${idx+1}</div>
+                        <p class="step-body-text">${s}</p>
+                    </div>
+                `).join('');
+                
+                const nutritionHtml = `
+                <div class="nutrition-badges">
+                    <span>🔥 ${day.kcal} kcal</span>
+                    <span style="color:var(--stone-300);">•</span>
+                    <span>💪 ${day.protein}g Prot.</span>
+                    <span style="color:var(--stone-300);">•</span>
+                    <span>⏱️ ${day.mins || (isFast ? 15 : 30)}m</span>
+                </div>`;
+
+                let baseFactor = portions / 3;
+                let displayFactor = (isMealPrep && day.isMealPrepMaster) ? (baseFactor * 2) : baseFactor;
+                let portionText = (isMealPrep && day.isMealPrepMaster) ? `${portions*2} Pers. (Meal-Prep)` : `${portions} Pers.`;
+                
+                let ingHtml = '';
+                if (day.ingredients && !day.isMealPrepCopy) {
+                    Object.values(day.ingredients).forEach(catItems => {
+                        catItems.forEach(item => {
+                            ingHtml += `<li>${scaleStr(item, displayFactor)}</li>`;
+                        });
+                    });
+                }
+                
+                const dynamicResteHinweis = getFutureUsesHtml(i);
+                
+                html += `
+                <div class="card-wrapper" 
+                     draggable="true" 
+                     ondragstart="handleDragStart(event, ${i})"
+                     ondragover="handleDragOver(event)"
+                     ondragleave="handleDragLeave(event)"
+                     ondrop="handleDrop(event, ${i})"
+                     ondragend="handleDragEnd(event)"
+                     onclick="toggleFlip(this, event)">
+                    <div class="flip-inner">
+                        <!-- FRONT -->
+                        <div class="flip-front">
+                            <div class="front-media">
+                                <div class="front-fallback">🍲</div>
+                                <img src="${getImageForRecipe(day)}" class="front-img" alt="${day.title}" loading="lazy" onerror="this.style.display='none'; this.previousElementSibling.style.display='flex';">
+                            </div>
+                            <div class="front-info">
+                                <div class="front-header-meta">
+                                    <span class="day-tag ${dayCol}">${day.day}</span>
+                                </div>
+                                <button class="fav-heart-btn ${day.locked ? 'active' : ''}" onclick="toggleLock(${i}, event)" title="${day.locked ? 'Gesperrt' : 'Fixieren'}">
+                                    <svg viewBox="0 0 24 24" fill="${day.locked ? 'currentColor' : 'none'}"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+                                </button>
+                                <h3 class="front-title">${day.title}</h3>
+                                ${nutritionHtml}
+                                <div class="front-tags-list">${tagsHtml}</div>
+                                <span class="drag-handle" title="Halten und ziehen, um Tage zu tauschen">${ICONS.drag} Tauschen</span>
+                            </div>
+                        </div>
+
+                        <!-- BACK -->
+                        <div class="flip-back">
+                            <div class="back-body">
+                                <div class="back-top-bar">
+                                    <span class="back-day-name">${day.day} • Details</span>
+                                    <button class="close-card-btn">${ICONS.close}</button>
+                                </div>
+                                <h2 class="back-recipe-title">${day.title}</h2>
+                                
+                                <button class="btn-cook-primary" onclick="openCookMode(${i}, event)">${ICONS.play} Jetzt Kochen</button>
+                                
+                                ${ingHtml !== '' ? `
+                                <div class="info-card-box">
+                                    <h4 class="box-title-sm">${ICONS.cart} Zutaten für ${portionText}:</h4>
+                                    <ul class="ingredients-ul">${ingHtml}</ul>
+                                </div>` : ''}
+
+                                ${!day.isMealPrepCopy ? `
+                                <div class="info-card-box">
+                                    <h4 class="box-title-sm">${ICONS.flame} Warum es passt:</h4>
+                                    <p style="margin:0; font-size:0.83rem; color:var(--stone-600); line-height:1.4;">${day.why} <span style="display:block; margin-top:4px; font-size:0.75rem; color:var(--stone-500);"><b>Reste-Tipp:</b> ${day.synergy}</span></p>
+                                </div>
+                                ${dynamicResteHinweis}
+                                ` : ''}
+                                
+                                <div class="box-title-sm" style="margin:1rem 0 0.5rem 0;">${ICONS.chef} Zubereitung:</div>
+                                <div class="step-list">${prepHtml}</div>
+                            </div>
+
+                            <div class="back-footer-swap">
+                                <div class="swap-heading">Gericht tauschen gegen:</div>
+                                <div class="swap-buttons-grid">
+                                    <button class="btn-swap-item swap-veggi" onclick="swapDay(${i}, 'veggi', event)">🌱 Veggi</button>
+                                    <button class="btn-swap-item swap-huhn" onclick="swapDay(${i}, 'huhn', event)">🍗 Huhn</button>
+                                    <button class="btn-swap-item swap-rind" onclick="swapDay(${i}, 'rind', event)">🥩 Rind</button>
+                                    <button class="btn-swap-item swap-schwein" onclick="swapDay(${i}, 'schwein', event)">🥓 Schwein</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                `;
+            });
+            root.innerHTML = html;
+        }
+
+        function renderCookbookOnly() {
+            const root = document.getElementById('app-root');
+            const factor = portions / 3;
+            let pool = getFullPool();
+
+            // Category filtering
+            if (cookbookFilter === 'veggi') pool = pool.filter(r => r.diet === 'veggi');
+            else if (cookbookFilter === 'huhn') pool = pool.filter(r => r.diet === 'huhn');
+            else if (cookbookFilter === 'rind') pool = pool.filter(r => r.diet === 'rind');
+            else if (cookbookFilter === 'schwein') pool = pool.filter(r => r.diet === 'schwein');
+            else if (cookbookFilter === 'fast') pool = pool.filter(r => r.time === 'Schnell' || (r.mins && r.mins <= 15));
+            else if (cookbookFilter === 'custom') pool = customRecipes;
+
+            // Search query filtering
+            if (cookbookSearch) {
+                pool = pool.filter(r => {
+                    const text = (r.title + ' ' + (r.tags||[]).join(' ') + ' ' + Object.values(r.ingredients||{}).flat().join(' ')).toLowerCase();
+                    return text.includes(cookbookSearch);
+                });
+            }
+
+            let html = `
+            <div class="actions-bar">
+                <h2 class="section-heading">${ICONS.book} Digitales Kochbuch (${pool.length})</h2>
+                <button class="btn-primary-pill" onclick="openCustomRecipeModal()">➕ Neues Rezept</button>
+            </div>
+
+            <!-- SEARCH BAR -->
+            <div class="cookbook-search-box">
+                ${ICONS.search}
+                <input type="text" class="cookbook-search-input" placeholder="Rezepte oder Zutaten suchen (z.B. Linsen, Curry, Feta...)" value="${cookbookSearch}" oninput="handleCookbookSearch(this.value)">
+                ${cookbookSearch ? `<button class="close-card-btn" style="width:20px;height:20px;" onclick="handleCookbookSearch('')">${ICONS.close}</button>` : ''}
+            </div>
+
+            <!-- FILTER PILLS -->
+            <div class="cookbook-filters-scroll">
+                <button class="cb-filter-pill ${cookbookFilter==='all'?'active':''}" onclick="setCookbookFilter('all')">Alle (${getFullPool().length})</button>
+                <button class="cb-filter-pill ${cookbookFilter==='veggi'?'active':''}" onclick="setCookbookFilter('veggi')">🌱 Veggi</button>
+                <button class="cb-filter-pill ${cookbookFilter==='huhn'?'active':''}" onclick="setCookbookFilter('huhn')">🍗 Hähnchen</button>
+                <button class="cb-filter-pill ${cookbookFilter==='rind'?'active':''}" onclick="setCookbookFilter('rind')">🥩 Rind</button>
+                <button class="cb-filter-pill ${cookbookFilter==='schwein'?'active':''}" onclick="setCookbookFilter('schwein')">🥓 Schwein</button>
+                <button class="cb-filter-pill ${cookbookFilter==='fast'?'active':''}" onclick="setCookbookFilter('fast')">⚡ Express (≤15m)</button>
+                <button class="cb-filter-pill ${cookbookFilter==='custom'?'active':''}" onclick="setCookbookFilter('custom')">🌟 Eigene (${customRecipes.length})</button>
+            </div>
+
+            <!-- RECIPES LIST -->
+            <div class="cookbook-grid">
+            `;
+
+            if (pool.length === 0) {
+                html += `
+                <div style="text-align:center; padding:3rem 1rem; color:var(--stone-500);">
+                    <div style="font-size:2.5rem; margin-bottom:0.5rem;">🔍</div>
+                    <p style="font-weight:700; font-size:1rem; color:var(--stone-700);">Keine Rezepte gefunden</p>
+                    <p style="font-size:0.85rem;">Passe deine Suchbegriffe oder Filter an.</p>
+                </div>`;
+            } else {
+                pool.forEach((r) => {
+                    const isFast = r.time === 'Schnell';
+                    const dietTag = r.diet === 'veggi' ? '🌱 Veggi' : (r.diet === 'huhn' ? '🍗 Huhn' : (r.diet === 'rind' ? '🥩 Rind' : '🥓 Schwein'));
+                    
+                    let ingCount = 0;
+                    if (r.ingredients) Object.values(r.ingredients).forEach(arr => ingCount += arr.length);
+
+                    html += `
+                    <div class="cookbook-card" onclick="openCookModeForRecipe(getFullPool().find(x=>x.title==='${r.title.replace(/'/g, "\\'")}'), event)">
+                        <div class="cb-media">
+                            <img src="${getImageForRecipe(r)}" class="cb-img" loading="lazy" alt="${r.title}">
+                        </div>
+                        <div class="cb-info">
+                            <div>
+                                <span style="font-size:0.68rem; font-weight:800; color:var(--primary); text-transform:uppercase;">${dietTag}</span>
+                                <h3 class="cb-title">${r.title}</h3>
+                                <div class="cb-meta">
+                                    <span>🔥 ${r.kcal} kcal</span> • 
+                                    <span>💪 ${r.protein}g Prot.</span> • 
+                                    <span>⏱️ ${r.mins || (isFast ? 15 : 30)} Min</span>
+                                </div>
+                            </div>
+                            <div class="cb-actions-row">
+                                <span style="font-size:0.7rem; color:var(--stone-400); font-weight:600;">${ingCount} Zutaten</span>
+                                <button class="btn-use-plan" onclick="openDayPickerForRecipe('${r.title.replace(/'/g, "\\'")}', event)">📅 In Wochenplan</button>
+                            </div>
+                        </div>
+                    </div>`;
+                });
+            }
+
+            html += `</div>`;
+            root.innerHTML = html;
+        }
+
+        function renderShoppingListOnly() {
+            const root = document.getElementById('app-root');
+            const factor = portions / 3;
+            
+            const rawList = getShoppingList();
+            let activeList = [];
+            let myPantryItems = [];
+
+            rawList.forEach(c => {
+                let activeItems = [];
+                c.items.forEach(obj => {
+                    if (pantryItems.includes(obj.name)) myPantryItems.push({ name: obj.name, cat: c.cat }); 
+                    else activeItems.push(obj);
+                });
+                if (activeItems.length > 0) activeList.push({ cat: c.cat, items: activeItems });
+            });
+            
+            let total = manualItems.length, checked = 0;
+            manualItems.forEach(i => { if (checkedItems[i]) checked++; });
+            activeList.forEach(c => c.items.forEach(obj => { total++; if (checkedItems[obj.name]) checked++; }));
+            
+            const prog = total === 0 ? 0 : Math.round((checked/total)*100);
+            document.getElementById('shop-dot').style.display = (prog > 0 && prog < 100) ? 'block' : 'none';
+
+            let opts = `<option value="Alle">🛒 Komplette Woche anzeigen</option>` + weeklyPlan.map(d => d ? `<option value="${d.day}" ${filterDay === d.day ? 'selected' : ''}>${d.day}: ${d.title}</option>` : '').join('');
+
+            let html = `
+            <div class="shopping-header">
+                <h2 class="section-heading">Einkaufsliste</h2>
+                <div class="shopping-actions">
+                    <button class="btn-primary-pill" onclick="shareOrCopyShoppingList()">${ICONS.share} Teilen / Kopieren</button>
+                    <button class="btn-primary-pill" onclick="window.print()" title="Drucken">🖨️ Drucken</button>
+                </div>
+            </div>
+
+            <div class="filter-select-box">
+                <label style="font-size:0.75rem; font-weight:800; text-transform:uppercase; color:var(--stone-500); display:flex; align-items:center; gap:4px;">${ICONS.filter} Ansicht filtern:</label>
+                <div class="custom-select-wrap">
+                    <select onchange="changeFilter(this.value)">${opts}</select>
+                    <span class="arrow">${ICONS.down}</span>
+                </div>
+            </div>
+            
+            <div class="progress-card">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem;">
+                    <span style="font-size:0.85rem; font-weight:700; color:var(--stone-800);">${filterDay === 'Alle' ? 'Gesamter Wocheneinkauf' : filterDay}</span>
+                    <span style="font-size:0.85rem; font-weight:800; color:var(--primary);">${prog}% abgehakt</span>
+                </div>
+                <div class="dash-progress-bg"><div class="dash-progress-fill" style="width: ${prog}%"></div></div>
+            </div>
+            `;
+            
+            activeList.forEach(c => {
+                html += `<div class="cat-group"><div class="cat-group-header"><h3 class="cat-group-title">${c.cat}</h3></div><div>`;
+                c.items.forEach(obj => {
+                    const isC = checkedItems[obj.name];
+                    const displayStr = scaleStr(obj.name, factor * obj.multi);
+                    
+                    html += `
+                    <div class="item-row ${isC ? 'checked' : ''}" onclick="toggleItem('${encodeURIComponent(obj.name)}')">
+                        ${isC ? ICONS.check : ICONS.circle}
+                        <span class="item-name">${displayStr}</span>
+                        <button class="pantry-icon-btn" onclick="togglePantry('${encodeURIComponent(obj.name)}', event)" title="In Vorrat verschieben (Ausblenden)">${ICONS.box}</button>
+                    </div>`;
+                });
+                html += `</div></div>`;
+            });
+
+            // Manual Items
+            html += `<div class="cat-group"><div class="cat-group-header"><h3 class="cat-group-title">Eigene Artikel</h3></div><div>`;
+            manualItems.forEach(i => {
+                const isC = checkedItems[i];
+                html += `
+                <div class="item-row ${isC ? 'checked' : ''}" onclick="toggleItem('${encodeURIComponent(i)}')">
+                    ${isC ? ICONS.check : ICONS.circle}
+                    <span class="item-name">${i}</span>
+                    <button class="del-item-btn" onclick="removeManualItem('${encodeURIComponent(i)}', event)">${ICONS.trash}</button>
+                </div>`;
+            });
+            html += `
+                <div class="manual-add-box">
+                    <input type="text" id="manual-input" class="manual-add-input" placeholder="Z.B. Hafermilch, Kaffee, Snacks..." onkeypress="if(event.key==='Enter') addManualItem()">
+                    <button class="manual-add-btn" onclick="addManualItem()">${ICONS.plus}</button>
+                </div>
+            </div></div>`;
+
+            // Pantry Items (Hidden / In Stock)
+            if (myPantryItems.length > 0) {
+                html += `<div class="cat-group" style="border-style:dashed; opacity:0.85;"><div class="cat-group-header" style="background:var(--stone-100);"><h3 class="cat-group-title">📦 Bereits im Vorrat (${myPantryItems.length})</h3></div><div>`;
+                myPantryItems.forEach(obj => {
+                    html += `
+                    <div class="item-row">
+                        <span class="item-name" style="color:var(--stone-500);">${obj.name}</span>
+                        <button class="pantry-icon-btn" onclick="togglePantry('${encodeURIComponent(obj.name)}', event)" style="color:var(--primary);" title="Wieder auf Einkaufsliste setzen">${ICONS.plus}</button>
+                    </div>`;
+                });
+                html += `</div></div>`;
+            }
+            
+            if (activeList.length === 0 && manualItems.length === 0) {
+                html += `<div style="text-align:center; padding:3rem 1rem; color:var(--stone-500);">
+                    <div style="font-size:2.5rem; margin-bottom:0.5rem;">🎉</div>
+                    <p style="font-weight:700; font-size:1rem; color:var(--stone-700);">Alles erledigt!</p>
+                    <p style="font-size:0.85rem;">Alle Zutaten sind eingekauft oder im Vorrat.</p>
+                </div>`;
+            }
+            root.innerHTML = html;
+        }
+
+        window.addEventListener('DOMContentLoaded', loadState);
+    </script>
+</body>
+</html>

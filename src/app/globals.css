@@ -1,0 +1,54 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    /* Color Scheme from IMG_6554.jpg: Aqua Mist & Peach Ice */
+    --aqua-mist: #789A99;
+    --aqua-mist-hover: #658584;
+    --aqua-mist-light: #EBF2F2;
+    --aqua-mist-border: #C5D8D7;
+    
+    --peach-ice: #FFD2C2;
+    --peach-ice-hover: #F7BFAC;
+    --peach-ice-light: #FFF4F0;
+    --peach-ice-text: #994931;
+
+    --slate-deep: #111C1E;
+    --slate-surface: #182629;
+    --slate-card: #203135;
+    --slate-border: #2D4348;
+    
+    --bg-page: #F6F9F9;
+    --text-primary: #121F22;
+    --text-secondary: #586F73;
+    --text-muted: #849C9F;
+  }
+}
+
+body {
+  background-color: var(--bg-page);
+  color: var(--text-primary);
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Custom scrollbars for clean SaaS look */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #C2D5D4;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #789A99;
+}
+
+/* Tabular numbers for clean numeric scannability */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
