@@ -47,9 +47,6 @@ export const RecipeCatalog: React.FC<RecipeCatalogProps> = ({
       <div className="bg-linear-to-r from-[#111C1E] to-[#1F3135] text-white p-6 rounded-2xl border border-[#2D4348] flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded-full bg-[#FFD2C2] text-[#994931] font-semibold text-xs uppercase tracking-wider">
-              100% Nicole-Konform
-            </span>
             <span className="text-xs text-slate-300">
               {recipes.length} hinterlegte Rezepte & KI-Kreationen
             </span>

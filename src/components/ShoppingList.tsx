@@ -83,7 +83,7 @@ export const ShoppingList: React.FC<ShoppingListProps> = ({
   // WhatsApp / Clipboard export
   const handleShare = async () => {
     const activeItems = items.filter((i) => !i.isPantry);
-    let text = '🛒 *Veggi & Fit 2.0 Einkaufsliste (Nicole)*\n';
+    let text = '🛒 *fit und healthy Einkaufsliste*\n';
     text += `Datum: ${new Date().toLocaleDateString('de-DE')} • ${toBuyCount} Artikel zu besorgen\n\n`;
 
     categories.forEach((cat) => {

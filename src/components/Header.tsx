@@ -33,10 +33,7 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-bold text-[#111C1E] text-base tracking-tight">Veggi & Fit 2.0</span>
-                <span className="text-[11px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#FFD2C2] text-[#994931]">
-                  Nicole Edition
-                </span>
+                <span className="font-bold text-[#111C1E] text-base tracking-tight">fit und healthy</span>
               </div>
               <p className="text-xs text-[#586F73] hidden sm:block">
                 Ziel: <span className="font-semibold text-[#111C1E]">{profile.targetGoals.calories} kcal</span> • Max. {profile.targetGoals.fat}g Fett • Min. {profile.targetGoals.protein}g Protein
@@ -64,7 +61,7 @@ export const Header: React.FC<HeaderProps> = ({
                   : 'text-[#586F73] hover:text-[#111C1E]'
               }`}
             >
-              Nicole-Rezepte
+              Rezepte
             </button>
             <button
               onClick={() => setActiveTab('shopping')}

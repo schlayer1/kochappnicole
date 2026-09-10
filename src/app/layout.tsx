@@ -9,13 +9,13 @@ const plusJakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Veggi & Fit 2.0 • Nicole Keller Edition",
+  title: "fit und healthy",
   description: "Smarter SaaS Wochen- und Ernährungsplaner nach Vorgaben der Ernährungstagebuchanalyse (1.508 kcal, 44g Fett, 103g Protein).",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Veggi & Fit",
+    title: "fit und healthy",
   },
 };
 
