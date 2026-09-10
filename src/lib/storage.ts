@@ -135,37 +135,67 @@ export function saveSettings(settings: AppSettings) {
   localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
 }
 
-export function generateShoppingListFromPlan(plan: DayPlan[]): ShoppingItem[] {
-  const itemMap = new Map<string, ShoppingItem>();
+import { groupAndAggregateIngredients } from './ingredient-aggregator';
+
+export function loadShoppingItems(): ShoppingItem[] | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.SHOPPING);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {
+    console.error('Failed to load shopping items', e);
+  }
+  return null;
+}
+
+export function saveShoppingItems(items: ShoppingItem[]) {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(STORAGE_KEYS.SHOPPING, JSON.stringify(items));
+}
+
+export function generateShoppingListFromPlan(
+  plan: DayPlan[],
+  existingItems?: ShoppingItem[]
+): ShoppingItem[] {
+  const rawList: { name: string; recipeSource?: string }[] = [];
 
   plan.forEach((day) => {
     if (day.isFastDay) return;
     const meals = [day.breakfast, day.lunch, day.dinner, day.snack].filter(Boolean) as Recipe[];
 
     meals.forEach((recipe) => {
-      Object.entries(recipe.ingredients).forEach(([cat, ingList]) => {
-        let mappedCat: ShoppingItem['category'] = 'Vorrat & Gewürze';
-        if (cat.toLowerCase().includes('kühl')) mappedCat = 'Kühlregal';
-        else if (cat.toLowerCase().includes('frisch') || cat.toLowerCase().includes('obst') || cat.toLowerCase().includes('gemüse')) mappedCat = 'Frischetheke & Obst';
-        else if (cat.toLowerCase().includes('fleisch') || cat.toLowerCase().includes('fisch') || cat.toLowerCase().includes('geflügel')) mappedCat = 'Geflügel & Fisch';
-        else if (cat.toLowerCase().includes('tk') || cat.toLowerCase().includes('tiefkühl')) mappedCat = 'Tiefkühl';
-
+      Object.values(recipe.ingredients).forEach((ingList) => {
         ingList.forEach((ingStr) => {
-          const key = ingStr.trim().toLowerCase();
-          if (!itemMap.has(key)) {
-            itemMap.set(key, {
-              id: 'shop_' + Math.random().toString(36).substring(2, 9),
-              name: ingStr.trim(),
-              category: mappedCat,
-              checked: false,
-              isPantry: false,
-              recipeSource: recipe.title,
-            });
-          }
+          rawList.push({
+            name: ingStr.trim(),
+            recipeSource: recipe.title,
+          });
         });
       });
     });
   });
 
-  return Array.from(itemMap.values());
+  const aggregated = groupAndAggregateIngredients(rawList);
+
+  // Preserve user check state and custom pantry toggles if existing items exist
+  if (existingItems && existingItems.length > 0) {
+    const statusMap = new Map<string, { checked: boolean; isPantry: boolean }>();
+    existingItems.forEach((it) => {
+      statusMap.set(it.id, { checked: it.checked, isPantry: it.isPantry });
+    });
+
+    return aggregated.map((item) => {
+      const prev = statusMap.get(item.id);
+      if (prev) {
+        return {
+          ...item,
+          checked: prev.checked,
+          isPantry: prev.isPantry,
+        };
+      }
+      return item;
+    });
+  }
+
+  return aggregated;
 }

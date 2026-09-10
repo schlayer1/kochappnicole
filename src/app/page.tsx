@@ -21,10 +21,12 @@ import {
   loadAllRecipes,
   loadProfile,
   loadSettings,
+  loadShoppingItems,
   loadWeeklyPlan,
   saveCustomRecipe,
   saveProfile,
   saveSettings,
+  saveShoppingItems,
   saveWeeklyPlan,
 } from '@/lib/storage';
 import { NICOLE_NUTRITION_PROFILE } from '@/lib/nutrition-profile';
@@ -60,13 +62,15 @@ export default function Home() {
     const loadedRecs = loadAllRecipes();
     const loadedPlan = loadWeeklyPlan(loadedRecs);
     const loadedSet = loadSettings();
-    const initialShop = generateShoppingListFromPlan(loadedPlan);
+    const savedShop = loadShoppingItems();
+    const initialShop = generateShoppingListFromPlan(loadedPlan, savedShop || undefined);
 
     setProfile(loadedProf);
     setRecipes(loadedRecs);
     setWeeklyPlan(loadedPlan);
     setSettings(loadedSet);
     setShoppingItems(initialShop);
+    saveShoppingItems(initialShop);
     setMounted(true);
   }, []);
 
@@ -74,7 +78,9 @@ export default function Home() {
   const updateWeeklyPlan = (newPlan: DayPlan[]) => {
     setWeeklyPlan(newPlan);
     saveWeeklyPlan(newPlan);
-    setShoppingItems(generateShoppingListFromPlan(newPlan));
+    const updatedShop = generateShoppingListFromPlan(newPlan, shoppingItems);
+    setShoppingItems(updatedShop);
+    saveShoppingItems(updatedShop);
   };
 
   const handleAssignMeal = (dayIdx: number, mealType: MealType, recipe: Recipe) => {
@@ -139,7 +145,9 @@ export default function Home() {
       setRecipes(CURATED_NICOLE_RECIPES);
       const resetPlan = loadWeeklyPlan(CURATED_NICOLE_RECIPES);
       setWeeklyPlan(resetPlan);
-      setShoppingItems(generateShoppingListFromPlan(resetPlan));
+      const resetShop = generateShoppingListFromPlan(resetPlan);
+      setShoppingItems(resetShop);
+      saveShoppingItems(resetShop);
       setSettings(DEFAULT_SETTINGS);
       setIsSettingsOpen(false);
     }
@@ -147,15 +155,19 @@ export default function Home() {
 
   // Shopping handlers
   const handleToggleShoppingItem = (id: string) => {
-    setShoppingItems((prev) =>
-      prev.map((it) => (it.id === id ? { ...it, checked: !it.checked } : it))
-    );
+    setShoppingItems((prev) => {
+      const updated = prev.map((it) => (it.id === id ? { ...it, checked: !it.checked } : it));
+      saveShoppingItems(updated);
+      return updated;
+    });
   };
 
   const handleToggleShoppingPantry = (id: string) => {
-    setShoppingItems((prev) =>
-      prev.map((it) => (it.id === id ? { ...it, isPantry: !it.isPantry } : it))
-    );
+    setShoppingItems((prev) => {
+      const updated = prev.map((it) => (it.id === id ? { ...it, isPantry: !it.isPantry } : it));
+      saveShoppingItems(updated);
+      return updated;
+    });
   };
 
   if (!mounted) {
@@ -239,7 +251,9 @@ export default function Home() {
             onToggleItem={handleToggleShoppingItem}
             onTogglePantry={handleToggleShoppingPantry}
             onRegenerateFromPlan={() => {
-              setShoppingItems(generateShoppingListFromPlan(weeklyPlan));
+              const fresh = generateShoppingListFromPlan(weeklyPlan, shoppingItems);
+              setShoppingItems(fresh);
+              saveShoppingItems(fresh);
             }}
           />
         )}

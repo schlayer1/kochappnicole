@@ -77,6 +77,7 @@ export interface ShoppingItem {
   id: string;
   name: string;
   amount?: string;
+  packAdvice?: string;
   category: 'Frischetheke & Obst' | 'Kühlregal' | 'Vorrat & Gewürze' | 'Geflügel & Fisch' | 'Tiefkühl';
   checked: boolean;
   isPantry: boolean;
