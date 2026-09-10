@@ -52,42 +52,54 @@ WICHTIG: Antworte AUSSCHLIESSLICH mit dem reinen JSON-Objekt.`;
 
     const userMessage = `Benutzer-Wunsch: ${prompt || 'Ein ausgewogenes, budgetfreundliches Gericht nach Nicoles Vorgaben'}`;
 
-    // 1. GROQ CLOUD API (Llama 3.3 70B - Ultraschnell & Kostenlos)
+    // 1. GROQ CLOUD API (Llama 3.1 8B Instant & Fallback - Ultraschnell & 100% Free)
     if (provider === 'groq' && effectiveGroqKey) {
-      const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${effectiveGroqKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: userMessage },
-          ],
-          response_format: { type: 'json_object' },
-          temperature: 0.3,
-        }),
-      });
+      const groqModels = ['llama-3.1-8b-instant', 'llama-3.3-70b-versatile', 'llama3-8b-8192'];
+      let lastErr = '';
 
-      if (!groqRes.ok) {
-        const err = await groqRes.text();
-        throw new Error(`Groq API Fehler: ${groqRes.status} - ${err}`);
+      for (const model of groqModels) {
+        try {
+          const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${effectiveGroqKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model: model,
+              messages: [
+                { role: 'system', content: systemPrompt },
+                { role: 'user', content: userMessage },
+              ],
+              response_format: { type: 'json_object' },
+              temperature: 0.3,
+            }),
+          });
+
+          if (!groqRes.ok) {
+            const err = await groqRes.text();
+            lastErr = `${model}: ${err}`;
+            continue; // Try next model in list
+          }
+
+          const groqData = await groqRes.json();
+          const content = groqData.choices?.[0]?.message?.content;
+          const recipeData = JSON.parse(content);
+
+          const fullRecipe: Recipe = {
+            ...recipeData,
+            id: 'ai-recipe-groq-' + Date.now(),
+            isAiGenerated: true,
+            plateRatio: { veggiesPercent: 50, proteinPercent: 25, carbsPercent: 25 },
+          };
+
+          return NextResponse.json({ recipe: fullRecipe, source: `groq-${model}` });
+        } catch (e: any) {
+          lastErr = e.message;
+        }
       }
 
-      const groqData = await groqRes.json();
-      const content = groqData.choices?.[0]?.message?.content;
-      const recipeData = JSON.parse(content);
-
-      const fullRecipe: Recipe = {
-        ...recipeData,
-        id: 'ai-recipe-groq-' + Date.now(),
-        isAiGenerated: true,
-        plateRatio: { veggiesPercent: 50, proteinPercent: 25, carbsPercent: 25 },
-      };
-
-      return NextResponse.json({ recipe: fullRecipe, source: 'groq-llama-3.3-70b' });
+      throw new Error(`Groq API Fehler: ${lastErr}`);
     }
 
     // 2. GOOGLE GEMINI FLASH API
