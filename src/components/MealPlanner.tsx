@@ -1,7 +1,21 @@
 'use client';
 
-import React from 'react';
-import { Clock, ChefHat, RefreshCw, Sparkles, Plus, Calendar, Flame } from 'lucide-react';
+import React, { useState } from 'react';
+import {
+  Clock,
+  ChefHat,
+  RefreshCw,
+  Sparkles,
+  Plus,
+  Calendar,
+  Dices,
+  Printer,
+  Copy,
+  Check,
+  Flame,
+  ArrowRight,
+  Utensils
+} from 'lucide-react';
 import { DayPlan, MealType, Recipe } from '@/lib/types';
 
 interface MealPlannerProps {
@@ -13,6 +27,8 @@ interface MealPlannerProps {
   onOpenCookMode: (recipe: Recipe) => void;
   onRemoveMeal: (dayIdx: number, mealType: MealType) => void;
   onToggleFastDay: (dayIdx: number) => void;
+  onAutoGeneratePlan?: () => void;
+  onMealPrepTomorrow?: (dayIdx: number, recipe: Recipe) => void;
 }
 
 export const MealPlanner: React.FC<MealPlannerProps> = ({
@@ -24,7 +40,10 @@ export const MealPlanner: React.FC<MealPlannerProps> = ({
   onOpenCookMode,
   onRemoveMeal,
   onToggleFastDay,
+  onAutoGeneratePlan,
+  onMealPrepTomorrow,
 }) => {
+  const [copiedSlot, setCopiedSlot] = useState<string | null>(null);
   const currentDay = weeklyPlan[selectedDayIdx] || weeklyPlan[0];
 
   const mealSlots: { type: MealType; title: string; subtitle: string; recipe: Recipe | null | undefined }[] = [
@@ -49,16 +68,63 @@ export const MealPlanner: React.FC<MealPlannerProps> = ({
     {
       type: 'snack',
       title: 'Snack & Büro-Option',
-      subtitle: 'Frisches Obst (Kaki/Apfel/Beeren) + Handvoll Nüsse oder Proteinriegel',
+      subtitle: 'Frisches Obst (Kaki/Apfel/Beeren) + Nüsse oder Magerquark',
       recipe: currentDay?.snack,
     },
   ];
 
+  const handleMealPrep = (recipe: Recipe, slotType: string) => {
+    if (onMealPrepTomorrow) {
+      onMealPrepTomorrow(selectedDayIdx, recipe);
+      const slotKey = `${selectedDayIdx}-${slotType}`;
+      setCopiedSlot(slotKey);
+      setTimeout(() => setCopiedSlot(null), 2500);
+    }
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
   return (
     <div className="space-y-6">
       
+      {/* Action Bar: Auto-Planer & Print/PDF */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-4 bg-white rounded-2xl border border-slate-200/80 shadow-[0_1px_3px_rgba(0,0,0,0.03)] print:hidden">
+        <div>
+          <h2 className="text-sm sm:text-base font-bold text-slate-900 tracking-tight">
+            Wochenplan-Zentrale
+          </h2>
+          <p className="text-xs text-slate-400 mt-0.5">
+            Automatisiere deine Woche oder drucke den fertigen Aushang für den Kühlschrank
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {onAutoGeneratePlan && (
+            <button
+              onClick={onAutoGeneratePlan}
+              className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-[#EBF2F2] hover:bg-[#DEE9E8] text-[#3D5B5A] border border-[#C5D8D7] transition-all active:scale-[0.98]"
+              title="Stellt die 7 Tage automatisch makro-perfekt aus den 160 Rezepten zusammen"
+            >
+              <Dices className="w-4 h-4 text-[#789A99]" />
+              Woche auto-planen
+            </button>
+          )}
+
+          <button
+            onClick={handlePrint}
+            className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-medium bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 transition-all active:scale-[0.98]"
+            title="Druckfertige A4-Ansicht des Wochenplans für die Kühlschranktür"
+          >
+            <Printer className="w-4 h-4 text-slate-500" />
+            Plan drucken / PDF
+          </button>
+        </div>
+      </div>
+
       {/* 7-Days Linear/macOS Style Segmented Switcher */}
-      <div className="bg-slate-200/50 p-1.5 rounded-2xl border border-slate-200/60 overflow-x-auto scrollbar-none flex items-center gap-1.5">
+      <div className="bg-slate-200/50 p-1.5 rounded-2xl border border-slate-200/60 overflow-x-auto scrollbar-none flex items-center gap-1.5 print:hidden">
         {weeklyPlan.map((day, idx) => {
           const isSelected = idx === selectedDayIdx;
           const mealCount = [day.breakfast, day.lunch, day.dinner, day.snack].filter(Boolean).length;
@@ -93,7 +159,7 @@ export const MealPlanner: React.FC<MealPlannerProps> = ({
       </div>
 
       {/* Fast Day Bar */}
-      <div className="flex items-center justify-between p-3.5 rounded-xl bg-white border border-slate-200/70 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+      <div className="flex items-center justify-between p-3.5 rounded-xl bg-white border border-slate-200/70 shadow-[0_1px_2px_rgba(0,0,0,0.02)] print:hidden">
         <span className="text-xs text-slate-500 flex items-center gap-2">
           <Calendar className="w-3.5 h-3.5 text-slate-400" />
           Status für {currentDay?.dayName}:
@@ -111,9 +177,10 @@ export const MealPlanner: React.FC<MealPlannerProps> = ({
       </div>
 
       {/* 4 Meal Slots Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 print:hidden">
         {mealSlots.map((slot) => {
           const { recipe } = slot;
+          const isCopied = copiedSlot === `${selectedDayIdx}-${slot.type}`;
 
           return (
             <div
@@ -208,7 +275,7 @@ export const MealPlanner: React.FC<MealPlannerProps> = ({
                         onClick={() => onOpenAiForSlot(selectedDayIdx, slot.type)}
                         className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-[#FFD2C2]/40 text-[#994931] border border-[#FFD2C2] hover:bg-[#FFD2C2]/60 transition-all duration-150 active:scale-[0.98]"
                       >
-                        <Sparkles className="w-3 h-3 text-[#FFD2C2]" /> Mit KI kreieren
+                        <Sparkles className="w-3.5 h-3.5 text-[#FFD2C2]" /> Mit KI kreieren
                       </button>
                     </div>
                   </div>
@@ -217,7 +284,7 @@ export const MealPlanner: React.FC<MealPlannerProps> = ({
 
               {/* Slot Actions */}
               {recipe && (
-                <div className="flex items-center justify-between gap-2 pt-3.5 mt-3 border-t border-slate-100">
+                <div className="flex items-center justify-between gap-2 pt-3.5 mt-3 border-t border-slate-100 flex-wrap">
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => onOpenMealPicker(selectedDayIdx, slot.type)}
@@ -225,7 +292,30 @@ export const MealPlanner: React.FC<MealPlannerProps> = ({
                     >
                       <RefreshCw className="w-3 h-3" /> Tauschen
                     </button>
-                    <span className="text-xs text-slate-200">•</span>
+
+                    {/* Meal Prep Button: Vorkochen für morgen */}
+                    {(slot.type === 'dinner' || slot.type === 'lunch') && onMealPrepTomorrow && (
+                      <button
+                        onClick={() => handleMealPrep(recipe, slot.type)}
+                        className={`flex items-center gap-1 text-xs font-medium py-1 px-2.5 rounded-lg border transition-all active:scale-[0.98] ${
+                          isCopied
+                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                            : 'text-slate-500 hover:text-slate-900 border-transparent hover:border-slate-200 hover:bg-slate-100'
+                        }`}
+                        title="Plant dieses Gericht automatisch für morgen Mittag als Meal-Prep ein"
+                      >
+                        {isCopied ? (
+                          <>
+                            <Check className="w-3 h-3 text-emerald-600" /> Für morgen geplant!
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3 h-3 text-[#789A99]" /> Vorkochen (morgen)
+                          </>
+                        )}
+                      </button>
+                    )}
+
                     <span className="text-xs text-slate-400 flex items-center gap-1 font-mono">
                       <Clock className="w-3 h-3 text-[#789A99]" /> {recipe.prepMins} Min
                     </span>
@@ -243,6 +333,63 @@ export const MealPlanner: React.FC<MealPlannerProps> = ({
             </div>
           );
         })}
+      </div>
+
+      {/* DEDICATED PRINT VIEW (Nur sichtbar beim Drucken oder PDF-Export) */}
+      <div className="hidden print:block font-sans text-black p-4">
+        <div className="border-b-2 border-black pb-3 mb-4 flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-black tracking-tight uppercase">fit und healthy • Wochenplan</h1>
+            <p className="text-xs text-gray-600 mt-0.5">
+              Ziel: 1.508 kcal • Max. 44g Fett • Min. 103g Protein • 50% Gemüse
+            </p>
+          </div>
+          <div className="text-right text-xs text-gray-500">
+            Erstellt am: {new Date().toLocaleDateString('de-DE')}
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          {weeklyPlan.map((day) => {
+            const totalKcal = [day.breakfast, day.lunch, day.dinner, day.snack].reduce((acc, r) => acc + (r?.kcal || 0), 0);
+            const totalProtein = [day.breakfast, day.lunch, day.dinner, day.snack].reduce((acc, r) => acc + (r?.protein || 0), 0);
+            const totalFat = [day.breakfast, day.lunch, day.dinner, day.snack].reduce((acc, r) => acc + (r?.fat || 0), 0);
+
+            return (
+              <div key={day.dayName} className="border border-gray-300 rounded-lg p-3 page-break-inside-avoid">
+                <div className="flex items-center justify-between font-bold border-b border-gray-200 pb-1.5 mb-2">
+                  <span className="text-sm uppercase tracking-wide">{day.dayName}</span>
+                  <span className="text-xs font-mono">
+                    {day.isFastDay ? 'FASTENTAG' : `${totalKcal} kcal | ${totalProtein}g Protein | ${totalFat}g Fett`}
+                  </span>
+                </div>
+
+                {day.isFastDay ? (
+                  <p className="text-xs italic text-gray-500">Geplanter Entlastungs- / Fastentag</p>
+                ) : (
+                  <div className="grid grid-cols-4 gap-2 text-xs">
+                    <div>
+                      <span className="font-semibold text-gray-600 block text-[10px] uppercase">Frühstück</span>
+                      <p className="font-medium text-gray-900 leading-snug">{day.breakfast?.title || '–'}</p>
+                    </div>
+                    <div>
+                      <span className="font-semibold text-gray-600 block text-[10px] uppercase">Mittagessen</span>
+                      <p className="font-medium text-gray-900 leading-snug">{day.lunch?.title || '–'}</p>
+                    </div>
+                    <div>
+                      <span className="font-semibold text-gray-600 block text-[10px] uppercase">Abendbrot</span>
+                      <p className="font-medium text-gray-900 leading-snug">{day.dinner?.title || '–'}</p>
+                    </div>
+                    <div>
+                      <span className="font-semibold text-gray-600 block text-[10px] uppercase">Snack</span>
+                      <p className="font-medium text-gray-900 leading-snug">{day.snack?.title || '–'}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
 
     </div>

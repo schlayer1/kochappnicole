@@ -18,13 +18,18 @@ import {
   AppSettings,
   DEFAULT_SETTINGS,
   generateShoppingListFromPlan,
+  generateSmartWeeklyPlan,
   loadAllRecipes,
+  loadFavoriteRecipeIds,
   loadProfile,
+  loadRecipeNotes,
   loadSettings,
   loadShoppingItems,
   loadWeeklyPlan,
   saveCustomRecipe,
+  saveFavoriteRecipeIds,
   saveProfile,
+  saveRecipeNote,
   saveSettings,
   saveShoppingItems,
   saveWeeklyPlan,
@@ -43,6 +48,8 @@ export default function Home() {
   const [weeklyPlan, setWeeklyPlan] = useState<DayPlan[]>([]);
   const [shoppingItems, setShoppingItems] = useState<ShoppingItem[]>([]);
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
+  const [favorites, setFavorites] = useState<string[]>([]);
+  const [recipeNotes, setRecipeNotes] = useState<Record<string, string>>({});
 
   // Modals
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
@@ -64,6 +71,8 @@ export default function Home() {
     const loadedSet = loadSettings();
     const savedShop = loadShoppingItems();
     const initialShop = generateShoppingListFromPlan(loadedPlan, savedShop || undefined);
+    const loadedFavs = loadFavoriteRecipeIds();
+    const loadedNotes = loadRecipeNotes();
 
     setProfile(loadedProf);
     setRecipes(loadedRecs);
@@ -71,6 +80,8 @@ export default function Home() {
     setSettings(loadedSet);
     setShoppingItems(initialShop);
     saveShoppingItems(initialShop);
+    setFavorites(loadedFavs);
+    setRecipeNotes(loadedNotes);
     setMounted(true);
   }, []);
 
@@ -81,6 +92,34 @@ export default function Home() {
     const updatedShop = generateShoppingListFromPlan(newPlan, shoppingItems);
     setShoppingItems(updatedShop);
     saveShoppingItems(updatedShop);
+  };
+
+  const handleAutoGeneratePlan = () => {
+    const smartPlan = generateSmartWeeklyPlan(recipes, weeklyPlan);
+    updateWeeklyPlan(smartPlan);
+  };
+
+  const handleMealPrepTomorrow = (dayIdx: number, recipe: Recipe) => {
+    const nextDayIdx = (dayIdx + 1) % 7;
+    handleAssignMeal(nextDayIdx, 'lunch', recipe);
+  };
+
+  const handleToggleFavorite = (recipeId: string) => {
+    setFavorites((prev) => {
+      const updated = prev.includes(recipeId)
+        ? prev.filter((id) => id !== recipeId)
+        : [...prev, recipeId];
+      saveFavoriteRecipeIds(updated);
+      return updated;
+    });
+  };
+
+  const handleSaveRecipeNote = (recipeId: string, note: string) => {
+    setRecipeNotes((prev) => {
+      const updated = { ...prev, [recipeId]: note };
+      saveRecipeNote(recipeId, note);
+      return updated;
+    });
   };
 
   const handleAssignMeal = (dayIdx: number, mealType: MealType, recipe: Recipe) => {
@@ -223,14 +262,18 @@ export default function Home() {
               onOpenCookMode={(recipe) => setCookModeRecipe(recipe)}
               onRemoveMeal={handleRemoveMeal}
               onToggleFastDay={handleToggleFastDay}
+              onAutoGeneratePlan={handleAutoGeneratePlan}
+              onMealPrepTomorrow={handleMealPrepTomorrow}
             />
           </div>
         )}
 
-        {/* Active Tab: Nicole-Rezepte */}
+        {/* Active Tab: Rezepte */}
         {activeTab === 'recipes' && (
           <RecipeCatalog
             recipes={recipes}
+            favorites={favorites}
+            onToggleFavorite={handleToggleFavorite}
             onOpenCookMode={(recipe) => setCookModeRecipe(recipe)}
             onAssignRecipeToDay={(recipe, dayIdx, slot) => {
               handleAssignMeal(dayIdx, slot, recipe);
@@ -271,6 +314,8 @@ export default function Home() {
       <CookModeModal
         recipe={cookModeRecipe}
         onClose={() => setCookModeRecipe(null)}
+        recipeNote={cookModeRecipe ? recipeNotes[cookModeRecipe.id] || '' : ''}
+        onSaveNote={handleSaveRecipeNote}
       />
 
       <AiRecipeGeneratorModal

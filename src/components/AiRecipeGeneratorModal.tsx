@@ -26,6 +26,8 @@ export const AiRecipeGeneratorModal: React.FC<AiRecipeGeneratorModalProps> = ({
   initialMealType = 'lunch',
 }) => {
   const [prompt, setPrompt] = useState('');
+  const [fridgeIngredients, setFridgeIngredients] = useState('');
+  const [mode, setMode] = useState<'creative' | 'fridge'>('fridge');
   const [mealType, setMealType] = useState<MealType>(initialMealType);
   const [loading, setLoading] = useState(false);
   const [generatedRecipe, setGeneratedRecipe] = useState<Recipe | null>(null);
@@ -33,15 +35,38 @@ export const AiRecipeGeneratorModal: React.FC<AiRecipeGeneratorModalProps> = ({
 
   if (!isOpen) return null;
 
+  const quickFridgeChips = [
+    '½ Becher Skyr',
+    '1 Zucchini',
+    '2 Eier',
+    '½ Feta light',
+    'Brokkoli',
+    'Champignons',
+    'TK-Beeren',
+    'Möhren',
+    'Paprika',
+    'Thunfisch Dose',
+  ];
+
+  const handleAddChip = (chip: string) => {
+    setFridgeIngredients((prev) => (prev ? `${prev}, ${chip}` : chip));
+  };
+
   const handleGenerate = async () => {
     setLoading(true);
     setErrorMsg('');
+
+    const effectivePrompt =
+      mode === 'fridge'
+        ? `[Kühlschrank-Reste-Verwertung]: Verwende vorrangig folgende vorhandene Reste: ${fridgeIngredients || 'Typische geöffnete Reste wie Zucchini, Skyr, Eier oder Gemüse'}. Ergänze nur Grundvorräte und halte streng die Nährwerte (max. 10g Fett) ein.`
+        : prompt;
+
     try {
       const res = await fetch('/api/generate-recipe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          prompt,
+          prompt: effectivePrompt,
           mealType,
           userApiKey,
           groqApiKey,
@@ -96,6 +121,32 @@ export const AiRecipeGeneratorModal: React.FC<AiRecipeGeneratorModalProps> = ({
           
           {!generatedRecipe ? (
             <>
+              {/* Mode Selector (Reste-Retter vs Kreativ) */}
+              <div className="flex p-1 rounded-xl bg-slate-100 border border-slate-200/60 text-xs font-semibold">
+                <button
+                  type="button"
+                  onClick={() => setMode('fridge')}
+                  className={`flex-1 py-1.5 rounded-lg transition-all ${
+                    mode === 'fridge'
+                      ? 'bg-white text-slate-900 shadow-xs'
+                      : 'text-slate-500 hover:text-slate-900'
+                  }`}
+                >
+                  🥫 Kühlschrank-Reste-Retter
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMode('creative')}
+                  className={`flex-1 py-1.5 rounded-lg transition-all ${
+                    mode === 'creative'
+                      ? 'bg-white text-slate-900 shadow-xs'
+                      : 'text-slate-500 hover:text-slate-900'
+                  }`}
+                >
+                  ✨ Freie Rezeptidee
+                </button>
+              </div>
+
               {/* Slot Selector */}
               <div>
                 <label className="block text-xs font-semibold text-[#111C1E] mb-1.5">
@@ -124,19 +175,57 @@ export const AiRecipeGeneratorModal: React.FC<AiRecipeGeneratorModalProps> = ({
                 </div>
               </div>
 
-              {/* Prompt Input */}
-              <div>
-                <label className="block text-xs font-semibold text-[#111C1E] mb-1.5">
-                  Zutatenwünsche oder Idee (optional)
-                </label>
-                <textarea
-                  rows={3}
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  placeholder="z.B. Ich habe noch Zucchini, Thunfisch und Magerquark im Kühlschrank... oder: Schnelles 15-Minuten-Gericht fürs Büro"
-                  className="w-full p-3 text-xs rounded-xl bg-[#F8FAFA] border border-[#E0EAE9] focus:outline-none focus:border-[#789A99] transition-colors"
-                />
-              </div>
+              {/* Fridge Mode Input */}
+              {mode === 'fridge' ? (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-semibold text-[#111C1E]">
+                      Welche Reste liegen noch im Kühlschrank?
+                    </label>
+                    <span className="text-[10px] text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                      Zero-Waste
+                    </span>
+                  </div>
+                  <textarea
+                    rows={3}
+                    value={fridgeIngredients}
+                    onChange={(e) => setFridgeIngredients(e.target.value)}
+                    placeholder="z. B. halber Feta light, 1 Zucchini, 2 Eier, noch 100g Hähnchenbrust..."
+                    className="w-full p-3 text-xs rounded-xl bg-[#F8FAFA] border border-[#E0EAE9] focus:outline-none focus:border-[#789A99] transition-colors"
+                  />
+
+                  {/* Quick-chips */}
+                  <div>
+                    <span className="text-[10px] text-slate-400 block mb-1">Schnell hinzufügen:</span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {quickFridgeChips.map((chip) => (
+                        <button
+                          key={chip}
+                          type="button"
+                          onClick={() => handleAddChip(chip)}
+                          className="text-[10px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
+                        >
+                          + {chip}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                /* Creative Mode Input */
+                <div>
+                  <label className="block text-xs font-semibold text-[#111C1E] mb-1.5">
+                    Zutatenwünsche oder Idee (optional)
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
+                    placeholder="z.B. Schnelle Pasta unter 10g Fett fürs Büro oder warmes Pfannengericht..."
+                    className="w-full p-3 text-xs rounded-xl bg-[#F8FAFA] border border-[#E0EAE9] focus:outline-none focus:border-[#789A99] transition-colors"
+                  />
+                </div>
+              )}
 
               {/* Guardrails Notice */}
               <div className="p-3.5 rounded-xl bg-[#EBF2F2] border border-[#C5D8D7] text-xs text-[#3D5B5A] space-y-1">

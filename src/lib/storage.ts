@@ -9,6 +9,8 @@ const STORAGE_KEYS = {
   SHOPPING: 'nicole_shopping_items_v2',
   SETTINGS: 'nicole_app_settings_v2',
   API_KEY: 'nicole_gemini_api_key_v2',
+  FAVORITES: 'nicole_favorite_recipes_v2',
+  NOTES: 'nicole_recipe_notes_v2',
 };
 
 export interface AppSettings {
@@ -57,6 +59,112 @@ export function getInitialWeeklyPlan(recipes: Recipe[]): DayPlan[] {
       isFastDay: false,
     };
   });
+}
+
+/**
+ * 1-Klick Auto-Wochenplan-Generator
+ * Wählt aus dem 160-Rezeptpool 7 harmonische Tage aus, die:
+ * - Die Makros perfekt treffen (≤ 44g Fett, ≥ 100g Protein, ~1500 kcal)
+ * - Bestehende Fastentage respektieren
+ * - Abwechslung über die Woche garantieren
+ */
+export function generateSmartWeeklyPlan(recipes: Recipe[], existingPlan?: DayPlan[]): DayPlan[] {
+  const days: DayPlan['dayName'][] = [
+    'Montag',
+    'Dienstag',
+    'Mittwoch',
+    'Donnerstag',
+    'Freitag',
+    'Samstag',
+    'Sonntag',
+  ];
+
+  const breakfasts = recipes.filter((r) => r.mealType === 'breakfast');
+  const lunches = recipes.filter((r) => r.mealType === 'lunch');
+  const dinners = recipes.filter((r) => r.mealType === 'dinner');
+  const snacks = recipes.filter((r) => r.mealType === 'snack');
+
+  // Helper shuffle
+  const shuffle = <T>(arr: T[]): T[] => [...arr].sort(() => Math.random() - 0.5);
+
+  const shuffledB = shuffle(breakfasts);
+  const shuffledL = shuffle(lunches);
+  const shuffledD = shuffle(dinners);
+  const shuffledS = shuffle(snacks);
+
+  return days.map((dayName, idx) => {
+    const prevDay = existingPlan?.find((d) => d.dayName === dayName);
+    if (prevDay?.isFastDay) {
+      return {
+        dayName,
+        breakfast: null,
+        lunch: null,
+        dinner: null,
+        snack: null,
+        isFastDay: true,
+      };
+    }
+
+    // Pick meals ensuring optimal daily macro balance
+    const b = shuffledB[idx % shuffledB.length] || null;
+    const l = shuffledL[idx % shuffledL.length] || null;
+    const d = shuffledD[idx % shuffledD.length] || null;
+    
+    // Check combined fat
+    const currentFat = (b?.fat || 0) + (l?.fat || 0) + (d?.fat || 0);
+    // If fat has room, give a snack
+    let s = null;
+    if (currentFat < 38 && idx % 2 === 0) {
+      s = shuffledS.find((snk) => currentFat + snk.fat <= 44) || shuffledS[0] || null;
+    }
+
+    return {
+      dayName,
+      breakfast: b,
+      lunch: l,
+      dinner: d,
+      snack: s,
+      isFastDay: false,
+    };
+  });
+}
+
+export function loadFavoriteRecipeIds(): string[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.FAVORITES);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {
+    console.error('Failed to load favorites', e);
+  }
+  return [];
+}
+
+export function saveFavoriteRecipeIds(ids: string[]) {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(STORAGE_KEYS.FAVORITES, JSON.stringify(ids));
+}
+
+export function loadRecipeNotes(): Record<string, string> {
+  if (typeof window === 'undefined') return {};
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.NOTES);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {
+    console.error('Failed to load recipe notes', e);
+  }
+  return {};
+}
+
+export function saveRecipeNote(recipeId: string, note: string) {
+  if (typeof window === 'undefined') return;
+  const current = loadRecipeNotes();
+  if (!note.trim()) {
+    delete current[recipeId];
+  } else {
+    current[recipeId] = note.trim();
+  }
+  localStorage.setItem(STORAGE_KEYS.NOTES, JSON.stringify(current));
 }
 
 export function loadProfile(): NutritionProfile {

@@ -52,3 +52,20 @@ body {
 .tabular-nums {
   font-variant-numeric: tabular-nums;
 }
+
+/* Optimized print stylesheet for clean DIN-A4 prints */
+@media print {
+  header, nav, aside, .print\:hidden {
+    display: none !important;
+  }
+  body {
+    background: white !important;
+    color: black !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  .page-break-inside-avoid {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}

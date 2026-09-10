@@ -1,11 +1,13 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Search, ChefHat, Clock, Sparkles, Plus, Check, ChevronDown } from 'lucide-react';
+import { Search, ChefHat, Clock, Sparkles, Plus, Check, ChevronDown, Heart } from 'lucide-react';
 import { Recipe, MealType } from '@/lib/types';
 
 interface RecipeCatalogProps {
   recipes: Recipe[];
+  favorites?: string[];
+  onToggleFavorite?: (recipeId: string) => void;
   onOpenCookMode: (recipe: Recipe) => void;
   onAssignRecipeToDay: (recipe: Recipe, dayIdx: number, slot: MealType) => void;
   onOpenAiGenerator: () => void;
@@ -13,6 +15,8 @@ interface RecipeCatalogProps {
 
 export const RecipeCatalog: React.FC<RecipeCatalogProps> = ({
   recipes,
+  favorites = [],
+  onToggleFavorite,
   onOpenCookMode,
   onAssignRecipeToDay,
   onOpenAiGenerator,
@@ -32,6 +36,7 @@ export const RecipeCatalog: React.FC<RecipeCatalogProps> = ({
     if (!matchesSearch) return false;
 
     if (selectedFilter === 'all') return true;
+    if (selectedFilter === 'favorites') return favorites.includes(r.id);
     if (selectedFilter === 'breakfast') return r.mealType === 'breakfast';
     if (selectedFilter === 'lunch') return r.mealType === 'lunch';
     if (selectedFilter === 'dinner') return r.mealType === 'dinner';
@@ -50,6 +55,11 @@ export const RecipeCatalog: React.FC<RecipeCatalogProps> = ({
             <span className="text-xs text-slate-300">
               {recipes.length} hinterlegte Rezepte & KI-Kreationen
             </span>
+            {favorites.length > 0 && (
+              <span className="text-xs text-[#FFD2C2] bg-white/10 px-2.5 py-0.5 rounded-full">
+                ❤️ {favorites.length} Favoriten
+              </span>
+            )}
           </div>
           <h2 className="text-xl font-bold mt-2">
             Dein maßgeschneiderter Rezeptpool
@@ -87,6 +97,7 @@ export const RecipeCatalog: React.FC<RecipeCatalogProps> = ({
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
           {[
             { id: 'all', label: 'Alle Rezepte' },
+            { id: 'favorites', label: `⭐ Favoriten (${favorites.length})` },
             { id: 'breakfast', label: 'Frühstück 2.0' },
             { id: 'lunch', label: 'Mittagessen' },
             { id: 'dinner', label: 'Abendbrot' },
@@ -113,6 +124,7 @@ export const RecipeCatalog: React.FC<RecipeCatalogProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filtered.map((recipe) => {
           const isAssigning = assigningRecipeId === recipe.id;
+          const isFav = favorites.includes(recipe.id);
 
           return (
             <div
@@ -121,16 +133,36 @@ export const RecipeCatalog: React.FC<RecipeCatalogProps> = ({
             >
               <div>
                 
-                {/* Category & Tags */}
+                {/* Category & Tags & Favorite Heart */}
                 <div className="flex items-center justify-between gap-2 mb-2">
                   <span className="text-[11px] font-bold uppercase tracking-wider text-[#789A99]">
                     {recipe.category}
                   </span>
-                  {recipe.isAiGenerated && (
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#FFD2C2] text-[#994931] font-semibold flex items-center gap-1">
-                      <Sparkles className="w-2.5 h-2.5" /> KI-Generiert
-                    </span>
-                  )}
+
+                  <div className="flex items-center gap-1.5">
+                    {recipe.isAiGenerated && (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#FFD2C2] text-[#994931] font-semibold flex items-center gap-1">
+                        <Sparkles className="w-2.5 h-2.5" /> KI-Generiert
+                      </span>
+                    )}
+
+                    {onToggleFavorite && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onToggleFavorite(recipe.id);
+                        }}
+                        className="p-1 rounded-lg hover:bg-slate-100 transition-colors"
+                        title={isFav ? 'Aus Favoriten entfernen' : 'Zu Favoriten hinzufügen'}
+                      >
+                        <Heart
+                          className={`w-4 h-4 transition-all active:scale-125 ${
+                            isFav ? 'fill-rose-500 text-rose-500' : 'text-slate-300 hover:text-rose-400'
+                          }`}
+                        />
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 <h3 className="font-bold text-[#111C1E] text-base leading-snug">
