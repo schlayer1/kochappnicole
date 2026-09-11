@@ -69,6 +69,7 @@ export default function Home() {
   const [customImages, setCustomImages] = useState<Record<string, string>>({});
   const [isCloudActive, setIsCloudActive] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isDark, setIsDark] = useState(false);
 
   // Modals
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
@@ -120,6 +121,18 @@ export default function Home() {
     setFavorites(loadedFavs);
     setRecipeNotes(loadedNotes);
     setCustomImages(loadedCustomImgs);
+
+    // Restore saved OLED Dark Mode
+    if (typeof window !== 'undefined') {
+      const savedDark = localStorage.getItem('nicole_dark_mode') === 'true';
+      setIsDark(savedDark);
+      if (savedDark) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    }
+
     setMounted(true);
 
     // Realtime synchronization if Firebase is configured
@@ -529,6 +542,19 @@ export default function Home() {
 
   const currentDayPlan = weeklyPlan[selectedDayIdx] || weeklyPlan[0];
 
+  const handleToggleDark = () => {
+    const nextDark = !isDark;
+    setIsDark(nextDark);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('nicole_dark_mode', String(nextDark));
+      if (nextDark) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#F6F9F9] text-[#111C1E] flex flex-col pb-24 md:pb-12 font-sans selection:bg-[#FFD2C2] selection:text-[#994931]">
       
@@ -549,6 +575,8 @@ export default function Home() {
         onOpenPrintStudio={() => setIsPrintModalOpen(true)}
         isCloudConnected={isCloudActive}
         isSyncing={isSyncing}
+        isDark={isDark}
+        onToggleDark={handleToggleDark}
       />
 
       {/* Main Content Area */}
@@ -561,6 +589,7 @@ export default function Home() {
             <MacroCockpit
               dayPlan={currentDayPlan}
               targetGoals={profile.targetGoals}
+              weeklyPlan={weeklyPlan}
             />
 
             {/* Meal Slots Plan */}

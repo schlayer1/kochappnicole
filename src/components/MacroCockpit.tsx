@@ -1,15 +1,29 @@
 'use client';
 
-import React from 'react';
-import { Flame, ShieldAlert, CheckCircle2, Award, TrendingUp, AlertTriangle } from 'lucide-react';
+import React, { useState } from 'react';
+import {
+  Flame,
+  ShieldAlert,
+  CheckCircle2,
+  Award,
+  TrendingUp,
+  AlertTriangle,
+  PieChart,
+  Salad,
+  Fish,
+  Wheat,
+  Info
+} from 'lucide-react';
 import { DayPlan, MacroGoals } from '@/lib/types';
 
 interface MacroCockpitProps {
   dayPlan: DayPlan;
   targetGoals: MacroGoals;
+  weeklyPlan?: DayPlan[];
 }
 
-export const MacroCockpit: React.FC<MacroCockpitProps> = ({ dayPlan, targetGoals }) => {
+export const MacroCockpit: React.FC<MacroCockpitProps> = ({ dayPlan, targetGoals, weeklyPlan = [] }) => {
+  const [showPlateInfo, setShowPlateInfo] = useState(false);
   const meals = [dayPlan.breakfast, dayPlan.lunch, dayPlan.dinner, dayPlan.snack].filter(Boolean);
 
   const total = meals.reduce(
@@ -35,8 +49,23 @@ export const MacroCockpit: React.FC<MacroCockpitProps> = ({ dayPlan, targetGoals
   const isFatWarning = total.fat > targetGoals.fat;
   const isProteinReached = total.protein >= targetGoals.protein;
 
+  // Calculate weekly streak (consecutive days where fat <= 44g and protein >= 85g or meals assigned)
+  const streakCount = React.useMemo(() => {
+    let streak = 0;
+    for (const d of weeklyPlan) {
+      const dMeals = [d.breakfast, d.lunch, d.dinner, d.snack].filter(Boolean);
+      if (dMeals.length === 0) continue;
+      const dFat = dMeals.reduce((sum, m) => sum + (m?.fat || 0), 0);
+      const dProtein = dMeals.reduce((sum, m) => sum + (m?.protein || 0), 0);
+      if (dFat <= targetGoals.fat && dProtein >= 85) {
+        streak++;
+      }
+    }
+    return Math.max(streak, 1);
+  }, [weeklyPlan, targetGoals.fat]);
+
   return (
-    <div className="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/80 shadow-[0_1px_3px_rgba(0,0,0,0.03)] transition-all">
+    <div className="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/80 shadow-[0_1px_3px_rgba(0,0,0,0.03)] transition-all space-y-6">
       {/* Top Header & Status Indicators */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-100">
         <div>
@@ -53,6 +82,11 @@ export const MacroCockpit: React.FC<MacroCockpitProps> = ({ dayPlan, targetGoals
                 {meals.length} / 4 Slots belegt
               </span>
             )}
+
+            {/* Streak Pill */}
+            <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-orange-50 text-orange-700 border border-orange-200 flex items-center gap-1 shadow-xs">
+              🔥 {streakCount} Tage Streak
+            </span>
           </div>
           <p className="text-xs text-slate-400 mt-0.5">
             Echtzeit-Synchronisation mit Vorgaben der Ernährungstagebuchanalyse
@@ -88,7 +122,7 @@ export const MacroCockpit: React.FC<MacroCockpitProps> = ({ dayPlan, targetGoals
       </div>
 
       {/* Grid of 5 Macro Metric Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 pt-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         
         {/* Kalorien */}
         <div className="p-3.5 rounded-xl bg-slate-50/70 border border-slate-200/70 hover:border-slate-300 transition-colors">
@@ -215,7 +249,133 @@ export const MacroCockpit: React.FC<MacroCockpitProps> = ({ dayPlan, targetGoals
             />
           </div>
         </div>
+      </div>
 
+      {/* Runder Teller-Visualizer "Der gesunde Teller" (50% Gemüse, 25% Protein, 25% Carbs) */}
+      <div className="p-4 sm:p-5 rounded-2xl bg-linear-to-br from-slate-50 to-[#EBF2F2]/40 border border-slate-200/80">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <PieChart className="w-4 h-4 text-[#789A99]" />
+            <h3 className="text-xs sm:text-sm font-bold text-slate-800">
+              Der gesunde Teller • Nicole-Aufteilung
+            </h3>
+          </div>
+          <button
+            onClick={() => setShowPlateInfo(!showPlateInfo)}
+            className="text-[11px] text-[#789A99] hover:text-[#3D5B5A] flex items-center gap-1 font-semibold cursor-pointer"
+          >
+            <Info className="w-3.5 h-3.5" />
+            <span>{showPlateInfo ? 'Ausblenden' : 'Erklärung'}</span>
+          </button>
+        </div>
+
+        {showPlateInfo && (
+          <p className="text-xs text-slate-600 mb-4 bg-white p-3 rounded-xl border border-slate-200 leading-relaxed animate-in fade-in duration-150">
+            <strong>Das Harvard- &amp; Nicole-Tellerprinzip:</strong> Für maximale Sättigung bei geringem Fettbudget besteht die Hauptmahlzeit zur Hälfte aus frischem Gemüse/Salat (50%), zu einem Viertel aus fettarmem Eiweiß (25%) und zu einem Viertel aus ballaststoffreichen Kohlenhydraten (25%).
+          </p>
+        )}
+
+        <div className="flex flex-col md:flex-row items-center justify-around gap-6 pt-2">
+          {/* Stilisierter Runder Teller mit Sektoren */}
+          <div className="relative w-44 h-44 sm:w-48 sm:h-48 rounded-full bg-white shadow-md border-4 border-slate-100 flex items-center justify-center shrink-0">
+            {/* Porzellan-Rand Effekt */}
+            <div className="absolute inset-1 rounded-full border border-slate-200/80 pointer-events-none" />
+            <div className="absolute inset-3 rounded-full border border-slate-200/40 pointer-events-none" />
+
+            {/* Sektoren via SVG Donut */}
+            <svg viewBox="0 0 100 100" className="w-36 h-36 -rotate-90">
+              {/* 50% Gemüse / Ballaststoffe (0 bis 180 Grad) */}
+              <circle
+                cx="50"
+                cy="50"
+                r="36"
+                fill="transparent"
+                stroke="#10B981"
+                strokeWidth="20"
+                strokeDasharray="113.1 113.1"
+                strokeDashoffset="0"
+                className="opacity-90 hover:opacity-100 transition-opacity cursor-pointer"
+              />
+              {/* 25% Protein (180 bis 270 Grad) */}
+              <circle
+                cx="50"
+                cy="50"
+                r="36"
+                fill="transparent"
+                stroke="#0EA5E9"
+                strokeWidth="20"
+                strokeDasharray="56.5 169.7"
+                strokeDashoffset="-113.1"
+                className="opacity-90 hover:opacity-100 transition-opacity cursor-pointer"
+              />
+              {/* 25% Carbs & Fette im Budget (270 bis 360 Grad) */}
+              <circle
+                cx="50"
+                cy="50"
+                r="36"
+                fill="transparent"
+                stroke="#F59E0B"
+                strokeWidth="20"
+                strokeDasharray="56.5 169.7"
+                strokeDashoffset="-169.6"
+                className="opacity-90 hover:opacity-100 transition-opacity cursor-pointer"
+              />
+            </svg>
+
+            {/* Teller Zentrum */}
+            <div className="absolute w-14 h-14 rounded-full bg-white shadow-xs border border-slate-200 flex flex-col items-center justify-center text-center">
+              <span className="text-[9px] font-bold uppercase text-slate-400">Balance</span>
+              <span className="text-[11px] font-black text-emerald-700">100%</span>
+            </div>
+          </div>
+
+          {/* Legende & Nährstoff-Sektoren */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-1 gap-2.5 w-full max-w-md">
+            {/* Sektor 1 */}
+            <div className="p-2.5 rounded-xl bg-white border border-emerald-200/80 flex items-center justify-between shadow-2xs">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                  <Salad className="w-3.5 h-3.5" />
+                </div>
+                <div>
+                  <div className="text-xs font-bold text-slate-900">50% Gemüse &amp; Salat</div>
+                  <div className="text-[10px] text-slate-500">Ballaststoffe, Volumen, Vitamine</div>
+                </div>
+              </div>
+              <span className="text-xs font-mono font-bold text-emerald-700">{total.fiber}g Ballastst.</span>
+            </div>
+
+            {/* Sektor 2 */}
+            <div className="p-2.5 rounded-xl bg-white border border-sky-200/80 flex items-center justify-between shadow-2xs">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center shrink-0">
+                  <Fish className="w-3.5 h-3.5" />
+                </div>
+                <div>
+                  <div className="text-xs font-bold text-slate-900">25% Protein (Prio 1)</div>
+                  <div className="text-[10px] text-slate-500">Quark, Geflügel, Fisch, Hülsenfrüchte</div>
+                </div>
+              </div>
+              <span className="text-xs font-mono font-bold text-sky-700">{total.protein}g / 103g</span>
+            </div>
+
+            {/* Sektor 3 */}
+            <div className="p-2.5 rounded-xl bg-white border border-amber-200/80 flex items-center justify-between shadow-2xs">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+                  <Wheat className="w-3.5 h-3.5" />
+                </div>
+                <div>
+                  <div className="text-xs font-bold text-slate-900">25% Carbs &amp; Fette</div>
+                  <div className="text-[10px] text-slate-500">Vollkorn, Haferflocken, max. 44g Fett</div>
+                </div>
+              </div>
+              <span className={`text-xs font-mono font-bold ${isFatWarning ? 'text-rose-600' : 'text-amber-700'}`}>
+                {total.fat}g Fett
+              </span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

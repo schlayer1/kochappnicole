@@ -17,7 +17,9 @@ import {
   Timer,
   Camera,
   Users,
-  ListCheck
+  ListCheck,
+  Mic,
+  MicOff
 } from 'lucide-react';
 import { Recipe } from '@/lib/types';
 import { RecipeImage } from './RecipeImage';
@@ -49,6 +51,11 @@ export const CookModeModal: React.FC<CookModeModalProps> = ({
   const [noteText, setNoteText] = useState(recipeNote);
   const [showNoteEditor, setShowNoteEditor] = useState(false);
 
+  // Hands-free Voice Control State
+  const [isListening, setIsListening] = useState(false);
+  const [voiceFeedback, setVoiceFeedback] = useState<string>('');
+  const recognitionRef = React.useRef<any>(null);
+
   useEffect(() => {
     setCurrentStep(0);
     setServings(1);
@@ -57,8 +64,15 @@ export const CookModeModal: React.FC<CookModeModalProps> = ({
     setTimerSeconds(0);
     setIsSpeaking(false);
     setNoteText(recipeNote);
+    setIsListening(false);
+    setVoiceFeedback('');
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       window.speechSynthesis.cancel();
+    }
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.stop();
+      } catch (e) {}
     }
   }, [recipe, recipeNote]);
 
@@ -133,6 +147,127 @@ export const CookModeModal: React.FC<CookModeModalProps> = ({
     window.speechSynthesis.speak(utterance);
   };
 
+  // Hands-Free Web Speech Recognition (Sprachsteuerung: "Weiter", "Zurück", "Vorlesen", "Timer")
+  const toggleVoiceControl = () => {
+    if (typeof window === 'undefined') return;
+
+    // Check browser support for SpeechRecognition
+    const SpeechRecognition =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      setVoiceFeedback('Sprachsteuerung wird von diesem Browser nicht unterstützt.');
+      setTimeout(() => setVoiceFeedback(''), 4000);
+      return;
+    }
+
+    if (isListening) {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+      setIsListening(false);
+      setVoiceFeedback('');
+      return;
+    }
+
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'de-DE';
+      recognition.continuous = true;
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+
+      recognition.onstart = () => {
+        setIsListening(true);
+        setVoiceFeedback('🎙️ Hört zu: Sag "Weiter", "Zurück", "Vorlesen" oder "Timer"');
+      };
+
+      recognition.onresult = (event: any) => {
+        const lastResultIdx = event.results.length - 1;
+        const transcript = event.results[lastResultIdx][0].transcript.toLowerCase().trim();
+        console.log('Voice command heard:', transcript);
+
+        if (
+          transcript.includes('weiter') ||
+          transcript.includes('nächster') ||
+          transcript.includes('vor') ||
+          transcript.includes('next')
+        ) {
+          setVoiceFeedback('🗣️ "Weiter" erkannt');
+          setCurrentStep((prev) => {
+            const next = Math.min((recipe?.instructions.length || 1) - 1, prev + 1);
+            if (recipe?.instructions[next]) {
+              handleToggleSpeak(recipe.instructions[next]);
+            }
+            return next;
+          });
+        } else if (
+          transcript.includes('zurück') ||
+          transcript.includes('vorher') ||
+          transcript.includes('back')
+        ) {
+          setVoiceFeedback('🗣️ "Zurück" erkannt');
+          setCurrentStep((prev) => {
+            const back = Math.max(0, prev - 1);
+            if (recipe?.instructions[back]) {
+              handleToggleSpeak(recipe.instructions[back]);
+            }
+            return back;
+          });
+        } else if (
+          transcript.includes('vorlesen') ||
+          transcript.includes('wiederholen') ||
+          transcript.includes('nochmal') ||
+          transcript.includes('lies')
+        ) {
+          setVoiceFeedback('🗣️ "Vorlesen" erkannt');
+          if (recipe?.instructions[currentStep]) {
+            handleToggleSpeak(recipe.instructions[currentStep]);
+          }
+        } else if (transcript.includes('timer start') || transcript.includes('timer an') || transcript.includes('starte timer')) {
+          setVoiceFeedback('🗣️ "Timer gestartet"');
+          setTimerRunning(true);
+        } else if (transcript.includes('timer stop') || transcript.includes('timer pause') || transcript.includes('stopp')) {
+          setVoiceFeedback('🗣️ "Timer pausiert"');
+          setTimerRunning(false);
+        } else {
+          setVoiceFeedback(`Befehl: "${transcript}"`);
+        }
+
+        setTimeout(() => {
+          setVoiceFeedback('🎙️ Hört zu... (Sag "Weiter", "Zurück")');
+        }, 2500);
+      };
+
+      recognition.onerror = (e: any) => {
+        console.warn('SpeechRecognition error:', e);
+        if (e.error === 'not-allowed') {
+          setVoiceFeedback('Mikrofon-Zugriff verweigert.');
+          setIsListening(false);
+        }
+      };
+
+      recognition.onend = () => {
+        // Auto-restart if user still wants it active and modal is open
+        if (recognitionRef.current && isListening) {
+          try {
+            recognition.start();
+          } catch (e) {
+            setIsListening(false);
+          }
+        }
+      };
+
+      recognitionRef.current = recognition;
+      recognition.start();
+      setIsListening(true);
+    } catch (err) {
+      console.warn('Speech recognition init error:', err);
+      setVoiceFeedback('Konnte Spracherkennung nicht starten.');
+      setIsListening(false);
+    }
+  };
+
   if (!recipe) return null;
 
   const totalSteps = recipe.instructions.length;
@@ -189,6 +324,20 @@ export const CookModeModal: React.FC<CookModeModalProps> = ({
             ))}
           </div>
 
+          {/* Hands-Free Voice Control Toggle */}
+          <button
+            onClick={toggleVoiceControl}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+              isListening
+                ? 'bg-rose-500 text-white border-rose-400 shadow-md animate-pulse'
+                : 'bg-[#182629] text-slate-300 border-[#2D4348] hover:text-white'
+            }`}
+            title="Hände-freie Sprachsteuerung ein/aus: Sag 'Weiter' oder 'Zurück'"
+          >
+            {isListening ? <Mic className="w-3.5 h-3.5 animate-bounce text-white" /> : <MicOff className="w-3.5 h-3.5 text-slate-400" />}
+            <span className="hidden sm:inline">{isListening ? 'Zuhören aktiv' : 'Sprachsteuerung'}</span>
+          </button>
+
           {/* Toggle Scaled Ingredients */}
           <button
             onClick={() => setShowIngredients(!showIngredients)}
@@ -225,6 +374,22 @@ export const CookModeModal: React.FC<CookModeModalProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Voice Assistant Live Status Toast */}
+      {voiceFeedback && (
+        <div className="max-w-4xl mx-auto w-full my-1.5 px-4 py-2 rounded-xl bg-slate-900/90 border border-emerald-500/40 text-emerald-300 text-xs flex items-center justify-between shadow-lg animate-in fade-in slide-in-from-top-1">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+            <span className="font-medium">{voiceFeedback}</span>
+          </div>
+          <button
+            onClick={() => setVoiceFeedback('')}
+            className="text-[10px] text-slate-400 hover:text-white"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* Note Editor Drawer / Banner */}
       {showNoteEditor && (

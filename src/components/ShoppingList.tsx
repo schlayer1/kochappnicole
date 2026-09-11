@@ -21,7 +21,8 @@ import {
   Utensils,
   ChevronDown,
   Plus,
-  Trash2
+  Trash2,
+  Compass
 } from 'lucide-react';
 import { ShoppingItem, DayPlan, Recipe } from '@/lib/types';
 
@@ -53,6 +54,18 @@ export const ShoppingList: React.FC<ShoppingListProps> = ({
   const [selectedRecipe, setSelectedRecipe] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [copied, setCopied] = useState(false);
+  const [isRouteOrdered, setIsRouteOrdered] = useState(true);
+
+  // Haptic feedback function for mobile devices
+  const triggerHaptic = (durationMs = 20) => {
+    if (typeof window !== 'undefined' && 'navigator' in window && navigator.vibrate) {
+      try {
+        navigator.vibrate(durationMs);
+      } catch (e) {
+        // ignore vibrate errors if blocked
+      }
+    }
+  };
 
   // Custom Item Form State
   const [isAddingCustom, setIsAddingCustom] = useState(false);
@@ -60,14 +73,17 @@ export const ShoppingList: React.FC<ShoppingListProps> = ({
   const [customAmount, setCustomAmount] = useState('');
   const [customCategory, setCustomCategory] = useState<ShoppingItem['category']>('Drogerie & Haushalt');
 
-  const categories: ShoppingItem['category'][] = [
+  // Supermarket walkthrough order: Produce -> Dairy/Fridge -> Meat/Fish -> Pantry -> Frozen -> Drugstore
+  const standardCategories: ShoppingItem['category'][] = [
     'Frischetheke & Obst',
     'Kühlregal',
     'Geflügel & Fisch',
-    'Tiefkühl',
     'Vorrat & Gewürze',
+    'Tiefkühl',
     'Drogerie & Haushalt',
   ];
+
+  const categories = standardCategories;
 
   const categoryIcons: Record<ShoppingItem['category'], string> = {
     'Frischetheke & Obst': '🥑',
@@ -256,6 +272,22 @@ export const ShoppingList: React.FC<ShoppingListProps> = ({
           </div>
 
           <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
+            <button
+              onClick={() => {
+                setIsRouteOrdered(!isRouteOrdered);
+                triggerHaptic(15);
+              }}
+              className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold border transition-all active:scale-[0.98] cursor-pointer ${
+                isRouteOrdered
+                  ? 'bg-emerald-50 text-emerald-800 border-emerald-300 shadow-2xs'
+                  : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+              }`}
+              title="Sortiert Abteilungen nach dem optimalen Laufweg durch den Supermarkt (Gemüse -> Frische -> Fleisch -> Vorrat -> Tiefkühl -> Kasse)"
+            >
+              <Compass className="w-3.5 h-3.5 text-emerald-600" />
+              <span>{isRouteOrdered ? 'Markt-Route aktiv' : 'Markt-Route'}</span>
+            </button>
+
             <button
               onClick={() => setIsAddingCustom(!isAddingCustom)}
               className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-[#EBF2F2] hover:bg-[#DEE9E8] text-[#3D5B5A] border border-[#C5D8D7] transition-all active:scale-[0.98]"
@@ -647,8 +679,11 @@ export const ShoppingList: React.FC<ShoppingListProps> = ({
                     >
                       {/* Checkbox & Product Details */}
                       <button
-                        onClick={() => onToggleItem(item.id)}
-                        className="flex items-start gap-3 flex-1 text-left active:scale-[0.99] transition-transform"
+                        onClick={() => {
+                          triggerHaptic(18);
+                          onToggleItem(item.id);
+                        }}
+                        className="flex items-start gap-3 flex-1 text-left active:scale-[0.99] transition-transform cursor-pointer"
                       >
                         <div className="pt-0.5 shrink-0">
                           {item.checked ? (
@@ -727,8 +762,11 @@ export const ShoppingList: React.FC<ShoppingListProps> = ({
                       {/* Pantry Toggle & Delete Custom Button */}
                       <div className="flex items-center gap-1 shrink-0 ml-2 pt-0.5">
                         <button
-                          onClick={() => onTogglePantry(item.id)}
-                          className={`text-[10px] px-2 py-1 rounded-lg font-medium border transition-all ${
+                          onClick={() => {
+                            triggerHaptic(15);
+                            onTogglePantry(item.id);
+                          }}
+                          className={`text-[10px] px-2 py-1 rounded-lg font-medium border transition-all cursor-pointer ${
                             item.isPantry
                               ? 'bg-amber-100 text-amber-900 border-amber-200 hover:bg-amber-200/70'
                               : 'text-slate-400 border-transparent hover:border-slate-200 hover:bg-slate-100 hover:text-slate-700'

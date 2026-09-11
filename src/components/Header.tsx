@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sparkles, FileText, Settings, ChefHat, Cloud, Utensils, Camera, Barcode, Printer } from 'lucide-react';
+import { Sparkles, FileText, Settings, ChefHat, Cloud, Utensils, Camera, Barcode, Printer, Moon, Sun } from 'lucide-react';
 import { NutritionProfile } from '@/lib/types';
 
 interface HeaderProps {
@@ -15,6 +15,8 @@ interface HeaderProps {
   onOpenPrintStudio?: () => void;
   isCloudConnected?: boolean;
   isSyncing?: boolean;
+  isDark?: boolean;
+  onToggleDark?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -30,6 +32,8 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenPrintStudio,
   isCloudConnected = false,
   isSyncing = false,
+  isDark = false,
+  onToggleDark,
 }) => {
   return (
     <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-[#E0EAE9]">
@@ -165,6 +169,17 @@ export const Header: React.FC<HeaderProps> = ({
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 <Cloud className={`w-3.5 h-3.5 text-emerald-600 ${isSyncing ? 'animate-spin' : ''}`} />
                 <span className="hidden sm:inline text-[11px] font-semibold">{isSyncing ? 'Sync...' : 'Cloud Sync'}</span>
+              </button>
+            )}
+
+            {/* Dark Mode Toggle Button */}
+            {onToggleDark && (
+              <button
+                onClick={onToggleDark}
+                className="p-2 rounded-lg text-[#586F73] hover:text-[#111C1E] hover:bg-[#F1F6F5] transition-colors cursor-pointer"
+                title={isDark ? 'Heller Modus aktivieren' : 'OLED Dark Mode aktivieren'}
+              >
+                {isDark ? <Sun className="w-4 h-4 text-amber-500" /> : <Moon className="w-4 h-4" />}
               </button>
             )}
 
