@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sparkles, FileText, Settings, ChefHat, Cloud } from 'lucide-react';
+import { Sparkles, FileText, Settings, ChefHat, Cloud, Utensils } from 'lucide-react';
 import { NutritionProfile } from '@/lib/types';
 
 interface HeaderProps {
@@ -9,6 +9,7 @@ interface HeaderProps {
   onOpenAiGenerator: () => void;
   onOpenDocAnalyzer: () => void;
   onOpenSettings: () => void;
+  onOpenFridgeLeftovers?: () => void;
   isCloudConnected?: boolean;
   isSyncing?: boolean;
 }
@@ -20,6 +21,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenAiGenerator,
   onOpenDocAnalyzer,
   onOpenSettings,
+  onOpenFridgeLeftovers,
   isCloudConnected = false,
   isSyncing = false,
 }) => {
@@ -79,10 +81,22 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Action CTAs */}
           <div className="flex items-center gap-2">
+            {/* Resteverwerter Button */}
+            {onOpenFridgeLeftovers && (
+              <button
+                onClick={onOpenFridgeLeftovers}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#EBF2F2] hover:bg-[#DEE9E8] text-[#3D5B5A] border border-[#C5D8D7] transition-all cursor-pointer"
+                title="Kühlschrank-Reste eingeben & passende Rezepte finden"
+              >
+                <Utensils className="w-3.5 h-3.5 text-[#789A99]" />
+                <span className="hidden lg:inline">Resteverwerter</span>
+              </button>
+            )}
+
             {/* KI Rezept Generator Button */}
             <button
               onClick={onOpenAiGenerator}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#789A99] hover:bg-[#658584] text-white shadow-sm transition-all active:scale-95"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#789A99] hover:bg-[#658584] text-white shadow-sm transition-all active:scale-95 cursor-pointer"
               title="Neues Rezept mit KI nach Nicole-Vorgaben generieren"
             >
               <Sparkles className="w-3.5 h-3.5 text-[#FFD2C2]" />

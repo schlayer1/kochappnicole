@@ -12,6 +12,7 @@ import { DocAnalyzerModal } from '@/components/DocAnalyzerModal';
 import { SettingsModal } from '@/components/SettingsModal';
 import { MealPickerModal } from '@/components/MealPickerModal';
 import { ImagePickerModal } from '@/components/ImagePickerModal';
+import { FridgeLeftoversModal } from '@/components/FridgeLeftoversModal';
 import { BottomNav } from '@/components/BottomNav';
 
 import { DayPlan, MealType, NutritionProfile, Recipe, ShoppingItem } from '@/lib/types';
@@ -72,6 +73,8 @@ export default function Home() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [cookModeRecipe, setCookModeRecipe] = useState<Recipe | null>(null);
   const [imagePickerRecipe, setImagePickerRecipe] = useState<Recipe | null>(null);
+  const [isFridgeModalOpen, setIsFridgeModalOpen] = useState(false);
+  const [aiInitialFridgeIngredients, setAiInitialFridgeIngredients] = useState('');
   const [pickerState, setPickerState] = useState<{ isOpen: boolean; dayIdx: number; mealType: MealType }>({
     isOpen: false,
     dayIdx: 0,
@@ -240,6 +243,62 @@ export default function Home() {
     });
   };
 
+  const handleUpdateServings = (dayIdx: number, slot: MealType, servings: number) => {
+    const updated = [...weeklyPlan];
+    if (updated[dayIdx]) {
+      const cur = updated[dayIdx].servings || {};
+      updated[dayIdx] = {
+        ...updated[dayIdx],
+        servings: {
+          ...cur,
+          [slot]: servings,
+        },
+      };
+      updateWeeklyPlan(updated);
+    }
+  };
+
+  const handleAddCustomShoppingItem = (name: string, amount: string, category: ShoppingItem['category']) => {
+    const newItem: ShoppingItem = {
+      id: `custom_item_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+      name,
+      amount: amount || undefined,
+      category,
+      checked: false,
+      isPantry: false,
+      isCustom: true,
+    };
+    setShoppingItems((prev) => {
+      const updated = [newItem, ...prev];
+      saveShoppingItems(updated);
+      if (isFirebaseConfigured()) {
+        setIsSyncing(true);
+        pushDataToCloud(getSavedHouseholdKey(), { shoppingItems: updated })
+          .finally(() => setIsSyncing(false));
+      }
+      return updated;
+    });
+  };
+
+  const handleDeleteCustomShoppingItem = (id: string) => {
+    setShoppingItems((prev) => {
+      const updated = prev.filter((it) => it.id !== id);
+      saveShoppingItems(updated);
+      if (isFirebaseConfigured()) {
+        setIsSyncing(true);
+        pushDataToCloud(getSavedHouseholdKey(), { shoppingItems: updated })
+          .finally(() => setIsSyncing(false));
+      }
+      return updated;
+    });
+  };
+
+  const handleGenerateAiWithIngredients = (ingredients: string[]) => {
+    setAiInitialFridgeIngredients(ingredients.join(', '));
+    setAiSlotTarget({});
+    setIsAiModalOpen(true);
+  };
+
   const handleManualCloudSync = async () => {
     if (!isFirebaseConfigured()) return false;
     setIsSyncing(true);
@@ -394,6 +453,7 @@ export default function Home() {
         }}
         onOpenDocAnalyzer={() => setIsDocAnalyzerOpen(true)}
         onOpenSettings={() => setIsSettingsOpen(true)}
+        onOpenFridgeLeftovers={() => setIsFridgeModalOpen(true)}
         isCloudConnected={isCloudActive}
         isSyncing={isSyncing}
       />
@@ -429,6 +489,7 @@ export default function Home() {
               onToggleFastDay={handleToggleFastDay}
               onAutoGeneratePlan={handleAutoGeneratePlan}
               onMealPrepTomorrow={handleMealPrepTomorrow}
+              onUpdateServings={handleUpdateServings}
             />
           </div>
         )}
@@ -461,6 +522,8 @@ export default function Home() {
             weeklyPlan={weeklyPlan}
             onToggleItem={handleToggleShoppingItem}
             onTogglePantry={handleToggleShoppingPantry}
+            onAddCustomItem={handleAddCustomShoppingItem}
+            onDeleteCustomItem={handleDeleteCustomShoppingItem}
             onRegenerateFromPlan={() => {
               const fresh = generateShoppingListFromPlan(weeklyPlan, shoppingItems);
               setShoppingItems(fresh);
@@ -514,6 +577,16 @@ export default function Home() {
         geminiApiKey={settings.geminiApiKey}
         aiProvider={settings.aiProvider}
         initialMealType={aiSlotTarget.mealType || 'lunch'}
+        initialFridgeIngredients={aiInitialFridgeIngredients}
+      />
+
+      <FridgeLeftoversModal
+        isOpen={isFridgeModalOpen}
+        onClose={() => setIsFridgeModalOpen(false)}
+        recipes={recipes}
+        customImages={customImages}
+        onOpenCookMode={(r) => setCookModeRecipe(r)}
+        onGenerateAiWithIngredients={handleGenerateAiWithIngredients}
       />
 
       <DocAnalyzerModal

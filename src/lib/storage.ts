@@ -245,6 +245,7 @@ export function saveSettings(settings: AppSettings) {
 }
 
 import { groupAndAggregateIngredients, RawIngredientInput } from './ingredient-aggregator';
+import { scaleIngredientString } from './scaling';
 
 export function loadShoppingItems(): ShoppingItem[] | null {
   if (typeof window === 'undefined') return null;
@@ -270,14 +271,21 @@ export function generateShoppingListFromPlan(
 
   plan.forEach((day) => {
     if (day.isFastDay) return;
-    const meals = [day.breakfast, day.lunch, day.dinner, day.snack].filter(Boolean) as Recipe[];
+    const slots = [
+      { recipe: day.breakfast, servings: day.servings?.breakfast || 1 },
+      { recipe: day.lunch, servings: day.servings?.lunch || 1 },
+      { recipe: day.dinner, servings: day.servings?.dinner || 1 },
+      { recipe: day.snack, servings: day.servings?.snack || 1 },
+    ];
 
-    meals.forEach((recipe) => {
+    slots.forEach(({ recipe, servings }) => {
+      if (!recipe) return;
       Object.values(recipe.ingredients).forEach((ingList) => {
         ingList.forEach((ingStr) => {
+          const scaledIng = scaleIngredientString(ingStr.trim(), servings);
           rawList.push({
-            name: ingStr.trim(),
-            recipeSource: recipe.title,
+            name: scaledIng,
+            recipeSource: servings > 1 ? `${recipe.title} (${servings}x Port.)` : recipe.title,
             dayName: day.dayName,
           });
         });
@@ -294,7 +302,7 @@ export function generateShoppingListFromPlan(
       statusMap.set(it.id, { checked: it.checked, isPantry: it.isPantry });
     });
 
-    return aggregated.map((item) => {
+    const updated = aggregated.map((item) => {
       const prev = statusMap.get(item.id);
       if (prev) {
         return {
@@ -305,6 +313,10 @@ export function generateShoppingListFromPlan(
       }
       return item;
     });
+
+    // Re-add custom user items so they are never lost on regenerate
+    const customItems = existingItems.filter((it) => it.isCustom);
+    return [...updated, ...customItems];
   }
 
   return aggregated;

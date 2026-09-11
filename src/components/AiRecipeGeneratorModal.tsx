@@ -14,6 +14,7 @@ interface AiRecipeGeneratorModalProps {
   geminiApiKey?: string;
   aiProvider?: 'groq' | 'gemini';
   initialMealType?: MealType;
+  initialFridgeIngredients?: string;
 }
 
 export const AiRecipeGeneratorModal: React.FC<AiRecipeGeneratorModalProps> = ({
@@ -25,14 +26,22 @@ export const AiRecipeGeneratorModal: React.FC<AiRecipeGeneratorModalProps> = ({
   geminiApiKey,
   aiProvider = 'groq',
   initialMealType = 'lunch',
+  initialFridgeIngredients = '',
 }) => {
   const [prompt, setPrompt] = useState('');
-  const [fridgeIngredients, setFridgeIngredients] = useState('');
-  const [mode, setMode] = useState<'creative' | 'fridge'>('fridge');
+  const [fridgeIngredients, setFridgeIngredients] = useState(initialFridgeIngredients);
+  const [mode, setMode] = useState<'creative' | 'fridge'>(initialFridgeIngredients ? 'fridge' : 'fridge');
   const [mealType, setMealType] = useState<MealType>(initialMealType);
   const [loading, setLoading] = useState(false);
   const [generatedRecipe, setGeneratedRecipe] = useState<Recipe | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
+
+  React.useEffect(() => {
+    if (initialFridgeIngredients) {
+      setFridgeIngredients(initialFridgeIngredients);
+      setMode('fridge');
+    }
+  }, [initialFridgeIngredients, isOpen]);
 
   if (!isOpen) return null;
 

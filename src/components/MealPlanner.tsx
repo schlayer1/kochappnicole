@@ -14,7 +14,8 @@ import {
   Check,
   Flame,
   ArrowRight,
-  Utensils
+  Utensils,
+  Users
 } from 'lucide-react';
 import { DayPlan, MealType, Recipe } from '@/lib/types';
 import { RecipeImage } from './RecipeImage';
@@ -32,6 +33,7 @@ interface MealPlannerProps {
   onAutoGeneratePlan?: () => void;
   onMealPrepTomorrow?: (dayIdx: number, recipe: Recipe) => void;
   onOpenImagePicker?: (recipe: Recipe) => void;
+  onUpdateServings?: (dayIdx: number, slot: MealType, servings: number) => void;
 }
 
 export const MealPlanner: React.FC<MealPlannerProps> = ({
@@ -47,6 +49,7 @@ export const MealPlanner: React.FC<MealPlannerProps> = ({
   onAutoGeneratePlan,
   onMealPrepTomorrow,
   onOpenImagePicker,
+  onUpdateServings,
 }) => {
   const [copiedSlot, setCopiedSlot] = useState<string | null>(null);
   const currentDay = weeklyPlan[selectedDayIdx] || weeklyPlan[0];
@@ -241,38 +244,85 @@ export const MealPlanner: React.FC<MealPlannerProps> = ({
                         />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-bold text-slate-900 text-sm sm:text-base leading-snug tracking-tight line-clamp-2">
-                          {recipe.title}
-                        </h4>
+                        <div className="flex items-start justify-between gap-2">
+                          <h4 className="font-bold text-slate-900 text-sm sm:text-base leading-snug tracking-tight line-clamp-2">
+                            {recipe.title}
+                          </h4>
+                          
+                          {/* Portion Switcher */}
+                          <div className="flex items-center gap-0.5 bg-slate-100 p-0.5 rounded-lg border border-slate-200/80 shrink-0">
+                            {[1, 2, 4].map((srv) => {
+                              const activeSrv = currentDay?.servings?.[slot.type] || 1;
+                              return (
+                                <button
+                                  key={srv}
+                                  onClick={() => onUpdateServings && onUpdateServings(selectedDayIdx, slot.type, srv)}
+                                  className={`text-[10px] px-1.5 py-0.5 rounded font-bold transition-all ${
+                                    activeSrv === srv
+                                      ? 'bg-[#789A99] text-white shadow-xs'
+                                      : 'text-slate-400 hover:text-slate-800'
+                                  }`}
+                                  title={`${srv} Portion${srv > 1 ? 'en' : ''}`}
+                                >
+                                  {srv}x
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
                         {recipe.subtitle && (
                           <p className="text-xs text-slate-400 mt-0.5 line-clamp-1">{recipe.subtitle}</p>
                         )}
                       </div>
                     </div>
 
+                    {/* Meal-Prep Prompt when 2 portions selected */}
+                    {(currentDay?.servings?.[slot.type] || 1) === 2 && (slot.type === 'dinner' || slot.type === 'lunch') && onMealPrepTomorrow && (
+                      <div className="flex items-center justify-between gap-2 p-2 rounded-xl bg-emerald-50/90 border border-emerald-200/80 text-emerald-900 text-xs">
+                        <span className="flex items-center gap-1.5 font-medium">
+                          <ChefHat className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                          <span>2 Portionen gekocht:</span>
+                        </span>
+                        <button
+                          onClick={() => handleMealPrep(recipe, slot.type)}
+                          className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-[11px] transition-colors shadow-2xs cursor-pointer"
+                        >
+                          Portion 2 für morgen vormerken
+                        </button>
+                      </div>
+                    )}
+
                     {/* Macro Indicator Grid */}
                     <div className="grid grid-cols-5 gap-1.5 p-2 rounded-xl bg-slate-50/80 border border-slate-200/60 text-center">
                       <div>
                         <div className="text-[9px] font-medium text-slate-400 uppercase">Kcal</div>
-                        <div className="text-xs font-bold font-mono tabular-nums text-slate-900">{recipe.kcal}</div>
+                        <div className="text-xs font-bold font-mono tabular-nums text-slate-900">
+                          {recipe.kcal * (currentDay?.servings?.[slot.type] || 1)}
+                        </div>
                       </div>
                       <div>
                         <div className="text-[9px] font-medium text-slate-400 uppercase">Protein</div>
-                        <div className="text-xs font-bold font-mono tabular-nums text-emerald-600">{recipe.protein}g</div>
+                        <div className="text-xs font-bold font-mono tabular-nums text-emerald-600">
+                          {recipe.protein * (currentDay?.servings?.[slot.type] || 1)}g
+                        </div>
                       </div>
                       <div>
                         <div className="text-[9px] font-medium text-slate-400 uppercase">Fett</div>
                         <div className={`text-xs font-bold font-mono tabular-nums ${recipe.fat > 14 ? 'text-rose-600' : 'text-[#789A99]'}`}>
-                          {recipe.fat}g
+                          {recipe.fat * (currentDay?.servings?.[slot.type] || 1)}g
                         </div>
                       </div>
                       <div>
                         <div className="text-[9px] font-medium text-slate-400 uppercase">Carbs</div>
-                        <div className="text-xs font-bold font-mono tabular-nums text-slate-700">{recipe.carbs}g</div>
+                        <div className="text-xs font-bold font-mono tabular-nums text-slate-700">
+                          {recipe.carbs * (currentDay?.servings?.[slot.type] || 1)}g
+                        </div>
                       </div>
                       <div>
                         <div className="text-[9px] font-medium text-slate-400 uppercase">Ballast.</div>
-                        <div className="text-xs font-bold font-mono tabular-nums text-slate-700">{recipe.fiber}g</div>
+                        <div className="text-xs font-bold font-mono tabular-nums text-slate-700">
+                          {recipe.fiber * (currentDay?.servings?.[slot.type] || 1)}g
+                        </div>
                       </div>
                     </div>
 

@@ -47,6 +47,12 @@ export interface DayPlan {
   lunch?: Recipe | null;
   dinner?: Recipe | null;
   snack?: Recipe | null;
+  servings?: {
+    breakfast?: number;
+    lunch?: number;
+    dinner?: number;
+    snack?: number;
+  };
   isFastDay?: boolean;
   notes?: string;
 }
@@ -78,9 +84,10 @@ export interface ShoppingItem {
   name: string;
   amount?: string;
   packAdvice?: string;
-  category: 'Frischetheke & Obst' | 'Kühlregal' | 'Vorrat & Gewürze' | 'Geflügel & Fisch' | 'Tiefkühl';
+  category: 'Frischetheke & Obst' | 'Kühlregal' | 'Vorrat & Gewürze' | 'Geflügel & Fisch' | 'Tiefkühl' | 'Drogerie & Haushalt';
   checked: boolean;
   isPantry: boolean;
+  isCustom?: boolean;
   recipeSource?: string;
   days?: string[];
   recipes?: string[];

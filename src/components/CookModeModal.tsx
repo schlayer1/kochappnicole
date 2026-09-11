@@ -15,10 +15,13 @@ import {
   FileEdit,
   Sparkles,
   Timer,
-  Camera
+  Camera,
+  Users,
+  ListCheck
 } from 'lucide-react';
 import { Recipe } from '@/lib/types';
 import { RecipeImage } from './RecipeImage';
+import { scaleRecipeIngredients } from '@/lib/scaling';
 
 interface CookModeModalProps {
   recipe: Recipe | null;
@@ -38,6 +41,8 @@ export const CookModeModal: React.FC<CookModeModalProps> = ({
   onOpenImagePicker,
 }) => {
   const [currentStep, setCurrentStep] = useState(0);
+  const [servings, setServings] = useState<number>(1);
+  const [showIngredients, setShowIngredients] = useState(false);
   const [timerSeconds, setTimerSeconds] = useState(0);
   const [timerRunning, setTimerRunning] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -46,6 +51,8 @@ export const CookModeModal: React.FC<CookModeModalProps> = ({
 
   useEffect(() => {
     setCurrentStep(0);
+    setServings(1);
+    setShowIngredients(false);
     setTimerRunning(false);
     setTimerSeconds(0);
     setIsSpeaking(false);
@@ -162,10 +169,44 @@ export const CookModeModal: React.FC<CookModeModalProps> = ({
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Portion Selector */}
+          <div className="flex items-center gap-1 bg-[#182629] px-2 py-1 rounded-xl border border-[#2D4348]">
+            <Users className="w-3.5 h-3.5 text-[#789A99]" />
+            <span className="text-[11px] text-slate-400 hidden sm:inline mr-0.5">Portionen:</span>
+            {[1, 2, 4].map((s) => (
+              <button
+                key={s}
+                onClick={() => setServings(s)}
+                className={`px-2 py-0.5 rounded-lg text-xs font-semibold transition-all ${
+                  servings === s
+                    ? 'bg-[#789A99] text-white shadow-xs'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+                title={`${s} Portion${s > 1 ? 'en' : ''}`}
+              >
+                {s}x
+              </button>
+            ))}
+          </div>
+
+          {/* Toggle Scaled Ingredients */}
+          <button
+            onClick={() => setShowIngredients(!showIngredients)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
+              showIngredients
+                ? 'bg-[#789A99] text-white border-[#789A99]'
+                : 'bg-[#182629] text-slate-300 border-[#2D4348] hover:text-white'
+            }`}
+            title="Zutatenliste für gewählte Portionen anzeigen"
+          >
+            <ListCheck className="w-3.5 h-3.5 text-[#FFD2C2]" />
+            <span className="hidden sm:inline">Zutaten</span>
+          </button>
+
           {/* Note Toggle */}
           <button
             onClick={() => setShowNoteEditor(!showNoteEditor)}
-            className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+            className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium border transition-colors ${
               noteText
                 ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
                 : 'bg-[#182629] text-slate-400 border-[#2D4348] hover:text-white'
@@ -209,6 +250,40 @@ export const CookModeModal: React.FC<CookModeModalProps> = ({
         </div>
       )}
 
+      {/* Scaled Ingredients Drawer */}
+      {showIngredients && (
+        <div className="max-w-4xl mx-auto w-full bg-[#182629] border border-[#789A99]/50 rounded-2xl p-4 my-2 space-y-3 animate-in slide-in-from-top-2 duration-150 max-h-60 overflow-y-auto">
+          <div className="flex items-center justify-between border-b border-[#2D4348] pb-2">
+            <span className="text-xs font-bold text-[#FFD2C2] flex items-center gap-1.5">
+              <ListCheck className="w-3.5 h-3.5" /> Zutaten für {servings}x {servings === 1 ? 'Portion' : 'Portionen'}:
+            </span>
+            <button
+              onClick={() => setShowIngredients(false)}
+              className="text-[11px] text-slate-400 hover:text-white"
+            >
+              Schließen ✕
+            </button>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {Object.entries(scaleRecipeIngredients(recipe.ingredients, servings)).map(([cat, ings]) => (
+              <div key={cat} className="bg-[#203135]/60 p-2.5 rounded-xl border border-[#2D4348]/60">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#789A99] block mb-1">
+                  {cat}
+                </span>
+                <ul className="space-y-1 text-xs text-slate-200">
+                  {ings.map((ing, idx) => (
+                    <li key={idx} className="flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#FFD2C2]" />
+                      <span>{ing}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Main Step Display */}
       <div className="max-w-4xl mx-auto w-full py-2 sm:py-4 flex-1 flex flex-col justify-center">
         
@@ -235,7 +310,15 @@ export const CookModeModal: React.FC<CookModeModalProps> = ({
 
           <div className="absolute bottom-2.5 left-3.5 right-3.5 flex items-center justify-between">
             <span className="text-xs font-semibold text-white drop-shadow-md">
-              {recipe.kcal} kcal • <span className="text-emerald-400 font-bold">{recipe.protein}g Protein</span> • <span className="text-[#FFD2C2]">{recipe.fat}g Fett</span>
+              {servings > 1 ? (
+                <>
+                  <span className="text-[#FFD2C2] font-bold">{recipe.kcal * servings} kcal</span> ({recipe.kcal} kcal/P.) • <span className="text-emerald-400 font-bold">{recipe.protein * servings}g Protein</span> • <span className="text-[#FFD2C2]">{recipe.fat * servings}g Fett</span>
+                </>
+              ) : (
+                <>
+                  {recipe.kcal} kcal • <span className="text-emerald-400 font-bold">{recipe.protein}g Protein</span> • <span className="text-[#FFD2C2]">{recipe.fat}g Fett</span>
+                </>
+              )}
             </span>
             <span className="text-[11px] text-white/90 bg-black/60 backdrop-blur-md px-2.5 py-0.5 rounded-full border border-white/20">
               ⏱️ {recipe.prepMins} Min. Zubereitung

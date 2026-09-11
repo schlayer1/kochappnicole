@@ -19,7 +19,9 @@ import {
   Filter,
   X,
   Utensils,
-  ChevronDown
+  ChevronDown,
+  Plus,
+  Trash2
 } from 'lucide-react';
 import { ShoppingItem, DayPlan, Recipe } from '@/lib/types';
 
@@ -29,6 +31,8 @@ interface ShoppingListProps {
   onToggleItem: (id: string) => void;
   onTogglePantry: (id: string) => void;
   onRegenerateFromPlan: () => void;
+  onAddCustomItem?: (name: string, amount: string, category: ShoppingItem['category']) => void;
+  onDeleteCustomItem?: (id: string) => void;
 }
 
 type TabType = 'toBuy' | 'pantry' | 'done' | 'all';
@@ -41,6 +45,8 @@ export const ShoppingList: React.FC<ShoppingListProps> = ({
   onToggleItem,
   onTogglePantry,
   onRegenerateFromPlan,
+  onAddCustomItem,
+  onDeleteCustomItem,
 }) => {
   const [activeTab, setActiveTab] = useState<TabType>('toBuy');
   const [selectedDay, setSelectedDay] = useState<string>('all');
@@ -48,12 +54,19 @@ export const ShoppingList: React.FC<ShoppingListProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [copied, setCopied] = useState(false);
 
+  // Custom Item Form State
+  const [isAddingCustom, setIsAddingCustom] = useState(false);
+  const [customName, setCustomName] = useState('');
+  const [customAmount, setCustomAmount] = useState('');
+  const [customCategory, setCustomCategory] = useState<ShoppingItem['category']>('Drogerie & Haushalt');
+
   const categories: ShoppingItem['category'][] = [
     'Frischetheke & Obst',
     'Kühlregal',
     'Geflügel & Fisch',
     'Tiefkühl',
     'Vorrat & Gewürze',
+    'Drogerie & Haushalt',
   ];
 
   const categoryIcons: Record<ShoppingItem['category'], string> = {
@@ -62,6 +75,7 @@ export const ShoppingList: React.FC<ShoppingListProps> = ({
     'Geflügel & Fisch': '🍗',
     'Tiefkühl': '❄️',
     'Vorrat & Gewürze': '🌾',
+    'Drogerie & Haushalt': '🧼',
   };
 
   // Extract all scheduled dishes from weeklyPlan and items
@@ -206,6 +220,17 @@ export const ShoppingList: React.FC<ShoppingListProps> = ({
     }
   };
 
+  const handleCreateCustomItem = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!customName.trim()) return;
+    if (onAddCustomItem) {
+      onAddCustomItem(customName.trim(), customAmount.trim(), customCategory);
+      setCustomName('');
+      setCustomAmount('');
+      setIsAddingCustom(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       
@@ -230,7 +255,16 @@ export const ShoppingList: React.FC<ShoppingListProps> = ({
             </p>
           </div>
 
-          <div className="flex items-center gap-2 w-full sm:w-auto">
+          <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
+            <button
+              onClick={() => setIsAddingCustom(!isAddingCustom)}
+              className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-[#EBF2F2] hover:bg-[#DEE9E8] text-[#3D5B5A] border border-[#C5D8D7] transition-all active:scale-[0.98]"
+              title="Eigenen Haushalts- oder Drogerieartikel hinzufügen"
+            >
+              <Plus className="w-3.5 h-3.5 text-[#789A99]" />
+              Eigener Artikel
+            </button>
+
             <button
               onClick={onRegenerateFromPlan}
               className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium text-slate-700 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-all active:scale-[0.98]"
@@ -256,6 +290,72 @@ export const ShoppingList: React.FC<ShoppingListProps> = ({
             </button>
           </div>
         </div>
+
+        {/* Quick Add Custom Item Form */}
+        {isAddingCustom && (
+          <form
+            onSubmit={handleCreateCustomItem}
+            className="p-4 bg-[#F8FAF9] rounded-2xl border border-[#C5D8D7] space-y-3 animate-in slide-in-from-top-2 duration-150"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-[#3D5B5A] flex items-center gap-1.5">
+                <Plus className="w-3.5 h-3.5 text-[#789A99]" /> Eigenen Artikel hinzufügen (z. B. Drogerie, Haushalt, Getränke):
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsAddingCustom(false)}
+                className="text-xs text-slate-400 hover:text-slate-600"
+              >
+                Schließen ✕
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-12 gap-2">
+              <div className="sm:col-span-5">
+                <input
+                  type="text"
+                  placeholder="Artikelname (z. B. Mineralwasser, Spülmittel, Zahnpasta)..."
+                  value={customName}
+                  onChange={(e) => setCustomName(e.target.value)}
+                  autoFocus
+                  className="w-full px-3 py-2 text-xs bg-white rounded-xl border border-slate-200 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#789A99]"
+                />
+              </div>
+
+              <div className="sm:col-span-3">
+                <input
+                  type="text"
+                  placeholder="Menge (z. B. 2 Kisten, 1 Flasche)"
+                  value={customAmount}
+                  onChange={(e) => setCustomAmount(e.target.value)}
+                  className="w-full px-3 py-2 text-xs bg-white rounded-xl border border-slate-200 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#789A99]"
+                />
+              </div>
+
+              <div className="sm:col-span-4 flex items-center gap-2">
+                <select
+                  value={customCategory}
+                  onChange={(e) => setCustomCategory(e.target.value as any)}
+                  className="w-full px-2.5 py-2 text-xs bg-white rounded-xl border border-slate-200 text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#789A99]"
+                >
+                  {categories.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {categoryIcons[cat]} {cat}
+                    </option>
+                  ))}
+                </select>
+
+                <button
+                  type="submit"
+                  disabled={!customName.trim()}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold bg-[#789A99] hover:bg-[#658584] text-white transition-all disabled:opacity-50 whitespace-nowrap cursor-pointer shadow-xs"
+                >
+                  Hinzufügen
+                </button>
+              </div>
+            </div>
+          </form>
+        )}
 
         {/* Filter Tabs & Search */}
         <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 pt-3 border-t border-slate-100">
@@ -584,6 +684,12 @@ export const ShoppingList: React.FC<ShoppingListProps> = ({
 
                           {/* Day Pills & Recipe Source Badges */}
                           <div className="flex items-center gap-2 flex-wrap pt-0.5">
+                            {item.isCustom && (
+                              <span className="text-[9px] px-1.5 py-0.2 rounded bg-indigo-50 text-indigo-700 border border-indigo-200/80 font-semibold">
+                                Eigener Eintrag
+                              </span>
+                            )}
+
                             {item.days && item.days.length > 0 && (
                               <div className="flex items-center gap-1 flex-wrap">
                                 <Calendar className="w-2.5 h-2.5 text-[#789A99] shrink-0" />
@@ -618,7 +724,7 @@ export const ShoppingList: React.FC<ShoppingListProps> = ({
                         </div>
                       </button>
 
-                      {/* Pantry Toggle Button */}
+                      {/* Pantry Toggle & Delete Custom Button */}
                       <div className="flex items-center gap-1 shrink-0 ml-2 pt-0.5">
                         <button
                           onClick={() => onTogglePantry(item.id)}
@@ -632,6 +738,19 @@ export const ShoppingList: React.FC<ShoppingListProps> = ({
                           <Archive className="w-2.5 h-2.5 inline mr-1" />
                           {item.isPantry ? 'Im Vorrat' : 'Hab ich da'}
                         </button>
+
+                        {item.isCustom && onDeleteCustomItem && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onDeleteCustomItem(item.id);
+                            }}
+                            className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                            title="Eigenen Eintrag löschen"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                       </div>
 
                     </div>
