@@ -64,26 +64,52 @@ Antworte NUR mit dem reinen JSON-Objekt ohne Markdown-Formatierung.`;
       parts.push({ text: `Dokumenten-Inhalt:\n${text}` });
     }
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts }],
-        generationConfig: {
-          responseMimeType: 'application/json',
-          temperature: 0.2
-        }
-      })
-    });
+    const modelsToTry = [
+      'gemini-2.5-flash',
+      'gemini-2.0-flash',
+      'gemini-1.5-flash',
+      'gemini-1.5-flash-latest'
+    ];
 
-    if (!response.ok) {
-      const errText = await response.text();
-      throw new Error(`Gemini API Fehler: ${response.status} - ${errText}`);
+    let extracted: any = null;
+    let lastError: any = null;
+
+    for (const model of modelsToTry) {
+      try {
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts }],
+              generationConfig: {
+                responseMimeType: 'application/json',
+                temperature: 0.1,
+              },
+            }),
+          }
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          let rawJson = data.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (rawJson) {
+            rawJson = rawJson.replace(/```json\s*/g, '').replace(/```\s*$/g, '').trim();
+            extracted = JSON.parse(rawJson);
+            break;
+          }
+        } else {
+          lastError = await response.text();
+        }
+      } catch (err) {
+        lastError = err;
+      }
     }
 
-    const data = await response.json();
-    const rawJson = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    const extracted = JSON.parse(rawJson);
+    if (!extracted) {
+      throw new Error(`Gemini Dokumentenanalyse fehlgeschlagen: ${lastError}`);
+    }
 
     return NextResponse.json({
       profile: {
@@ -98,7 +124,7 @@ Antworte NUR mit dem reinen JSON-Objekt ohne Markdown-Formatierung.`;
         allowedCarbs: extracted.allowedCarbs || [],
         avoidCarbs: extracted.avoidCarbs || [],
       },
-      source: 'gemini-1.5-flash'
+      source: 'gemini-flash'
     });
   } catch (error: any) {
     console.error('Error in document analysis:', error);
