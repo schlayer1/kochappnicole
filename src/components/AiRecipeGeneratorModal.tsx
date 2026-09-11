@@ -196,7 +196,7 @@ export const AiRecipeGeneratorModal: React.FC<AiRecipeGeneratorModalProps> = ({
                     <div className="flex items-center gap-2">
                       <SpeechInputButton
                         size="sm"
-                        onTranscript={(txt) => setFridgeIngredients((prev) => (prev ? `${prev}, ${txt}` : txt))}
+                        onTranscript={(txt) => setFridgeIngredients(txt)}
                       />
                       <span className="text-[10px] text-[#3D5B5A] bg-[#EBF2F2] px-2 py-0.5 rounded-full border border-[#C5D8D7]">
                         Reste-Retter
@@ -237,7 +237,7 @@ export const AiRecipeGeneratorModal: React.FC<AiRecipeGeneratorModalProps> = ({
                     </label>
                     <SpeechInputButton
                       size="sm"
-                      onTranscript={(txt) => setPrompt((prev) => (prev ? `${prev} ${txt}` : txt))}
+                      onTranscript={(txt) => setPrompt(txt)}
                     />
                   </div>
                   <textarea

@@ -446,7 +446,7 @@ export const ShoppingList: React.FC<ShoppingListProps> = ({
                 />
                 <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
                   <SpeechInputButton
-                    onTranscript={(txt) => setCustomName((prev) => (prev ? `${prev} ${txt}` : txt))}
+                    onTranscript={(txt) => setCustomName(txt)}
                   />
                 </div>
               </div>
@@ -567,7 +567,7 @@ export const ShoppingList: React.FC<ShoppingListProps> = ({
             <div className="absolute right-1 top-1/2 -translate-y-1/2">
               <SpeechInputButton
                 size="sm"
-                onTranscript={(txt) => setSearchQuery((prev) => (prev ? `${prev} ${txt}` : txt))}
+                onTranscript={(txt) => setSearchQuery(txt)}
               />
             </div>
           </div>

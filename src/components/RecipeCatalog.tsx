@@ -100,7 +100,7 @@ export const RecipeCatalog: React.FC<RecipeCatalogProps> = ({
           <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
             <SpeechInputButton
               size="sm"
-              onTranscript={(txt) => setSearchTerm((prev) => (prev ? `${prev} ${txt}` : txt))}
+              onTranscript={(txt) => setSearchTerm(txt)}
             />
           </div>
         </div>
