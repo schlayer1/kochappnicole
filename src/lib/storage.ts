@@ -244,7 +244,7 @@ export function saveSettings(settings: AppSettings) {
   localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
 }
 
-import { groupAndAggregateIngredients } from './ingredient-aggregator';
+import { groupAndAggregateIngredients, RawIngredientInput } from './ingredient-aggregator';
 
 export function loadShoppingItems(): ShoppingItem[] | null {
   if (typeof window === 'undefined') return null;
@@ -266,7 +266,7 @@ export function generateShoppingListFromPlan(
   plan: DayPlan[],
   existingItems?: ShoppingItem[]
 ): ShoppingItem[] {
-  const rawList: { name: string; recipeSource?: string }[] = [];
+  const rawList: RawIngredientInput[] = [];
 
   plan.forEach((day) => {
     if (day.isFastDay) return;
@@ -278,6 +278,7 @@ export function generateShoppingListFromPlan(
           rawList.push({
             name: ingStr.trim(),
             recipeSource: recipe.title,
+            dayName: day.dayName,
           });
         });
       });

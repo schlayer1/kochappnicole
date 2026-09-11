@@ -82,4 +82,6 @@ export interface ShoppingItem {
   checked: boolean;
   isPantry: boolean;
   recipeSource?: string;
+  days?: string[];
+  recipes?: string[];
 }

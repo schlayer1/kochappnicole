@@ -519,8 +519,14 @@ export function parseIngredientAmount(str: string): { amount: number; unit: stri
   return { amount: 1, unit: 'Stück', cleanName: s };
 }
 
+export interface RawIngredientInput {
+  name: string;
+  recipeSource?: string;
+  dayName?: string;
+}
+
 export function groupAndAggregateIngredients(
-  rawList: { name: string; recipeSource?: string }[]
+  rawList: RawIngredientInput[]
 ): ShoppingItem[] {
   const groups = new Map<
     string,
@@ -528,6 +534,7 @@ export function groupAndAggregateIngredients(
       def: CanonicalDefinition;
       totalAmount: number;
       sources: Set<string>;
+      days: Set<string>;
       rawExamples: string[];
     }
   >();
@@ -539,6 +546,7 @@ export function groupAndAggregateIngredients(
       totalAmount: number;
       unit: string;
       sources: Set<string>;
+      days: Set<string>;
     }
   >();
 
@@ -562,6 +570,7 @@ export function groupAndAggregateIngredients(
           def: matchedDef,
           totalAmount: 0,
           sources: new Set<string>(),
+          days: new Set<string>(),
           rawExamples: [],
         });
       }
@@ -569,6 +578,7 @@ export function groupAndAggregateIngredients(
       const g = groups.get(matchedDef.id)!;
       g.totalAmount += parsed.amount;
       if (raw.recipeSource) g.sources.add(raw.recipeSource);
+      if (raw.dayName) g.days.add(raw.dayName);
       if (g.rawExamples.length < 2) g.rawExamples.push(text);
     } else {
       // Robust fallback grouping: normalizes name so duplicates merge automatically
@@ -582,12 +592,14 @@ export function groupAndAggregateIngredients(
           totalAmount: 0,
           unit: parsed.unit,
           sources: new Set<string>(),
+          days: new Set<string>(),
         });
       }
 
       const fg = fallbackGroups.get(key)!;
       fg.totalAmount += parsed.amount;
       if (raw.recipeSource) fg.sources.add(raw.recipeSource);
+      if (raw.dayName) fg.days.add(raw.dayName);
     }
   });
 
@@ -627,6 +639,8 @@ export function groupAndAggregateIngredients(
       checked: false,
       isPantry: Boolean(def.isPantryStaple),
       recipeSource: Array.from(g.sources).slice(0, 3).join(', ') + (g.sources.size > 3 ? ` (+${g.sources.size - 3} weitere)` : ''),
+      days: Array.from(g.days),
+      recipes: Array.from(g.sources),
     });
   });
 
@@ -654,6 +668,8 @@ export function groupAndAggregateIngredients(
       checked: false,
       isPantry: false,
       recipeSource: Array.from(fg.sources).slice(0, 3).join(', ') + (fg.sources.size > 3 ? ` (+${fg.sources.size - 3} weitere)` : ''),
+      days: Array.from(fg.days),
+      recipes: Array.from(fg.sources),
     });
   });
 

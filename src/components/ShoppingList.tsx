@@ -14,12 +14,18 @@ import {
   Sparkles,
   Package,
   Layers,
-  ChefHat
+  ChefHat,
+  Calendar,
+  Filter,
+  X,
+  Utensils,
+  ChevronDown
 } from 'lucide-react';
-import { ShoppingItem } from '@/lib/types';
+import { ShoppingItem, DayPlan, Recipe } from '@/lib/types';
 
 interface ShoppingListProps {
   items: ShoppingItem[];
+  weeklyPlan?: DayPlan[];
   onToggleItem: (id: string) => void;
   onTogglePantry: (id: string) => void;
   onRegenerateFromPlan: () => void;
@@ -27,13 +33,18 @@ interface ShoppingListProps {
 
 type TabType = 'toBuy' | 'pantry' | 'done' | 'all';
 
+const DAYS = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'] as const;
+
 export const ShoppingList: React.FC<ShoppingListProps> = ({
   items,
+  weeklyPlan = [],
   onToggleItem,
   onTogglePantry,
   onRegenerateFromPlan,
 }) => {
   const [activeTab, setActiveTab] = useState<TabType>('toBuy');
+  const [selectedDay, setSelectedDay] = useState<string>('all');
+  const [selectedRecipe, setSelectedRecipe] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [copied, setCopied] = useState(false);
 
@@ -53,18 +64,82 @@ export const ShoppingList: React.FC<ShoppingListProps> = ({
     'Vorrat & Gewürze': '🌾',
   };
 
-  // Counts
+  // Extract all scheduled dishes from weeklyPlan and items
+  const allDishes = useMemo(() => {
+    const dishMap = new Map<string, { title: string; days: Set<string> }>();
+
+    if (weeklyPlan && weeklyPlan.length > 0) {
+      weeklyPlan.forEach((day) => {
+        if (day.isFastDay) return;
+        const meals = [day.breakfast, day.lunch, day.dinner, day.snack].filter(Boolean) as Recipe[];
+        meals.forEach((r) => {
+          if (!dishMap.has(r.title)) {
+            dishMap.set(r.title, { title: r.title, days: new Set() });
+          }
+          dishMap.get(r.title)!.days.add(day.dayName);
+        });
+      });
+    }
+
+    // Also include from items (e.g. in case custom items have recipe tags)
+    items.forEach((item) => {
+      item.recipes?.forEach((r) => {
+        if (!dishMap.has(r)) {
+          dishMap.set(r, { title: r, days: new Set() });
+        }
+        item.days?.forEach((d) => dishMap.get(r)!.days.add(d));
+      });
+    });
+
+    return Array.from(dishMap.values())
+      .map((d) => ({
+        title: d.title,
+        days: Array.from(d.days),
+      }))
+      .sort((a, b) => a.title.localeCompare(b.title, 'de'));
+  }, [weeklyPlan, items]);
+
+  // Filtered dishes available for currently selected day
+  const visibleDishes = useMemo(() => {
+    if (selectedDay === 'all') return allDishes;
+    return allDishes.filter((d) => d.days.includes(selectedDay));
+  }, [allDishes, selectedDay]);
+
+  // Counts of uncompleted items per day
+  const itemCountByDay = useMemo(() => {
+    const map: Record<string, number> = {};
+    DAYS.forEach((d) => {
+      map[d] = items.filter((it) => !it.isPantry && !it.checked && it.days?.includes(d)).length;
+    });
+    return map;
+  }, [items]);
+
+  // Global Counts
   const toBuyCount = useMemo(() => items.filter((i) => !i.checked && !i.isPantry).length, [items]);
   const doneCount = useMemo(() => items.filter((i) => i.checked && !i.isPantry).length, [items]);
   const pantryCount = useMemo(() => items.filter((i) => i.isPantry).length, [items]);
 
-  // Filtered items
+  // Filtered items based on Tab + Day + Dish + Search
   const filteredItems = useMemo(() => {
     return items.filter((item) => {
       // Tab filter
       if (activeTab === 'toBuy' && (item.checked || item.isPantry)) return false;
       if (activeTab === 'pantry' && !item.isPantry) return false;
       if (activeTab === 'done' && (!item.checked || item.isPantry)) return false;
+
+      // Day filter
+      if (selectedDay !== 'all') {
+        if (!item.days || !item.days.includes(selectedDay)) {
+          return false;
+        }
+      }
+
+      // Dish filter
+      if (selectedRecipe !== 'all') {
+        if (!item.recipes || !item.recipes.includes(selectedRecipe)) {
+          return false;
+        }
+      }
 
       // Search query
       if (searchQuery.trim()) {
@@ -73,18 +148,36 @@ export const ShoppingList: React.FC<ShoppingListProps> = ({
         const matchesAmount = item.amount?.toLowerCase().includes(q) || false;
         const matchesPack = item.packAdvice?.toLowerCase().includes(q) || false;
         const matchesCat = item.category.toLowerCase().includes(q);
-        return matchesName || matchesAmount || matchesPack || matchesCat;
+        const matchesRecipe = item.recipeSource?.toLowerCase().includes(q) || false;
+        return matchesName || matchesAmount || matchesPack || matchesCat || matchesRecipe;
       }
 
       return true;
     });
-  }, [items, activeTab, searchQuery]);
+  }, [items, activeTab, selectedDay, selectedRecipe, searchQuery]);
 
-  // WhatsApp / Clipboard export
+  // Count of items in current filtered view that still need buying
+  const filteredToBuyCount = useMemo(() => {
+    return filteredItems.filter((i) => !i.checked && !i.isPantry).length;
+  }, [filteredItems]);
+
+  const hasActiveFilters = selectedDay !== 'all' || selectedRecipe !== 'all';
+
+  // WhatsApp / Clipboard export (respects active day / dish filters!)
   const handleShare = async () => {
-    const activeItems = items.filter((i) => !i.isPantry);
-    let text = '🛒 *fit und healthy Einkaufsliste*\n';
-    text += `Datum: ${new Date().toLocaleDateString('de-DE')} • ${toBuyCount} Artikel zu besorgen\n\n`;
+    const activeItems = filteredItems.filter((i) => !i.isPantry);
+
+    let filterContext = '';
+    if (selectedDay !== 'all' && selectedRecipe !== 'all') {
+      filterContext = ` (${selectedDay} • ${selectedRecipe})`;
+    } else if (selectedDay !== 'all') {
+      filterContext = ` (Nur ${selectedDay})`;
+    } else if (selectedRecipe !== 'all') {
+      filterContext = ` (Gericht: ${selectedRecipe})`;
+    }
+
+    let text = `🛒 *fit und healthy Einkaufsliste${filterContext}*\n`;
+    text += `Datum: ${new Date().toLocaleDateString('de-DE')} • ${activeItems.length} Artikel\n\n`;
 
     categories.forEach((cat) => {
       const catItems = activeItems.filter((i) => i.category === cat);
@@ -102,7 +195,7 @@ export const ShoppingList: React.FC<ShoppingListProps> = ({
 
     try {
       if (navigator.share) {
-        await navigator.share({ title: 'Einkaufsliste Nicole', text });
+        await navigator.share({ title: `Einkaufsliste Nicole${filterContext}`, text });
       } else {
         await navigator.clipboard.writeText(text);
         setCopied(true);
@@ -237,7 +330,7 @@ export const ShoppingList: React.FC<ShoppingListProps> = ({
             <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Zutat suchen (z. B. Skyr, Hafer)..."
+              placeholder="Zutat oder Gericht suchen..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-8 pr-3 py-1.5 bg-slate-50 hover:bg-slate-100/80 focus:bg-white text-xs rounded-xl border border-slate-200 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#789A99]"
@@ -246,6 +339,138 @@ export const ShoppingList: React.FC<ShoppingListProps> = ({
 
         </div>
 
+        {/* --- Days & Dishes Filter Controls --- */}
+        <div className="pt-3 border-t border-slate-100 space-y-3">
+          
+          {/* Day Pills Filter */}
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 shrink-0">
+              <Calendar className="w-3.5 h-3.5 text-[#789A99]" />
+              <span>Nach Tag filtern:</span>
+            </div>
+
+            <div className="flex items-center gap-1 overflow-x-auto pb-1 scrollbar-none">
+              <button
+                onClick={() => setSelectedDay('all')}
+                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
+                  selectedDay === 'all'
+                    ? 'bg-[#789A99] text-white shadow-xs font-semibold'
+                    : 'bg-slate-100 hover:bg-slate-200/80 text-slate-600'
+                }`}
+              >
+                Ganze Woche
+              </button>
+
+              {DAYS.map((day) => {
+                const count = itemCountByDay[day] || 0;
+                const isSelected = selectedDay === day;
+                const shortName = day.slice(0, 2);
+
+                return (
+                  <button
+                    key={day}
+                    onClick={() => setSelectedDay(isSelected ? 'all' : day)}
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
+                      isSelected
+                        ? 'bg-[#789A99] text-white shadow-xs font-semibold'
+                        : 'bg-slate-100 hover:bg-slate-200/80 text-slate-600'
+                    }`}
+                    title={`${day}: ${count} Produkte benötigt`}
+                  >
+                    <span>{shortName}</span>
+                    <span className="hidden xl:inline">{day.slice(2)}</span>
+                    {count > 0 && (
+                      <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono tabular-nums ${
+                        isSelected ? 'bg-white/25 text-white' : 'bg-slate-200 text-slate-600'
+                      }`}>
+                        {count}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Dish Selector Dropdown */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 shrink-0">
+              <Utensils className="w-3.5 h-3.5 text-[#789A99]" />
+              <span>Nach Gericht filtern:</span>
+            </div>
+
+            <div className="relative flex-1 sm:max-w-md">
+              <select
+                value={selectedRecipe}
+                onChange={(e) => setSelectedRecipe(e.target.value)}
+                className="w-full pl-3 pr-8 py-1.5 text-xs bg-slate-50 hover:bg-slate-100 focus:bg-white text-slate-800 border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#789A99] transition-colors appearance-none cursor-pointer"
+              >
+                <option value="all">
+                  Alle Gerichte {selectedDay !== 'all' ? `(${selectedDay})` : '(Ganze Woche)'}
+                </option>
+                {visibleDishes.map((d) => (
+                  <option key={d.title} value={d.title}>
+                    {d.title} {d.days.length > 0 ? `[${d.days.map((x) => x.slice(0, 2)).join(', ')}]` : ''}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            </div>
+          </div>
+
+        </div>
+
+        {/* Active Filter Badges & Reset Button */}
+        {hasActiveFilters && (
+          <div className="flex items-center justify-between gap-2 pt-2.5 px-3.5 py-2.5 bg-[#EBF2F2]/80 rounded-xl border border-[#C5D8D7] text-xs text-[#2C4847] flex-wrap animate-in fade-in duration-150">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-semibold flex items-center gap-1">
+                <Filter className="w-3.5 h-3.5 text-[#789A99]" /> Aktiver Filter:
+              </span>
+
+              {selectedDay !== 'all' && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-white border border-[#C5D8D7] text-slate-800 font-semibold shadow-2xs">
+                  📅 {selectedDay}
+                  <button
+                    onClick={() => setSelectedDay('all')}
+                    className="hover:text-rose-600 transition-colors ml-0.5"
+                    title="Tagesfilter aufheben"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              )}
+
+              {selectedRecipe !== 'all' && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-white border border-[#C5D8D7] text-slate-800 font-semibold max-w-[260px] truncate shadow-2xs">
+                  🍲 {selectedRecipe}
+                  <button
+                    onClick={() => setSelectedRecipe('all')}
+                    className="hover:text-rose-600 transition-colors ml-0.5"
+                    title="Gerichte-Filter aufheben"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              )}
+
+              <span className="text-slate-600 font-mono text-[11px]">
+                ({filteredItems.length} {filteredItems.length === 1 ? 'Artikel' : 'Artikel'} passend)
+              </span>
+            </div>
+
+            <button
+              onClick={() => {
+                setSelectedDay('all');
+                setSelectedRecipe('all');
+              }}
+              className="text-xs font-semibold text-[#789A99] hover:text-[#586F73] underline hover:no-underline transition-all"
+            >
+              Filter zurücksetzen
+            </button>
+          </div>
+        )}
+
       </div>
 
       {/* Main Items Display grouped by Supermarket Aisle */}
@@ -253,16 +478,35 @@ export const ShoppingList: React.FC<ShoppingListProps> = ({
         <div className="bg-white p-12 rounded-2xl border border-slate-200/80 text-center shadow-xs space-y-2">
           <ShoppingBag className="w-10 h-10 text-slate-300 mx-auto" />
           <h3 className="text-sm font-semibold text-slate-700">
-            {activeTab === 'toBuy' && 'Keine offenen Einkäufe mehr!'}
-            {activeTab === 'pantry' && 'Keine Vorratsartikel abgelegt.'}
-            {activeTab === 'done' && 'Noch keine Einkäufe abgehakt.'}
-            {activeTab === 'all' && 'Keine Zutaten gefunden.'}
+            {hasActiveFilters
+              ? 'Keine Artikel für die gewählten Filter gefunden'
+              : activeTab === 'toBuy'
+              ? 'Keine offenen Einkäufe mehr!'
+              : activeTab === 'pantry'
+              ? 'Keine Vorratsartikel abgelegt.'
+              : activeTab === 'done'
+              ? 'Noch keine Einkäufe abgehakt.'
+              : 'Keine Zutaten gefunden.'}
           </h3>
           <p className="text-xs text-slate-400 max-w-sm mx-auto">
-            {activeTab === 'toBuy'
+            {hasActiveFilters
+              ? 'Passe den Tag oder das Gericht an oder setze die Filter zurück.'
+              : activeTab === 'toBuy'
               ? 'Alle benötigten Produkte für deinen aktuellen Wochenplan sind erledigt oder im Vorratsschrank.'
               : 'Passe den Filter an oder klicke oben auf „Aktualisieren“.'}
           </p>
+          {hasActiveFilters && (
+            <button
+              onClick={() => {
+                setSelectedDay('all');
+                setSelectedRecipe('all');
+                setSearchQuery('');
+              }}
+              className="mt-2 text-xs font-semibold text-[#789A99] bg-[#EBF2F2] hover:bg-[#DEE9E8] px-3 py-1.5 rounded-lg border border-[#C5D8D7] transition-colors"
+            >
+              Alle Filter aufheben
+            </button>
+          )}
         </div>
       ) : (
         <div className="space-y-5">
@@ -338,13 +582,39 @@ export const ShoppingList: React.FC<ShoppingListProps> = ({
                             </div>
                           )}
 
-                          {/* Recipe sources */}
-                          {item.recipeSource && (
-                            <div className="flex items-center gap-1 text-[10px] text-slate-400 truncate">
-                              <ChefHat className="w-2.5 h-2.5 shrink-0" />
-                              <span className="truncate">Für: {item.recipeSource}</span>
-                            </div>
-                          )}
+                          {/* Day Pills & Recipe Source Badges */}
+                          <div className="flex items-center gap-2 flex-wrap pt-0.5">
+                            {item.days && item.days.length > 0 && (
+                              <div className="flex items-center gap-1 flex-wrap">
+                                <Calendar className="w-2.5 h-2.5 text-[#789A99] shrink-0" />
+                                {item.days.map((d) => (
+                                  <span
+                                    key={d}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSelectedDay(d);
+                                    }}
+                                    className={`text-[9px] px-1.5 py-0.2 rounded font-medium cursor-pointer transition-colors ${
+                                      selectedDay === d
+                                        ? 'bg-[#789A99] text-white font-semibold'
+                                        : 'bg-slate-100 hover:bg-[#EBF2F2] text-slate-600 hover:text-[#3D5B5A]'
+                                    }`}
+                                    title={`Klicken, um nur Artikel für ${d} anzuzeigen`}
+                                  >
+                                    {d.slice(0, 2)}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+
+                            {item.recipeSource && (
+                              <div className="flex items-center gap-1 text-[10px] text-slate-400 truncate max-w-full">
+                                <ChefHat className="w-2.5 h-2.5 shrink-0 text-[#789A99]" />
+                                <span className="truncate">Für: {item.recipeSource}</span>
+                              </div>
+                            )}
+                          </div>
+
                         </div>
                       </button>
 

@@ -458,6 +458,7 @@ export default function Home() {
         {activeTab === 'shopping' && (
           <ShoppingList
             items={shoppingItems}
+            weeklyPlan={weeklyPlan}
             onToggleItem={handleToggleShoppingItem}
             onTogglePantry={handleToggleShoppingPantry}
             onRegenerateFromPlan={() => {
