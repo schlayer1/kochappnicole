@@ -17,6 +17,7 @@ import {
   Timer
 } from 'lucide-react';
 import { Recipe } from '@/lib/types';
+import { RecipeImage } from './RecipeImage';
 
 interface CookModeModalProps {
   recipe: Recipe | null;
@@ -204,8 +205,26 @@ export const CookModeModal: React.FC<CookModeModalProps> = ({
       )}
 
       {/* Main Step Display */}
-      <div className="max-w-4xl mx-auto w-full py-4 sm:py-6 flex-1 flex flex-col justify-center">
+      <div className="max-w-4xl mx-auto w-full py-2 sm:py-4 flex-1 flex flex-col justify-center">
         
+        {/* Dish Hero Photo Banner */}
+        <div className="relative w-full h-28 sm:h-36 rounded-2xl overflow-hidden mb-4 border border-[#2D4348] shadow-lg shrink-0 bg-slate-900">
+          <RecipeImage
+            recipe={recipe}
+            aspectRatio="banner"
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-linear-to-t from-[#182629] via-transparent to-black/30" />
+          <div className="absolute bottom-2.5 left-3.5 right-3.5 flex items-center justify-between">
+            <span className="text-xs font-semibold text-white drop-shadow-md">
+              {recipe.kcal} kcal • <span className="text-emerald-400 font-bold">{recipe.protein}g Protein</span> • <span className="text-[#FFD2C2]">{recipe.fat}g Fett</span>
+            </span>
+            <span className="text-[11px] text-white/90 bg-black/60 backdrop-blur-md px-2.5 py-0.5 rounded-full border border-white/20">
+              ⏱️ {recipe.prepMins} Min. Zubereitung
+            </span>
+          </div>
+        </div>
+
         {/* Step Counter & Indicators */}
         <div className="flex items-center justify-between mb-4">
           <span className="text-xs font-semibold text-slate-400">

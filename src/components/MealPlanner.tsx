@@ -17,6 +17,7 @@ import {
   Utensils
 } from 'lucide-react';
 import { DayPlan, MealType, Recipe } from '@/lib/types';
+import { RecipeImage } from './RecipeImage';
 
 interface MealPlannerProps {
   weeklyPlan: DayPlan[];
@@ -220,13 +221,22 @@ export const MealPlanner: React.FC<MealPlannerProps> = ({
                 {/* Slot Content */}
                 {recipe ? (
                   <div className="pt-3.5 space-y-3">
-                    <div>
-                      <h4 className="font-bold text-slate-900 text-sm sm:text-base leading-snug tracking-tight">
-                        {recipe.title}
-                      </h4>
-                      {recipe.subtitle && (
-                        <p className="text-xs text-slate-400 mt-0.5">{recipe.subtitle}</p>
-                      )}
+                    <div className="flex items-start gap-3">
+                      <div className="w-13 h-13 rounded-xl overflow-hidden shrink-0 border border-slate-200/80 shadow-xs bg-slate-100">
+                        <RecipeImage
+                          recipe={recipe}
+                          aspectRatio="square"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-bold text-slate-900 text-sm sm:text-base leading-snug tracking-tight line-clamp-2">
+                          {recipe.title}
+                        </h4>
+                        {recipe.subtitle && (
+                          <p className="text-xs text-slate-400 mt-0.5 line-clamp-1">{recipe.subtitle}</p>
+                        )}
+                      </div>
                     </div>
 
                     {/* Macro Indicator Grid */}

@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Search, ChefHat, Clock, Sparkles, Plus, Check, ChevronDown, Heart } from 'lucide-react';
 import { Recipe, MealType } from '@/lib/types';
+import { RecipeImage } from './RecipeImage';
 
 interface RecipeCatalogProps {
   recipes: Recipe[];
@@ -129,20 +130,28 @@ export const RecipeCatalog: React.FC<RecipeCatalogProps> = ({
           return (
             <div
               key={recipe.id}
-              className="bg-white rounded-2xl border border-[#E0EAE9] p-5 shadow-xs flex flex-col justify-between hover:border-[#C5D8D7] transition-all"
+              className="group bg-white rounded-2xl border border-[#E0EAE9] overflow-hidden shadow-xs flex flex-col justify-between hover:border-[#C5D8D7] hover:shadow-md transition-all duration-200"
             >
-              <div>
-                
-                {/* Category & Tags & Favorite Heart */}
-                <div className="flex items-center justify-between gap-2 mb-2">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-[#789A99]">
-                    {recipe.category}
-                  </span>
+              {/* 16:9 Image with Floating Badges */}
+              <div className="relative overflow-hidden aspect-16/9 bg-slate-100">
+                  <RecipeImage
+                    recipe={recipe}
+                    aspectRatio="16/9"
+                    className="w-full h-full group-hover:scale-105 transition-transform duration-500"
+                  />
 
-                  <div className="flex items-center gap-1.5">
+                  {/* Floating Glassmorphism Category Badge */}
+                  <div className="absolute top-2.5 left-2.5 z-10">
+                    <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-black/55 backdrop-blur-md text-white border border-white/20 shadow-xs">
+                      {recipe.category}
+                    </span>
+                  </div>
+
+                  {/* Top Right: AI Badge & Favorite Heart */}
+                  <div className="absolute top-2.5 right-2.5 z-10 flex items-center gap-1.5">
                     {recipe.isAiGenerated && (
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#FFD2C2] text-[#994931] font-semibold flex items-center gap-1">
-                        <Sparkles className="w-2.5 h-2.5" /> KI-Generiert
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#FFD2C2]/95 backdrop-blur-md text-[#994931] font-bold flex items-center gap-1 shadow-xs border border-white/30">
+                        <Sparkles className="w-2.5 h-2.5" /> KI
                       </span>
                     )}
 
@@ -152,12 +161,12 @@ export const RecipeCatalog: React.FC<RecipeCatalogProps> = ({
                           e.stopPropagation();
                           onToggleFavorite(recipe.id);
                         }}
-                        className="p-1 rounded-lg hover:bg-slate-100 transition-colors"
+                        className="p-1.5 rounded-full bg-black/45 backdrop-blur-md border border-white/25 hover:bg-black/65 transition-all active:scale-125 shadow-xs"
                         title={isFav ? 'Aus Favoriten entfernen' : 'Zu Favoriten hinzufügen'}
                       >
                         <Heart
-                          className={`w-4 h-4 transition-all active:scale-125 ${
-                            isFav ? 'fill-rose-500 text-rose-500' : 'text-slate-300 hover:text-rose-400'
+                          className={`w-3.5 h-3.5 transition-all ${
+                            isFav ? 'fill-rose-500 text-rose-500' : 'text-white/90 hover:text-white'
                           }`}
                         />
                       </button>
@@ -165,113 +174,114 @@ export const RecipeCatalog: React.FC<RecipeCatalogProps> = ({
                   </div>
                 </div>
 
-                <h3 className="font-bold text-[#111C1E] text-base leading-snug">
-                  {recipe.title}
-                </h3>
-                {recipe.subtitle && (
-                  <p className="text-xs text-[#586F73] mt-0.5">{recipe.subtitle}</p>
-                )}
-
-                {/* Macro Pills */}
-                <div className="grid grid-cols-4 gap-1.5 p-2 rounded-xl bg-[#F8FAFA] border border-[#E0EAE9] text-center my-3">
+                <div className="p-5 flex flex-col flex-1 justify-between">
                   <div>
-                    <div className="text-[10px] text-[#586F73]">Kcal</div>
-                    <div className="text-xs font-bold font-mono tabular-nums text-[#111C1E]">{recipe.kcal}</div>
-                  </div>
-                  <div>
-                    <div className="text-[10px] text-[#586F73]">Protein</div>
-                    <div className="text-xs font-bold font-mono tabular-nums text-emerald-700">{recipe.protein}g</div>
-                  </div>
-                  <div>
-                    <div className="text-[10px] text-[#586F73]">Fett</div>
-                    <div className="text-xs font-bold font-mono tabular-nums text-[#789A99]">{recipe.fat}g</div>
-                  </div>
-                  <div>
-                    <div className="text-[10px] text-[#586F73]">Ballastst.</div>
-                    <div className="text-xs font-bold font-mono tabular-nums text-[#111C1E]">{recipe.fiber}g</div>
-                  </div>
-                </div>
-
-                {/* Why Nicole fits rule */}
-                <p className="text-xs text-[#3D5B5A] bg-[#EBF2F2]/60 p-2.5 rounded-lg border border-[#C5D8D7]/60 line-clamp-3">
-                  <span className="font-semibold text-[#789A99]">Nicole-Vorgabe: </span>
-                  {recipe.whyNicole}
-                </p>
-
-                {/* Ingredients snippet */}
-                <div className="mt-3 pt-3 border-t border-[#F0F5F4]">
-                  <div className="text-[11px] font-semibold text-[#111C1E] mb-1">Hauptzutaten:</div>
-                  <div className="flex flex-wrap gap-1">
-                    {Object.values(recipe.ingredients).flat().slice(0, 4).map((ing, i) => (
-                      <span key={i} className="text-[10px] px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 truncate max-w-[140px]">
-                        {ing}
-                      </span>
-                    ))}
-                    {Object.values(recipe.ingredients).flat().length > 4 && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-500">
-                        +{Object.values(recipe.ingredients).flat().length - 4} weitere
-                      </span>
+                    <h3 className="font-bold text-[#111C1E] text-base leading-snug group-hover:text-[#789A99] transition-colors">
+                      {recipe.title}
+                    </h3>
+                    {recipe.subtitle && (
+                      <p className="text-xs text-[#586F73] mt-0.5">{recipe.subtitle}</p>
                     )}
-                  </div>
-                </div>
 
-              </div>
-
-              {/* Bottom Actions */}
-              <div className="pt-4 mt-3 border-t border-[#F0F5F4] space-y-2">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs text-[#586F73] flex items-center gap-1">
-                    <Clock className="w-3 h-3 text-[#789A99]" /> {recipe.prepMins} Min
-                  </span>
-
-                  <button
-                    onClick={() => onOpenCookMode(recipe)}
-                    className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-[#111C1E] text-white hover:bg-[#203135] transition-colors"
-                  >
-                    <ChefHat className="w-3.5 h-3.5 text-[#FFD2C2]" /> Zubereiten
-                  </button>
-                </div>
-
-                {/* Assign to Day Picker Toggle */}
-                <div className="relative">
-                  <button
-                    onClick={() => setAssigningRecipeId(isAssigning ? null : recipe.id)}
-                    className="w-full flex items-center justify-center gap-1 py-1.5 text-xs font-medium text-[#3D5B5A] bg-[#EBF2F2] hover:bg-[#DEE9E8] rounded-lg transition-colors"
-                  >
-                    <Plus className="w-3 h-3 text-[#789A99]" /> In Wochenplan einbinden
-                    <ChevronDown className={`w-3 h-3 transition-transform ${isAssigning ? 'rotate-180' : ''}`} />
-                  </button>
-
-                  {/* Dropdown for Days */}
-                  {isAssigning && (
-                    <div className="mt-2 p-2 bg-white rounded-xl border border-[#E0EAE9] shadow-lg space-y-1 z-20">
-                      <div className="text-[10px] font-bold uppercase text-[#586F73] px-2 py-1">
-                        Zu welchem Tag hinzufügen?
+                    {/* Macro Pills */}
+                    <div className="grid grid-cols-4 gap-1.5 p-2 rounded-xl bg-[#F8FAFA] border border-[#E0EAE9] text-center my-3">
+                      <div>
+                        <div className="text-[10px] text-[#586F73]">Kcal</div>
+                        <div className="text-xs font-bold font-mono tabular-nums text-[#111C1E]">{recipe.kcal}</div>
                       </div>
-                      <div className="grid grid-cols-2 gap-1 max-h-48 overflow-y-auto">
-                        {days.map((dayName, dIdx) => (
-                          <button
-                            key={dayName}
-                            onClick={() => {
-                              onAssignRecipeToDay(
-                                recipe,
-                                dIdx,
-                                recipe.mealType === 'any' ? 'lunch' : recipe.mealType
-                              );
-                              setAssigningRecipeId(null);
-                            }}
-                            className="text-left text-xs p-1.5 rounded-md hover:bg-[#F8FAFA] hover:text-[#789A99] transition-colors flex items-center justify-between"
-                          >
-                            <span>{dayName}</span>
-                            <span className="text-[10px] text-slate-400 capitalize">{recipe.mealType}</span>
-                          </button>
-                        ))}
+                      <div>
+                        <div className="text-[10px] text-[#586F73]">Protein</div>
+                        <div className="text-xs font-bold font-mono tabular-nums text-emerald-700">{recipe.protein}g</div>
+                      </div>
+                      <div>
+                        <div className="text-[10px] text-[#586F73]">Fett</div>
+                        <div className="text-xs font-bold font-mono tabular-nums text-[#789A99]">{recipe.fat}g</div>
+                      </div>
+                      <div>
+                        <div className="text-[10px] text-[#586F73]">Ballastst.</div>
+                        <div className="text-xs font-bold font-mono tabular-nums text-[#111C1E]">{recipe.fiber}g</div>
                       </div>
                     </div>
-                  )}
-                </div>
 
-              </div>
+                    {/* Why Nicole fits rule */}
+                    <p className="text-xs text-[#3D5B5A] bg-[#EBF2F2]/60 p-2.5 rounded-lg border border-[#C5D8D7]/60 line-clamp-3">
+                      <span className="font-semibold text-[#789A99]">Nicole-Vorgabe: </span>
+                      {recipe.whyNicole}
+                    </p>
+
+                    {/* Ingredients snippet */}
+                    <div className="mt-3 pt-3 border-t border-[#F0F5F4]">
+                      <div className="text-[11px] font-semibold text-[#111C1E] mb-1">Hauptzutaten:</div>
+                      <div className="flex flex-wrap gap-1">
+                        {Object.values(recipe.ingredients).flat().slice(0, 4).map((ing, i) => (
+                          <span key={i} className="text-[10px] px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 truncate max-w-[140px]">
+                            {ing}
+                          </span>
+                        ))}
+                        {Object.values(recipe.ingredients).flat().length > 4 && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-500">
+                            +{Object.values(recipe.ingredients).flat().length - 4} weitere
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Bottom Actions */}
+                  <div className="pt-4 mt-4 border-t border-[#F0F5F4] space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs text-[#586F73] flex items-center gap-1">
+                        <Clock className="w-3 h-3 text-[#789A99]" /> {recipe.prepMins} Min
+                      </span>
+
+                      <button
+                        onClick={() => onOpenCookMode(recipe)}
+                        className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-[#111C1E] text-white hover:bg-[#203135] transition-colors"
+                      >
+                        <ChefHat className="w-3.5 h-3.5 text-[#FFD2C2]" /> Zubereiten
+                      </button>
+                    </div>
+
+                    {/* Assign to Day Picker Toggle */}
+                    <div className="relative">
+                      <button
+                        onClick={() => setAssigningRecipeId(isAssigning ? null : recipe.id)}
+                        className="w-full flex items-center justify-center gap-1 py-1.5 text-xs font-medium text-[#3D5B5A] bg-[#EBF2F2] hover:bg-[#DEE9E8] rounded-lg transition-colors"
+                      >
+                        <Plus className="w-3 h-3 text-[#789A99]" /> In Wochenplan einbinden
+                        <ChevronDown className={`w-3 h-3 transition-transform ${isAssigning ? 'rotate-180' : ''}`} />
+                      </button>
+
+                      {/* Dropdown for Days */}
+                      {isAssigning && (
+                        <div className="mt-2 p-2 bg-white rounded-xl border border-[#E0EAE9] shadow-lg space-y-1 z-20">
+                          <div className="text-[10px] font-bold uppercase text-[#586F73] px-2 py-1">
+                            Zu welchem Tag hinzufügen?
+                          </div>
+                          <div className="grid grid-cols-2 gap-1 max-h-48 overflow-y-auto">
+                            {days.map((dayName, dIdx) => (
+                              <button
+                                key={dayName}
+                                onClick={() => {
+                                  onAssignRecipeToDay(
+                                    recipe,
+                                    dIdx,
+                                    recipe.mealType === 'any' ? 'lunch' : recipe.mealType
+                                  );
+                                  setAssigningRecipeId(null);
+                                }}
+                                className="text-left text-xs p-1.5 rounded-md hover:bg-[#F8FAFA] hover:text-[#789A99] transition-colors flex items-center justify-between"
+                              >
+                                <span>{dayName}</span>
+                                <span className="text-[10px] text-slate-400 capitalize">{recipe.mealType}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
 
             </div>
           );

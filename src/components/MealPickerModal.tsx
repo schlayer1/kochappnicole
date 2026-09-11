@@ -1,8 +1,7 @@
-'use client';
-
 import React, { useState } from 'react';
 import { X, Check, Search, Sparkles } from 'lucide-react';
 import { MealType, Recipe } from '@/lib/types';
+import { RecipeImage } from './RecipeImage';
 
 interface MealPickerModalProps {
   isOpen: boolean;
@@ -102,11 +101,19 @@ export const MealPickerModal: React.FC<MealPickerModalProps> = ({
                 onSelectRecipe(r);
                 onClose();
               }}
-              className="p-3 rounded-2xl border border-[#E0EAE9] hover:border-[#789A99] hover:bg-[#F8FAFA] cursor-pointer transition-all flex items-center justify-between gap-3 group"
+              className="p-2.5 rounded-2xl border border-[#E0EAE9] hover:border-[#789A99] hover:bg-[#F8FAFA] cursor-pointer transition-all flex items-center justify-between gap-3 group"
             >
-              <div className="flex-1">
+              <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0 border border-slate-200/80 shadow-xs bg-slate-100">
+                <RecipeImage
+                  recipe={r}
+                  aspectRatio="square"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+
+              <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <h4 className="font-bold text-xs text-[#111C1E] group-hover:text-[#789A99] transition-colors">
+                  <h4 className="font-bold text-xs text-[#111C1E] group-hover:text-[#789A99] transition-colors truncate">
                     {r.title}
                   </h4>
                   {r.isAiGenerated && (

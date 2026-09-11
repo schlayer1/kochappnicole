@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { X, Sparkles, Loader2, CheckCircle2, ArrowRight } from 'lucide-react';
 import { MealType, Recipe } from '@/lib/types';
+import { RecipeImage } from './RecipeImage';
 
 interface AiRecipeGeneratorModalProps {
   isOpen: boolean;
@@ -263,6 +264,15 @@ export const AiRecipeGeneratorModal: React.FC<AiRecipeGeneratorModalProps> = ({
               <div className="flex items-center gap-1.5 text-xs text-emerald-700 font-semibold bg-emerald-50 p-2.5 rounded-xl border border-emerald-200">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                 Erfolgreich nach Nicoles Makro-Limits generiert!
+              </div>
+
+              {/* Recipe Photo Preview */}
+              <div className="w-full h-36 rounded-2xl overflow-hidden border border-[#E0EAE9] shadow-xs bg-slate-100">
+                <RecipeImage
+                  recipe={generatedRecipe}
+                  aspectRatio="banner"
+                  className="w-full h-full object-cover"
+                />
               </div>
 
               <div>
