@@ -1,6 +1,7 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import {
   getFirestore,
+  initializeFirestore,
   Firestore,
   doc,
   setDoc,
@@ -91,7 +92,13 @@ export function getFirebaseDb(): Firestore | null {
   try {
     const app: FirebaseApp =
       getApps().length > 0 ? getApp() : initializeApp(config as any);
-    cachedDb = getFirestore(app);
+    try {
+      cachedDb = initializeFirestore(app, {
+        experimentalAutoDetectLongPolling: true,
+      });
+    } catch {
+      cachedDb = getFirestore(app);
+    }
     return cachedDb;
   } catch (e) {
     console.error('Failed to initialize Firebase', e);
