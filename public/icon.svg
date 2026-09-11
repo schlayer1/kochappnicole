@@ -1,0 +1,54 @@
+
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8AAEA9"/>
+      <stop offset="100%" stop-color="#5B8281"/>
+    </linearGradient>
+    <linearGradient id="peachGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFE3D9"/>
+      <stop offset="100%" stop-color="#FFD2C2"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#223D3A" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <!-- Background Base with subtle inset border -->
+  <rect width="512" height="512" rx="115" fill="url(#bgGrad)"/>
+  <rect x="12" y="12" width="488" height="488" rx="105" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="4"/>
+
+  <!-- Subtle Concentric Dish Ring -->
+  <circle cx="256" cy="240" r="165" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="2"/>
+  <circle cx="256" cy="240" r="145" fill="#1B2E30" fill-opacity="0.15" filter="url(#glow)"/>
+
+  <!-- Chef Hat / Cloche Icon in Peach Ice and Pure White -->
+  <g transform="translate(256, 230) scale(1.15)">
+    <!-- Chef Hat Base Band -->
+    <rect x="-70" y="45" width="140" height="24" rx="12" fill="url(#peachGrad)" filter="url(#glow)"/>
+    <!-- Band line accents -->
+    <line x1="-50" y1="57" x2="50" y2="57" stroke="#994931" stroke-width="3" stroke-linecap="round" opacity="0.5"/>
+
+    <!-- Main Chef Hat Clouds -->
+    <!-- Center puff -->
+    <circle cx="0" cy="-35" r="55" fill="#FFFFFF" filter="url(#glow)"/>
+    <!-- Left puff -->
+    <circle cx="-55" cy="5" r="45" fill="#FFFFFF"/>
+    <!-- Right puff -->
+    <circle cx="55" cy="5" r="45" fill="#FFFFFF"/>
+    <!-- Lower filler -->
+    <path d="M -65,30 Q 0,45 65,30 L 60,45 L -60,45 Z" fill="#FFFFFF"/>
+
+    <!-- Sparkle Stars for AI / Smartness -->
+    <path d="M 72,-40 Q 72,-28 84,-28 Q 72,-28 72,-16 Q 72,-28 60,-28 Q 72,-28 72,-40 Z" fill="#FFD2C2"/>
+    <circle cx="-75" cy="-25" r="4" fill="#FFE3D9"/>
+  </g>
+
+  <!-- Typography: Clean Branding -->
+  <text x="256" y="432" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="42" font-weight="800" fill="#FFFFFF" letter-spacing="-1.2">
+    fit und healthy
+  </text>
+  <text x="256" y="462" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="20" font-weight="600" fill="#FFE3D9" letter-spacing="1.5">
+    NICOLE • 1508 KCAL
+  </text>
+</svg>

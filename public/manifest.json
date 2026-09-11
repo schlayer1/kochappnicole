@@ -1,15 +1,29 @@
 {
-  "name": "fit und healthy",
+  "name": "fit und healthy • Nicole Keller",
   "short_name": "fit und healthy",
-  "description": "Ernährungs- & Kochplaner nach Vorgaben der Ernährungstagebuchanalyse",
+  "description": "Ernährungs- & Kochplaner nach Vorgaben der Ernährungstagebuchanalyse (1.508 kcal, max. 44g Fett, min. 103g Protein)",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#F6F9F9",
   "theme_color": "#789A99",
+  "orientation": "portrait",
+  "scope": "/",
   "icons": [
     {
-      "src": "/icon.png",
+      "src": "/icon-192.png",
       "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
       "type": "image/png"
     }
   ]
