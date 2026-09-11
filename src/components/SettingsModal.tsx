@@ -1,9 +1,17 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, Key, Sliders, RotateCcw, Download, ExternalLink, Check, Zap, Sparkles, Cloud, Database } from 'lucide-react';
-import { AppSettings } from '@/lib/storage';
-import { NutritionProfile } from '@/lib/types';
+import { X, Key, Sliders, RotateCcw, Download, ExternalLink, Check, Zap, Sparkles, Cloud, Database, User, Plus, Trash2, Users } from 'lucide-react';
+import {
+  AppSettings,
+  getSavedProfiles,
+  saveProfileEntry,
+  deleteProfileEntry,
+  getActiveProfileId,
+  setActiveProfileId,
+  DEFAULT_PROFILE,
+} from '@/lib/storage';
+import { NutritionProfile, UserProfileEntry } from '@/lib/types';
 import {
   getSavedHouseholdKey,
   saveHouseholdKey,
@@ -22,6 +30,8 @@ interface SettingsModalProps {
   onSaveProfile: (p: NutritionProfile) => void;
   onResetAllData: () => void;
   onManualCloudSync?: () => Promise<boolean>;
+  activeProfile?: UserProfileEntry;
+  onSwitchProfile?: (profile: UserProfileEntry) => void;
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
@@ -33,6 +43,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onSaveProfile,
   onResetAllData,
   onManualCloudSync,
+  activeProfile,
+  onSwitchProfile,
 }) => {
   const [localSettings, setLocalSettings] = useState<AppSettings>(settings);
   const [localGoals, setLocalGoals] = useState(profile.targetGoals);
@@ -45,7 +57,92 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const [syncSuccess, setSyncSuccess] = useState(false);
   const [savedNotice, setSavedNotice] = useState(false);
 
+  // Dynamic profiles state
+  const [savedProfiles, setSavedProfiles] = useState<UserProfileEntry[]>(getSavedProfiles());
+  const [activeProfileId, setActiveId] = useState<string>(activeProfile?.id || getActiveProfileId());
+  const [isCreatingProfile, setIsCreatingProfile] = useState(false);
+  const [newProfileName, setNewProfileName] = useState('');
+  const [newHouseholdKey, setNewHouseholdKey] = useState('');
+  const [showNewMacros, setShowNewMacros] = useState(false);
+  const [newCalories, setNewCalories] = useState('1800');
+  const [newFat, setNewFat] = useState('50');
+  const [newProtein, setNewProtein] = useState('110');
+  const [profileError, setProfileError] = useState('');
+
   if (!isOpen) return null;
+
+  const generateCleanKey = (raw: string) => {
+    return raw
+      .trim()
+      .toLowerCase()
+      .replace(/ä/g, 'ae')
+      .replace(/ö/g, 'oe')
+      .replace(/ü/g, 'ue')
+      .replace(/ß/g, 'ss')
+      .replace(/[^a-z0-9]/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
+  };
+
+  const handleSelectProfile = (p: UserProfileEntry) => {
+    setActiveId(p.id);
+    setActiveProfileId(p.id);
+    setHouseholdKey(p.householdKey);
+    setLocalGoals(p.targetGoals);
+    saveHouseholdKey(p.householdKey);
+    onSwitchProfile?.(p);
+  };
+
+  const handleDeleteProfile = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (id === DEFAULT_PROFILE.id) return;
+    if (confirm('Möchtest du dieses Profil wirklich entfernen? Lokale Daten für diesen Haushalt bleiben erhalten.')) {
+      deleteProfileEntry(id);
+      const updated = getSavedProfiles();
+      setSavedProfiles(updated);
+      if (activeProfileId === id) {
+        const fallback = updated[0] || DEFAULT_PROFILE;
+        handleSelectProfile(fallback);
+      }
+    }
+  };
+
+  const handleCreateNewProfile = (skipMacros = false) => {
+    const cleanName = newProfileName.trim();
+    if (!cleanName) {
+      setProfileError('Bitte gib einen Profilnamen ein.');
+      return;
+    }
+    const cleanKey = (newHouseholdKey.trim() || generateCleanKey(cleanName)) || `user-${Date.now().toString().slice(-4)}`;
+    
+    const created: UserProfileEntry = {
+      id: cleanKey,
+      name: cleanName,
+      householdKey: cleanKey,
+      targetGoals: skipMacros
+        ? { calories: 1800, fat: 50, protein: 110, carbs: 180, fiber: 25 }
+        : {
+            calories: parseInt(newCalories) || 1800,
+            fat: parseInt(newFat) || 50,
+            protein: parseInt(newProtein) || 110,
+            carbs: 180,
+            fiber: 25,
+          },
+      createdAt: new Date().toISOString().slice(0, 10),
+    };
+
+    saveProfileEntry(created);
+    const updatedList = getSavedProfiles();
+    setSavedProfiles(updatedList);
+    handleSelectProfile(created);
+    
+    // Reset form
+    setIsCreatingProfile(false);
+    setNewProfileName('');
+    setNewHouseholdKey('');
+    setShowNewMacros(false);
+    setProfileError('');
+  };
 
   const handleSave = () => {
     onSaveSettings(localSettings);
@@ -54,6 +151,20 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       targetGoals: localGoals,
     });
     saveHouseholdKey(householdKey);
+
+    // Sync updated goals/key to active profile entry
+    const currentActive = savedProfiles.find((p) => p.id === activeProfileId);
+    if (currentActive) {
+      const updatedActive: UserProfileEntry = {
+        ...currentActive,
+        householdKey: householdKey.trim().toLowerCase(),
+        targetGoals: localGoals,
+      };
+      saveProfileEntry(updatedActive);
+      setSavedProfiles(getSavedProfiles());
+      onSwitchProfile?.(updatedActive);
+    }
+
     if (customFirebase.apiKey && customFirebase.projectId) {
       saveCustomFirebaseConfig(customFirebase);
     }
@@ -235,61 +346,239 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               </span>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <label className="text-[11px] text-slate-700 font-bold block">
-                  Aktives Profil / Haushalts-Schlüssel:
+                <label className="text-[11px] text-slate-700 font-bold flex items-center gap-1.5">
+                  <Users className="w-3.5 h-3.5 text-[#789A99]" />
+                  Profile &amp; getrennte Datenbanken:
                 </label>
                 <span className="text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 font-mono">
-                  Eigene Datenbank
+                  {savedProfiles.length} {savedProfiles.length === 1 ? 'Profil' : 'Profile'}
                 </span>
               </div>
 
-              {/* Quick Profile Switcher */}
-              <div className="grid grid-cols-2 gap-2 pt-1">
-                <button
-                  type="button"
-                  onClick={() => setHouseholdKey('nicole-keller')}
-                  className={`p-2 rounded-xl text-xs font-semibold border text-left transition-all ${
-                    householdKey.trim().toLowerCase() === 'nicole-keller'
-                      ? 'bg-white border-[#789A99] ring-2 ring-[#789A99]/20 text-[#3D5B5A]'
-                      : 'bg-white/60 border-slate-200 text-slate-600 hover:bg-white'
-                  }`}
-                >
-                  <span className="block font-bold text-slate-900">Nicole Keller</span>
-                  <span className="text-[10px] text-slate-400">Hauptprofil</span>
-                </button>
+              {/* Dynamic Profiles List */}
+              <div className="space-y-2">
+                {savedProfiles.map((p) => {
+                  const isActive = p.id === activeProfileId;
+                  const isNicole = p.id === DEFAULT_PROFILE.id;
+                  return (
+                    <div
+                      key={p.id}
+                      onClick={() => handleSelectProfile(p)}
+                      className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex items-center justify-between gap-3 ${
+                        isActive
+                          ? 'bg-white border-[#789A99] ring-2 ring-[#789A99]/20 shadow-xs'
+                          : 'bg-white/60 border-slate-200 hover:bg-white text-slate-600'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div
+                          className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 ${
+                            isActive
+                              ? 'bg-[#789A99] text-white'
+                              : 'bg-slate-100 text-slate-600'
+                          }`}
+                        >
+                          {p.name.slice(0, 2).toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-slate-900 text-xs truncate">
+                              {p.name}
+                            </span>
+                            {isNicole && (
+                              <span className="text-[9px] font-semibold px-1.5 py-0.2 rounded-md bg-[#EBF2F2] text-[#3D5B5A]">
+                                Nicole
+                              </span>
+                            )}
+                            {isActive && (
+                              <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md bg-emerald-100 text-emerald-800 flex items-center gap-0.5">
+                                <Check className="w-2.5 h-2.5" /> Aktiv
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-[10px] text-slate-400 truncate mt-0.5">
+                            Key: <code className="font-mono text-slate-600">{p.householdKey}</code> • {p.targetGoals.calories} kcal • {p.targetGoals.fat}g Fett • {p.targetGoals.protein}g Prot.
+                          </div>
+                        </div>
+                      </div>
 
-                <button
-                  type="button"
-                  onClick={() => setHouseholdKey('haushalt-2')}
-                  className={`p-2 rounded-xl text-xs font-semibold border text-left transition-all ${
-                    householdKey.trim().toLowerCase() === 'haushalt-2'
-                      ? 'bg-white border-[#789A99] ring-2 ring-[#789A99]/20 text-[#3D5B5A]'
-                      : 'bg-white/60 border-slate-200 text-slate-600 hover:bg-white'
-                  }`}
-                >
-                  <span className="block font-bold text-slate-900">Zweites Profil</span>
-                  <span className="text-[10px] text-slate-400">Eigener Wochenplan</span>
-                </button>
+                      <div className="flex items-center gap-1 shrink-0">
+                        {!isActive && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSelectProfile(p);
+                            }}
+                            className="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-slate-100 hover:bg-[#789A99] hover:text-white text-slate-700 transition-colors cursor-pointer"
+                          >
+                            Wechseln
+                          </button>
+                        )}
+                        {!isNicole && savedProfiles.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={(e) => handleDeleteProfile(p.id, e)}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                            title="Profil löschen"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
 
-              <div className="pt-1">
+              {/* Inline Form to Create a New Profile */}
+              {!isCreatingProfile ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsCreatingProfile(true);
+                    setProfileError('');
+                  }}
+                  className="w-full py-2.5 px-3 rounded-xl border border-dashed border-[#789A99]/50 hover:border-[#789A99] hover:bg-[#789A99]/5 text-[#3D5B5A] text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5 text-[#789A99]" />
+                  <span>Neues Profil / Haushalt anlegen</span>
+                </button>
+              ) : (
+                <div className="p-3.5 rounded-2xl bg-white border border-[#789A99] ring-2 ring-[#789A99]/15 space-y-3 animate-in slide-in-from-top-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-900">Neues Profil anlegen</span>
+                    <button
+                      type="button"
+                      onClick={() => setIsCreatingProfile(false)}
+                      className="text-[10px] text-slate-400 hover:text-slate-700 cursor-pointer"
+                    >
+                      Abbrechen
+                    </button>
+                  </div>
+
+                  {profileError && (
+                    <div className="p-2 rounded-lg bg-rose-50 border border-rose-200 text-[11px] text-rose-700 font-medium">
+                      {profileError}
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-700 block mb-0.5">
+                        Name:
+                      </label>
+                      <input
+                        type="text"
+                        value={newProfileName}
+                        onChange={(e) => {
+                          setNewProfileName(e.target.value);
+                          if (!newHouseholdKey || newHouseholdKey === generateCleanKey(newProfileName)) {
+                            setNewHouseholdKey(generateCleanKey(e.target.value));
+                          }
+                        }}
+                        placeholder="z. B. Markus oder Sarah"
+                        className="w-full p-2 text-xs rounded-xl bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:border-[#789A99]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-700 block mb-0.5">
+                        Haushalts-Schlüssel (Cloud-Sync):
+                      </label>
+                      <input
+                        type="text"
+                        value={newHouseholdKey}
+                        onChange={(e) => setNewHouseholdKey(generateCleanKey(e.target.value))}
+                        placeholder="z. B. markus-keller"
+                        className="w-full p-2 text-xs rounded-xl bg-slate-50 border border-slate-200 font-mono text-slate-900 focus:outline-none focus:border-[#789A99]"
+                      />
+                      <span className="text-[9px] text-slate-400 block mt-0.5">
+                        Eindeutiger Schlüssel für deine eigene, getrennte Datenbank.
+                      </span>
+                    </div>
+
+                    {/* Optional custom macros */}
+                    <div className="pt-1">
+                      <button
+                        type="button"
+                        onClick={() => setShowNewMacros(!showNewMacros)}
+                        className="text-[10px] font-semibold text-[#789A99] hover:underline flex items-center gap-1 cursor-pointer"
+                      >
+                        <Sliders className="w-3 h-3" />
+                        {showNewMacros ? 'Makro-Ziele verbergen' : 'Individuelle Makro-Ziele festlegen (optional)'}
+                      </button>
+
+                      {showNewMacros && (
+                        <div className="grid grid-cols-3 gap-2 mt-1.5 p-2 bg-slate-50 rounded-xl border border-slate-200">
+                          <div>
+                            <label className="text-[9px] font-bold text-slate-600 block">Kalorien</label>
+                            <input
+                              type="number"
+                              value={newCalories}
+                              onChange={(e) => setNewCalories(e.target.value)}
+                              className="w-full p-1 text-xs rounded bg-white border border-slate-200 font-mono"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[9px] font-bold text-slate-600 block">Fett (g)</label>
+                            <input
+                              type="number"
+                              value={newFat}
+                              onChange={(e) => setNewFat(e.target.value)}
+                              className="w-full p-1 text-xs rounded bg-white border border-slate-200 font-mono"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[9px] font-bold text-slate-600 block">Protein (g)</label>
+                            <input
+                              type="number"
+                              value={newProtein}
+                              onChange={(e) => setNewProtein(e.target.value)}
+                              className="w-full p-1 text-xs rounded bg-white border border-slate-200 font-mono"
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2 pt-2">
+                      <button
+                        type="button"
+                        onClick={() => handleCreateNewProfile(true)}
+                        className="flex-1 py-2 px-2.5 rounded-xl text-[11px] font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors cursor-pointer text-center"
+                      >
+                        Überspringen &amp; erstellen
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleCreateNewProfile(false)}
+                        className="flex-1 py-2 px-2.5 rounded-xl text-[11px] font-bold bg-[#789A99] hover:bg-[#658584] text-white transition-colors cursor-pointer text-center shadow-xs"
+                      >
+                        Profil anlegen
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="pt-2 border-t border-slate-200/60">
                 <label className="text-[10px] text-slate-500 block mb-1">
-                  Oder individuellen Schlüssel eingeben:
+                  Aktueller Cloud-Haushaltsschlüssel (manuell bearbeiten):
                 </label>
                 <input
                   type="text"
                   value={householdKey}
                   onChange={(e) => setHouseholdKey(e.target.value)}
-                  placeholder="z. B. familie-keller oder person-2"
+                  placeholder="z. B. familie-keller"
                   className="w-full p-2 text-xs rounded-xl bg-white border border-slate-200 text-slate-900 font-mono focus:outline-none focus:border-[#789A99]"
                 />
+                <p className="text-[10px] text-slate-400 mt-1 leading-relaxed">
+                  💡 Alle Geräte mit demselben Haushalts-Schlüssel teilen sich in Echtzeit denselben Wochenplan &amp; dieselbe Einkaufsliste.
+                </p>
               </div>
-
-              <p className="text-[10px] text-slate-500 leading-relaxed bg-slate-50 p-2.5 rounded-xl border border-slate-200">
-                💡 <strong>Multi-User Info:</strong> Jeder Schlüssel steuert eine völlig unabhängige Datenbank-Partition in Firebase. Trage denselben Schlüssel auf Handy &amp; iPad ein, um den Plan zu teilen – oder einen neuen Schlüssel, damit eine andere Person ihren eigenen Plan hat.
-              </p>
             </div>
 
             {onManualCloudSync && isFirebaseConfigured() && (

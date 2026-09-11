@@ -17,14 +17,18 @@ import { MealSwapModal } from '@/components/MealSwapModal';
 import { FoodScannerModal } from '@/components/FoodScannerModal';
 import { ProductScannerModal } from '@/components/ProductScannerModal';
 import { PrintExportModal } from '@/components/PrintExportModal';
+import { OnboardingModal } from '@/components/OnboardingModal';
 import { BottomNav } from '@/components/BottomNav';
 
-import { DayPlan, MealType, NutritionProfile, Recipe, ShoppingItem } from '@/lib/types';
+import { DayPlan, MealType, NutritionProfile, Recipe, ShoppingItem, UserProfileEntry } from '@/lib/types';
 import {
   AppSettings,
+  DEFAULT_PROFILE,
   DEFAULT_SETTINGS,
   generateShoppingListFromPlan,
   generateSmartWeeklyPlan,
+  getActiveProfile,
+  hasUserOnboarded,
   loadAllRecipes,
   loadFavoriteRecipeIds,
   loadProfile,
@@ -48,6 +52,7 @@ import { NICOLE_NUTRITION_PROFILE } from '@/lib/nutrition-profile';
 import { CURATED_NICOLE_RECIPES } from '@/lib/recipes-data';
 import {
   getSavedHouseholdKey,
+  saveHouseholdKey,
   isFirebaseConfigured,
   pushDataToCloud,
   subscribeToCloudSync,
@@ -57,6 +62,10 @@ export default function Home() {
   const [mounted, setMounted] = useState(false);
   const [activeTab, setActiveTab] = useState<'plan' | 'recipes' | 'shopping'>('plan');
   const [selectedDayIdx, setSelectedDayIdx] = useState(0);
+
+  // Profile & User State
+  const [activeProfile, setActiveProfile] = useState<UserProfileEntry>(DEFAULT_PROFILE);
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
 
   // App State
   const [profile, setProfile] = useState<NutritionProfile>(NICOLE_NUTRITION_PROFILE);
@@ -100,24 +109,34 @@ export default function Home() {
     mealType: 'lunch',
   });
 
-  // Load state on mount & connect realtime Firebase listener
+  // Load state on mount
   useEffect(() => {
+    const activeP = getActiveProfile();
+    setActiveProfile(activeP);
+    if (!hasUserOnboarded()) {
+      setIsOnboardingOpen(true);
+    }
+
     const loadedProf = loadProfile();
+    const currentProf: NutritionProfile = {
+      ...loadedProf,
+      targetGoals: activeP.targetGoals,
+    };
     const loadedRecs = loadAllRecipes();
-    const loadedPlan = loadWeeklyPlan(loadedRecs);
+    const loadedPlan = loadWeeklyPlan(loadedRecs, activeP.householdKey);
     const loadedSet = loadSettings();
-    const savedShop = loadShoppingItems();
+    const savedShop = loadShoppingItems(activeP.householdKey);
     const initialShop = generateShoppingListFromPlan(loadedPlan, savedShop || undefined);
     const loadedFavs = loadFavoriteRecipeIds();
     const loadedNotes = loadRecipeNotes();
     const loadedCustomImgs = loadCustomImages();
 
-    setProfile(loadedProf);
+    setProfile(currentProf);
     setRecipes(loadedRecs);
     setWeeklyPlan(loadedPlan);
     setSettings(loadedSet);
     setShoppingItems(initialShop);
-    saveShoppingItems(initialShop);
+    saveShoppingItems(initialShop, activeP.householdKey);
     setFavorites(loadedFavs);
     setRecipeNotes(loadedNotes);
     setCustomImages(loadedCustomImgs);
@@ -134,75 +153,95 @@ export default function Home() {
     }
 
     setMounted(true);
-
-    // Realtime synchronization if Firebase is configured
-    if (isFirebaseConfigured()) {
-      setIsCloudActive(true);
-      const household = getSavedHouseholdKey();
-      const unsub = subscribeToCloudSync(household, (remoteData, isFromRemote) => {
-        // If Firestore has a weekly plan, adopt it
-        if (remoteData.weeklyPlan && Array.isArray(remoteData.weeklyPlan) && remoteData.weeklyPlan.length > 0) {
-          if (isFromRemote) {
-            setWeeklyPlan(remoteData.weeklyPlan);
-            saveWeeklyPlan(remoteData.weeklyPlan);
-          }
-        } else {
-          // Cloud is empty: Initial seed from this device!
-          setIsSyncing(true);
-          pushDataToCloud(household, {
-            weeklyPlan: loadedPlan,
-            shoppingItems: initialShop,
-            favorites: loadedFavs,
-            recipeNotes: loadedNotes,
-            customImages: loadedCustomImgs,
-          }).finally(() => setIsSyncing(false));
-        }
-
-        if (remoteData.shoppingItems && Array.isArray(remoteData.shoppingItems)) {
-          if (isFromRemote) {
-            setShoppingItems(remoteData.shoppingItems);
-            saveShoppingItems(remoteData.shoppingItems);
-          }
-        }
-        if (remoteData.favorites && Array.isArray(remoteData.favorites)) {
-          if (isFromRemote) {
-            setFavorites(remoteData.favorites);
-            saveFavoriteRecipeIds(remoteData.favorites);
-          }
-        }
-        if (remoteData.recipeNotes) {
-          if (isFromRemote) {
-            setRecipeNotes(remoteData.recipeNotes);
-          }
-        }
-        if (remoteData.customImages) {
-          if (isFromRemote) {
-            setCustomImages(remoteData.customImages);
-            saveAllCustomImages(remoteData.customImages);
-          }
-        }
-        if (remoteData.customRecipes && Array.isArray(remoteData.customRecipes)) {
-          if (isFromRemote) {
-            remoteData.customRecipes.forEach((cr: Recipe) => saveCustomRecipe(cr));
-            setRecipes(loadAllRecipes());
-          }
-        }
-      });
-      return () => unsub();
-    }
   }, []);
+
+  // Realtime synchronization if Firebase is configured
+  useEffect(() => {
+    if (!mounted || !isFirebaseConfigured()) return;
+
+    setIsCloudActive(true);
+    const household = activeProfile.householdKey;
+    const unsub = subscribeToCloudSync(household, (remoteData, isFromRemote) => {
+      // If Firestore has a weekly plan, adopt it
+      if (remoteData.weeklyPlan && Array.isArray(remoteData.weeklyPlan) && remoteData.weeklyPlan.length > 0) {
+        if (isFromRemote) {
+          setWeeklyPlan(remoteData.weeklyPlan);
+          saveWeeklyPlan(remoteData.weeklyPlan, household);
+        }
+      } else {
+        // Cloud is empty: Initial seed from this device!
+        setIsSyncing(true);
+        pushDataToCloud(household, {
+          weeklyPlan,
+          shoppingItems,
+          favorites,
+          recipeNotes,
+          customImages,
+        }).finally(() => setIsSyncing(false));
+      }
+
+      if (remoteData.shoppingItems && Array.isArray(remoteData.shoppingItems)) {
+        if (isFromRemote) {
+          setShoppingItems(remoteData.shoppingItems);
+          saveShoppingItems(remoteData.shoppingItems, household);
+        }
+      }
+      if (remoteData.favorites && Array.isArray(remoteData.favorites)) {
+        if (isFromRemote) {
+          setFavorites(remoteData.favorites);
+          saveFavoriteRecipeIds(remoteData.favorites);
+        }
+      }
+      if (remoteData.recipeNotes) {
+        if (isFromRemote) {
+          setRecipeNotes(remoteData.recipeNotes);
+        }
+      }
+      if (remoteData.customImages) {
+        if (isFromRemote) {
+          setCustomImages(remoteData.customImages);
+          saveAllCustomImages(remoteData.customImages);
+        }
+      }
+      if (remoteData.customRecipes && Array.isArray(remoteData.customRecipes)) {
+        if (isFromRemote) {
+          remoteData.customRecipes.forEach((cr: Recipe) => saveCustomRecipe(cr));
+          setRecipes(loadAllRecipes());
+        }
+      }
+    });
+    return () => unsub();
+  }, [mounted, activeProfile.householdKey]);
+
+  // Profile switch & creation handler
+  const handleSwitchProfile = (newProfile: UserProfileEntry) => {
+    setActiveProfile(newProfile);
+    setProfile((prev) => ({
+      ...prev,
+      targetGoals: newProfile.targetGoals,
+    }));
+    saveHouseholdKey(newProfile.householdKey);
+
+    const loadedPlan = loadWeeklyPlan(recipes, newProfile.householdKey);
+    setWeeklyPlan(loadedPlan);
+
+    const savedShop = loadShoppingItems(newProfile.householdKey);
+    const updatedShop = generateShoppingListFromPlan(loadedPlan, savedShop || undefined);
+    setShoppingItems(updatedShop);
+    saveShoppingItems(updatedShop, newProfile.householdKey);
+  };
 
   // Save weekly plan updates & push to Cloud
   const updateWeeklyPlan = (newPlan: DayPlan[]) => {
     setWeeklyPlan(newPlan);
-    saveWeeklyPlan(newPlan);
+    saveWeeklyPlan(newPlan, activeProfile.householdKey);
     const updatedShop = generateShoppingListFromPlan(newPlan, shoppingItems);
     setShoppingItems(updatedShop);
-    saveShoppingItems(updatedShop);
+    saveShoppingItems(updatedShop, activeProfile.householdKey);
 
     if (isFirebaseConfigured()) {
       setIsSyncing(true);
-      pushDataToCloud(getSavedHouseholdKey(), {
+      pushDataToCloud(activeProfile.householdKey, {
         weeklyPlan: newPlan,
         shoppingItems: updatedShop,
       }).finally(() => setIsSyncing(false));
@@ -561,6 +600,7 @@ export default function Home() {
       {/* SaaS Header */}
       <Header
         profile={profile}
+        activeProfileName={activeProfile.name}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         onOpenAiGenerator={() => {
@@ -796,6 +836,16 @@ export default function Home() {
         onSaveProfile={handleUpdateProfile}
         onResetAllData={handleResetAll}
         onManualCloudSync={handleManualCloudSync}
+        activeProfile={activeProfile}
+        onSwitchProfile={handleSwitchProfile}
+      />
+
+      <OnboardingModal
+        isOpen={isOnboardingOpen}
+        onComplete={(newP) => {
+          setIsOnboardingOpen(false);
+          handleSwitchProfile(newP);
+        }}
       />
 
       <MealPickerModal

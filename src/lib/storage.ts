@@ -1,4 +1,4 @@
-import { DayPlan, NutritionProfile, Recipe, ShoppingItem } from './types';
+import { DayPlan, NutritionProfile, Recipe, ShoppingItem, UserProfileEntry } from './types';
 import { NICOLE_NUTRITION_PROFILE } from './nutrition-profile';
 import { CURATED_NICOLE_RECIPES } from './recipes-data';
 
@@ -12,6 +12,9 @@ const STORAGE_KEYS = {
   FAVORITES: 'nicole_favorite_recipes_v2',
   NOTES: 'nicole_recipe_notes_v2',
   CUSTOM_IMAGES: 'nicole_custom_recipe_images_v2',
+  PROFILES: 'fit_app_saved_profiles_v2',
+  ACTIVE_PROFILE_ID: 'fit_app_active_profile_id_v2',
+  HAS_ONBOARDED: 'fit_has_onboarded_v2',
 };
 
 export interface AppSettings {
@@ -212,20 +215,116 @@ export function saveCustomRecipe(recipe: Recipe) {
   localStorage.setItem(STORAGE_KEYS.RECIPES, JSON.stringify(customOnly));
 }
 
-export function loadWeeklyPlan(recipes: Recipe[]): DayPlan[] {
+export const DEFAULT_PROFILE: UserProfileEntry = {
+  id: 'nicole-keller',
+  name: 'Nicole Keller',
+  householdKey: 'nicole-keller',
+  targetGoals: {
+    calories: 1508,
+    fat: 44,
+    protein: 103,
+    carbs: 165,
+    fiber: 25,
+  },
+  createdAt: '2026-09-01',
+};
+
+export function getSavedProfiles(): UserProfileEntry[] {
+  if (typeof window === 'undefined') return [DEFAULT_PROFILE];
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.PROFILES);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed.map((p) => ({
+          ...p,
+          targetGoals: {
+            calories: p.targetGoals?.calories || 1800,
+            fat: p.targetGoals?.fat || 50,
+            protein: p.targetGoals?.protein || 110,
+            carbs: p.targetGoals?.carbs || 180,
+            fiber: p.targetGoals?.fiber || 25,
+          },
+        }));
+      }
+    }
+  } catch (e) {
+    console.error('Failed to load profiles', e);
+  }
+  return [DEFAULT_PROFILE];
+}
+
+export function saveProfileEntry(profile: UserProfileEntry) {
+  if (typeof window === 'undefined') return;
+  const current = getSavedProfiles();
+  const idx = current.findIndex((p) => p.id === profile.id);
+  let updated: UserProfileEntry[];
+  if (idx >= 0) {
+    updated = [...current];
+    updated[idx] = profile;
+  } else {
+    updated = [...current, profile];
+  }
+  localStorage.setItem(STORAGE_KEYS.PROFILES, JSON.stringify(updated));
+}
+
+export function deleteProfileEntry(id: string) {
+  if (typeof window === 'undefined') return;
+  const current = getSavedProfiles();
+  if (current.length <= 1) return; // Never delete last profile
+  const filtered = current.filter((p) => p.id !== id);
+  localStorage.setItem(STORAGE_KEYS.PROFILES, JSON.stringify(filtered));
+}
+
+export function getActiveProfileId(): string {
+  if (typeof window === 'undefined') return DEFAULT_PROFILE.id;
+  return localStorage.getItem(STORAGE_KEYS.ACTIVE_PROFILE_ID) || DEFAULT_PROFILE.id;
+}
+
+export function setActiveProfileId(id: string) {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(STORAGE_KEYS.ACTIVE_PROFILE_ID, id);
+}
+
+export function getActiveProfile(): UserProfileEntry {
+  const activeId = getActiveProfileId();
+  const profiles = getSavedProfiles();
+  return profiles.find((p) => p.id === activeId) || profiles[0] || DEFAULT_PROFILE;
+}
+
+export function hasUserOnboarded(): boolean {
+  if (typeof window === 'undefined') return true;
+  return Boolean(localStorage.getItem(STORAGE_KEYS.HAS_ONBOARDED));
+}
+
+export function markUserOnboarded() {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(STORAGE_KEYS.HAS_ONBOARDED, 'true');
+}
+
+export function loadWeeklyPlan(recipes: Recipe[], householdKey?: string): DayPlan[] {
   if (typeof window === 'undefined') return getInitialWeeklyPlan(recipes);
   try {
-    const raw = localStorage.getItem(STORAGE_KEYS.WEEKLY_PLAN);
+    const key = householdKey ? `${STORAGE_KEYS.WEEKLY_PLAN}_${householdKey}` : STORAGE_KEYS.WEEKLY_PLAN;
+    const raw = localStorage.getItem(key);
     if (raw) return JSON.parse(raw);
+    if (!householdKey || householdKey === DEFAULT_PROFILE.householdKey) {
+      const fallback = localStorage.getItem(STORAGE_KEYS.WEEKLY_PLAN);
+      if (fallback) return JSON.parse(fallback);
+    }
   } catch (e) {
     console.error('Failed to load plan', e);
   }
   return getInitialWeeklyPlan(recipes);
 }
 
-export function saveWeeklyPlan(plan: DayPlan[]) {
+export function saveWeeklyPlan(plan: DayPlan[], householdKey?: string) {
   if (typeof window === 'undefined') return;
-  localStorage.setItem(STORAGE_KEYS.WEEKLY_PLAN, JSON.stringify(plan));
+  const key = householdKey ? `${STORAGE_KEYS.WEEKLY_PLAN}_${householdKey}` : STORAGE_KEYS.WEEKLY_PLAN;
+  localStorage.setItem(key, JSON.stringify(plan));
+  if (!householdKey || householdKey === DEFAULT_PROFILE.householdKey) {
+    localStorage.setItem(STORAGE_KEYS.WEEKLY_PLAN, JSON.stringify(plan));
+  }
 }
 
 export function loadSettings(): AppSettings {
@@ -247,20 +346,29 @@ export function saveSettings(settings: AppSettings) {
 import { groupAndAggregateIngredients, RawIngredientInput } from './ingredient-aggregator';
 import { scaleIngredientString } from './scaling';
 
-export function loadShoppingItems(): ShoppingItem[] | null {
+export function loadShoppingItems(householdKey?: string): ShoppingItem[] | null {
   if (typeof window === 'undefined') return null;
   try {
-    const raw = localStorage.getItem(STORAGE_KEYS.SHOPPING);
+    const key = householdKey ? `${STORAGE_KEYS.SHOPPING}_${householdKey}` : STORAGE_KEYS.SHOPPING;
+    const raw = localStorage.getItem(key);
     if (raw) return JSON.parse(raw);
+    if (!householdKey || householdKey === DEFAULT_PROFILE.householdKey) {
+      const fallback = localStorage.getItem(STORAGE_KEYS.SHOPPING);
+      if (fallback) return JSON.parse(fallback);
+    }
   } catch (e) {
     console.error('Failed to load shopping items', e);
   }
   return null;
 }
 
-export function saveShoppingItems(items: ShoppingItem[]) {
+export function saveShoppingItems(items: ShoppingItem[], householdKey?: string) {
   if (typeof window === 'undefined') return;
-  localStorage.setItem(STORAGE_KEYS.SHOPPING, JSON.stringify(items));
+  const key = householdKey ? `${STORAGE_KEYS.SHOPPING}_${householdKey}` : STORAGE_KEYS.SHOPPING;
+  localStorage.setItem(key, JSON.stringify(items));
+  if (!householdKey || householdKey === DEFAULT_PROFILE.householdKey) {
+    localStorage.setItem(STORAGE_KEYS.SHOPPING, JSON.stringify(items));
+  }
 }
 
 export function generateShoppingListFromPlan(

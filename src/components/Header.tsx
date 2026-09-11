@@ -12,7 +12,8 @@ import {
   Moon,
   Sun,
   MoreHorizontal,
-  X
+  X,
+  User
 } from 'lucide-react';
 import { NutritionProfile } from '@/lib/types';
 
@@ -31,6 +32,7 @@ interface HeaderProps {
   isSyncing?: boolean;
   isDark?: boolean;
   onToggleDark?: () => void;
+  activeProfileName?: string;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -48,6 +50,7 @@ export const Header: React.FC<HeaderProps> = ({
   isSyncing = false,
   isDark = false,
   onToggleDark,
+  activeProfileName,
 }) => {
   const [showMobileTools, setShowMobileTools] = useState(false);
   return (
@@ -63,6 +66,16 @@ export const Header: React.FC<HeaderProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-bold text-[#111C1E] text-base tracking-tight">fit und healthy</span>
+                {activeProfileName && (
+                  <button
+                    onClick={onOpenSettings}
+                    className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#EBF2F2] hover:bg-[#DEE9E8] text-[#3D5B5A] text-[11px] font-semibold transition-colors cursor-pointer border border-[#C5D8D7]"
+                    title="Aktives Profil / Haushalt wechseln"
+                  >
+                    <User className="w-3 h-3 text-[#789A99]" />
+                    <span className="max-w-[110px] truncate">{activeProfileName}</span>
+                  </button>
+                )}
               </div>
               <p className="text-xs text-[#586F73] hidden sm:block">
                 Ziel: <span className="font-semibold text-[#111C1E]">{profile.targetGoals.calories} kcal</span> • Max. {profile.targetGoals.fat}g Fett • Min. {profile.targetGoals.protein}g Protein

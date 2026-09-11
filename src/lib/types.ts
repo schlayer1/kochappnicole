@@ -117,3 +117,11 @@ export interface ShoppingItem {
   days?: string[];
   recipes?: string[];
 }
+
+export interface UserProfileEntry {
+  id: string; // e.g. 'nicole-keller', 'markus'
+  name: string; // e.g. 'Nicole Keller', 'Markus'
+  householdKey: string; // sync key in firebase
+  targetGoals: MacroGoals;
+  createdAt: string;
+}
