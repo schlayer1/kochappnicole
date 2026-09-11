@@ -64,6 +64,7 @@ export const ProductScannerModal: React.FC<ProductScannerModalProps> = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+  const barcodePhotoInputRef = useRef<HTMLInputElement>(null);
   const [cameraActive, setCameraActive] = useState(false);
   const [hasBarcodeDetector, setHasBarcodeDetector] = useState(false);
 
@@ -92,26 +93,57 @@ export const ProductScannerModal: React.FC<ProductScannerModalProps> = ({
 
   const startCameraStream = async () => {
     setErrorMsg('');
+    setCameraActive(true);
+
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment' },
-      });
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.setAttribute('playsinline', 'true');
-        await videoRef.current.play();
-        setCameraActive(true);
-        startBarcodeScanLoop();
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('getUserMedia wird von diesem Browser nicht unterstützt');
       }
+
+      let stream: MediaStream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { ideal: 'environment' },
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+          },
+        });
+      } catch (e1) {
+        // Fallback for strict mobile browsers that fail with ideal width/height
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+        });
+      }
+
+      // Allow React render tick to ensure videoRef is bound
+      setTimeout(async () => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          videoRef.current.setAttribute('playsinline', 'true');
+          videoRef.current.setAttribute('webkit-playsinline', 'true');
+          videoRef.current.muted = true;
+          try {
+            await videoRef.current.play();
+          } catch (playErr) {
+            console.warn('Video play error:', playErr);
+          }
+          startBarcodeScanLoop();
+        }
+      }, 50);
     } catch (err: any) {
       console.warn('Camera access denied or unavailable:', err);
       setCameraActive(false);
-      setErrorMsg('Kamerazugriff nicht möglich. Bitte Barcode manuell eingeben oder Foto hochladen.');
+      setErrorMsg(
+        err?.name === 'NotAllowedError'
+          ? 'Kamerazugriff wurde verweigert. Bitte erlaube den Zugriff in den Browser-Einstellungen oder nutze den Foto-Button.'
+          : 'Kamera konnte nicht gestartet werden. Nutze den Foto-Button oder tippe die Ziffern ein.'
+      );
     }
   };
 
   const startBarcodeScanLoop = () => {
-    if (!('BarcodeDetector' in window)) return;
+    if (typeof window === 'undefined' || !('BarcodeDetector' in window)) return;
 
     try {
       // @ts-ignore
@@ -136,10 +168,52 @@ export const ProductScannerModal: React.FC<ProductScannerModalProps> = ({
         } catch (e) {
           // ignore scan frame errors
         }
-      }, 350);
+      }, 300);
     } catch (e) {
       console.warn('BarcodeDetector init error:', e);
     }
+  };
+
+  // Detect barcode from a captured photo file
+  const processBarcodePhoto = (file: File) => {
+    setIsLoading(true);
+    setErrorMsg('');
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = async () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0);
+
+          if (typeof window !== 'undefined' && 'BarcodeDetector' in window) {
+            try {
+              // @ts-ignore
+              const detector = new window.BarcodeDetector({
+                formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'qr_code'],
+              });
+              const barcodes = await detector.detect(canvas);
+              if (barcodes.length > 0 && barcodes[0].rawValue) {
+                lookupBarcode(barcodes[0].rawValue);
+                return;
+              }
+            } catch (err) {
+              console.warn('Photo barcode detection error:', err);
+            }
+          }
+
+          // Fallback: If barcode detector didn't find barcode, call OCR to read nutrition table
+          const compressed = canvas.toDataURL('image/jpeg', 0.80);
+          callOcrApi(compressed);
+        }
+      };
+      img.src = e.target?.result as string;
+    };
+    reader.readAsDataURL(file);
   };
 
   const lookupBarcode = async (code: string) => {
@@ -451,29 +525,59 @@ export const ProductScannerModal: React.FC<ProductScannerModalProps> = ({
                   </p>
                 </div>
 
-                {!cameraActive ? (
+                {/* Hidden input for native camera snapshot fallback */}
+                <input
+                  type="file"
+                  ref={barcodePhotoInputRef}
+                  onChange={(e) => e.target.files?.[0] && processBarcodePhoto(e.target.files[0])}
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                />
+
+                {/* Persistent Video Element Container */}
+                <div className={`space-y-2 ${cameraActive ? 'block' : 'hidden'}`}>
+                  <div className="relative rounded-2xl overflow-hidden max-w-sm mx-auto bg-black aspect-video border-2 border-[#789A99] shadow-inner">
+                    <video
+                      ref={videoRef}
+                      playsInline
+                      muted
+                      autoPlay
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 border-2 border-red-500/60 m-6 rounded-lg pointer-events-none flex items-center justify-center animate-pulse">
+                      <span className="text-[10px] bg-red-600/80 text-white px-2 py-0.5 rounded font-mono shadow-sm">
+                        Barcode hier zentrieren
+                      </span>
+                    </div>
+                  </div>
                   <button
                     type="button"
-                    onClick={startCameraStream}
-                    className="px-5 py-2.5 rounded-xl bg-[#789A99] hover:bg-[#658584] text-white text-xs font-bold shadow-xs flex items-center justify-center gap-2 mx-auto cursor-pointer active:scale-95 transition-all"
+                    onClick={stopCamera}
+                    className="text-xs text-slate-500 hover:text-slate-800 underline cursor-pointer"
                   >
-                    <Camera className="w-4 h-4" />
-                    Kamera für Barcode starten
+                    Live-Kamera schließen
                   </button>
-                ) : (
-                  <div className="space-y-2">
-                    <div className="relative rounded-2xl overflow-hidden max-w-sm mx-auto bg-black aspect-video border-2 border-[#789A99]">
-                      <video ref={videoRef} className="w-full h-full object-cover" />
-                      <div className="absolute inset-0 border-2 border-red-500/60 m-6 rounded-lg pointer-events-none flex items-center justify-center">
-                        <span className="text-[10px] bg-red-600/80 text-white px-2 py-0.5 rounded font-mono">Barcode hier zentrieren</span>
-                      </div>
-                    </div>
+                </div>
+
+                {!cameraActive && (
+                  <div className="flex flex-col sm:flex-row items-center justify-center gap-2 max-w-md mx-auto">
                     <button
                       type="button"
-                      onClick={stopCamera}
-                      className="text-xs text-slate-500 hover:text-slate-800 underline cursor-pointer"
+                      onClick={startCameraStream}
+                      className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-[#789A99] hover:bg-[#658584] text-white text-xs font-bold shadow-xs flex items-center justify-center gap-2 cursor-pointer active:scale-95 transition-all"
                     >
-                      Kamera schließen
+                      <Camera className="w-4 h-4" />
+                      Live-Scanner starten
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => barcodePhotoInputRef.current?.click()}
+                      className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-white hover:bg-slate-100 text-slate-800 border border-slate-200 text-xs font-bold shadow-xs flex items-center justify-center gap-2 cursor-pointer active:scale-95 transition-all"
+                    >
+                      <Camera className="w-4 h-4 text-[#789A99]" />
+                      Barcode knipsen (Foto)
                     </button>
                   </div>
                 )}
