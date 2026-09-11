@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-let cachedWorkingGemini: { model: string; apiVer: string } | null = null;
+let cachedWorkingGemini: string | null = null;
 
 export async function POST(req: NextRequest) {
   try {
@@ -67,27 +67,62 @@ ANTWORTE AUSSCHLIESSLICH IM FOLGENDEN VALIDE JSON-FORMAT:
 }
 WICHTIG: Antworte NUR im reinen JSON-Format, ohne Begleittext und ohne Markdown-Fences.`;
 
-    // 1. GOOGLE GEMINI FLASH VISION API (Höchste Erkennungsrate & Schnelligkeit)
+    // 1. GOOGLE GEMINI FLASH VISION API (Höchste Erkennungsrate & automatische Modell-Ermittlung)
     if (effectiveGeminiKey) {
-      // Prioritized vision-capable models (fastest first)
-      // Gemma / TTS / Embedding models are intentionally excluded as they don't support image vision
-      const targetVisionModels = [
-        { model: 'gemini-2.0-flash', apiVer: 'v1beta' },
-        { model: 'gemini-1.5-flash', apiVer: 'v1beta' },
-        { model: 'gemini-1.5-flash-8b', apiVer: 'v1beta' },
-        { model: 'gemini-1.5-flash-latest', apiVer: 'v1beta' },
-        { model: 'gemini-1.5-flash', apiVer: 'v1' },
-      ];
+      let modelsToTry: string[] = [];
 
-      // If we already know which model works for this server instance, try it first
-      const orderedCandidates = cachedWorkingGemini
-        ? [cachedWorkingGemini, ...targetVisionModels.filter(m => m.model !== cachedWorkingGemini?.model || m.apiVer !== cachedWorkingGemini?.apiVer)]
-        : targetVisionModels;
+      // If we already cached a working model from a previous scan on this instance, try it first
+      if (cachedWorkingGemini) {
+        modelsToTry.push(cachedWorkingGemini);
+      }
 
-      for (const candidate of orderedCandidates) {
+      // Query Google's ListModels to get the exact models active for this API key/region
+      try {
+        const listRes = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models?key=${effectiveGeminiKey}`
+        );
+        if (listRes.ok) {
+          const listData = await listRes.json();
+          if (Array.isArray(listData.models)) {
+            const available = listData.models
+              .filter(
+                (m: any) =>
+                  m.supportedGenerationMethods?.includes('generateContent') &&
+                  !m.name.includes('embedding') &&
+                  !m.name.includes('aqa') &&
+                  !m.name.includes('tts') &&
+                  !m.name.includes('imagen')
+              )
+              .map((m: any) => m.name.replace(/^models\//, ''));
+
+            // Smart Sort: Prioritize Gemini Flash models, then Gemini, then others
+            available.sort((a: string, b: string) => {
+              const score = (name: string) => {
+                const lower = name.toLowerCase();
+                if (lower.includes('gemini') && lower.includes('flash')) return 100;
+                if (lower.includes('flash')) return 80;
+                if (lower.includes('gemini')) return 60;
+                return 10;
+              };
+              return score(b) - score(a);
+            });
+
+            modelsToTry = Array.from(new Set([...modelsToTry, ...available]));
+          }
+        }
+      } catch (err) {
+        console.warn('Gemini ListModels query failed:', err);
+      }
+
+      // Fallback list if ListModels was empty
+      if (modelsToTry.length === 0) {
+        modelsToTry = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-flash-latest'];
+      }
+
+      for (const model of modelsToTry) {
         try {
           const geminiRes = await fetch(
-            `https://generativelanguage.googleapis.com/${candidate.apiVer}/models/${candidate.model}:generateContent?key=${effectiveGeminiKey}`,
+            `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${effectiveGeminiKey}`,
             {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -109,7 +144,6 @@ WICHTIG: Antworte NUR im reinen JSON-Format, ohne Begleittext und ohne Markdown-
                 generationConfig: {
                   responseMimeType: 'application/json',
                   temperature: 0.2,
-                  maxOutputTokens: 1024,
                 },
               }),
             }
@@ -121,15 +155,15 @@ WICHTIG: Antworte NUR im reinen JSON-Format, ohne Begleittext und ohne Markdown-
             rawJson = rawJson.replace(/```(?:json)?/gi, '').trim();
             const result = JSON.parse(rawJson);
             
-            // Cache the successful model configuration for ultra-fast subsequent requests
-            cachedWorkingGemini = candidate;
-            return NextResponse.json({ result, source: `${candidate.model} (${candidate.apiVer})` });
+            // Cache successful model for lightning-fast future calls
+            cachedWorkingGemini = model;
+            return NextResponse.json({ result, source: `gemini-${model}` });
           } else {
             const errText = await geminiRes.text();
-            console.warn(`Gemini (${candidate.apiVer}/${candidate.model}) returned ${geminiRes.status}:`, errText);
+            console.warn(`Gemini (${model}) returned ${geminiRes.status}:`, errText);
           }
         } catch (err) {
-          console.warn(`Gemini call error (${candidate.apiVer}/${candidate.model}):`, err);
+          console.warn(`Gemini call error (${model}):`, err);
         }
       }
     }
