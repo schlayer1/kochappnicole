@@ -64,6 +64,9 @@ WICHTIG: Antworte NUR im reinen JSON-Format, ohne Begleittext und ohne Markdown-
     // 1. GROQ VISION API (Ultraschnell & 100% Free)
     if (provider === 'groq' && effectiveGroqKey) {
       const groqVisionModels = [
+        'qwen/qwen3.6-27b',
+        'meta-llama/llama-4-scout-17b-16e-instruct',
+        'meta-llama/llama-4-maverick-17b-128e-instruct',
         'llama-3.2-11b-vision-preview',
         'llama-3.2-90b-vision-preview',
       ];
@@ -110,45 +113,49 @@ WICHTIG: Antworte NUR im reinen JSON-Format, ohne Begleittext und ohne Markdown-
       }
     }
 
-    // 2. GOOGLE GEMINI 1.5 FLASH VISION API
+    // 2. GOOGLE GEMINI FLASH VISION API (Höchste Erkennungsrate für Food)
     if (effectiveGeminiKey) {
-      try {
-        const geminiRes = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${effectiveGeminiKey}`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              contents: [
-                {
-                  parts: [
-                    { text: systemPrompt },
-                    {
-                      inlineData: {
-                        mimeType,
-                        data: cleanBase64,
-                      },
-                    },
-                  ],
-                },
-              ],
-              generationConfig: {
-                responseMimeType: 'application/json',
-                temperature: 0.2,
-              },
-            }),
-          }
-        );
+      const geminiModels = ['gemini-1.5-flash', 'gemini-2.0-flash'];
 
-        if (geminiRes.ok) {
-          const data = await geminiRes.json();
-          let rawJson = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-          rawJson = rawJson.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
-          const result = JSON.parse(rawJson);
-          return NextResponse.json({ result, source: 'gemini-1.5-flash' });
+      for (const model of geminiModels) {
+        try {
+          const geminiRes = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${effectiveGeminiKey}`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                contents: [
+                  {
+                    parts: [
+                      { text: systemPrompt },
+                      {
+                        inlineData: {
+                          mimeType,
+                          data: cleanBase64,
+                        },
+                      },
+                    ],
+                  },
+                ],
+                generationConfig: {
+                  responseMimeType: 'application/json',
+                  temperature: 0.2,
+                },
+              }),
+            }
+          );
+
+          if (geminiRes.ok) {
+            const data = await geminiRes.json();
+            let rawJson = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+            rawJson = rawJson.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
+            const result = JSON.parse(rawJson);
+            return NextResponse.json({ result, source: model });
+          }
+        } catch (err) {
+          console.warn(`Gemini vision API (${model}) failed:`, err);
         }
-      } catch (err) {
-        console.warn('Gemini vision API failed:', err);
       }
     }
 
