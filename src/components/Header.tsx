@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   Sparkles,
   FileText,
@@ -11,8 +11,6 @@ import {
   Printer,
   Moon,
   Sun,
-  MoreHorizontal,
-  X,
   User
 } from 'lucide-react';
 import { NutritionProfile } from '@/lib/types';
@@ -52,32 +50,34 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleDark,
   activeProfileName,
 }) => {
-  const [showMobileTools, setShowMobileTools] = useState(false);
   return (
     <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-[#E0EAE9]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 gap-4">
+      <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
+        <div className="flex items-center justify-between h-14 sm:h-16 gap-1.5 sm:gap-3">
           
-          {/* Brand Logo & Profile */}
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#789A99] flex items-center justify-center text-white shadow-sm shadow-[#789A99]/20">
-              <ChefHat className="w-5 h-5 text-white" />
+          {/* Option B: All-in-One Brand Pill */}
+          <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#EBF2F2] border border-[#C5D8D7] shadow-2xs hover:bg-[#DEE9E8] transition-colors">
+              <div className="w-5 h-5 rounded-full bg-[#789A99] flex items-center justify-center text-white shrink-0 shadow-2xs">
+                <ChefHat className="w-3 h-3 text-white" />
+              </div>
+              <span className="font-bold text-[#111C1E] text-xs sm:text-sm tracking-tight whitespace-nowrap">
+                <span className="hidden min-[380px]:inline">fit und healthy</span>
+                <span className="min-[380px]:hidden">f&amp;h</span>
+              </span>
             </div>
-            <div>
-              <span className="font-bold text-[#111C1E] text-base tracking-tight block">fit und healthy</span>
-              <p className="text-xs text-[#586F73] hidden sm:block">
-                Ziel: <span className="font-semibold text-[#111C1E]">{profile.targetGoals.calories} kcal</span> • Max. {profile.targetGoals.fat}g Fett • Min. {profile.targetGoals.protein}g Protein
-              </p>
-            </div>
+            <p className="text-[11px] text-[#586F73] hidden 2xl:block whitespace-nowrap">
+              Ziel: <span className="font-semibold text-[#111C1E]">{profile.targetGoals.calories} kcal</span> • Max. {profile.targetGoals.fat}g Fett • Min. {profile.targetGoals.protein}g Protein
+            </p>
           </div>
 
           {/* Navigation Tabs (Desktop / Tablet) */}
-          <nav className="hidden md:flex items-center p-1 bg-[#F1F6F5] rounded-xl border border-[#E0EAE9]">
+          <nav className="hidden md:flex items-center p-1 bg-[#F1F6F5] rounded-xl border border-[#E0EAE9] shrink-0">
             <button
               onClick={() => setActiveTab('plan')}
-              className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
+              className={`px-3.5 py-1.5 rounded-lg text-xs lg:text-sm font-medium transition-all ${
                 activeTab === 'plan'
-                  ? 'bg-white text-[#111C1E] shadow-sm'
+                  ? 'bg-white text-[#111C1E] shadow-xs'
                   : 'text-[#586F73] hover:text-[#111C1E]'
               }`}
             >
@@ -85,9 +85,9 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
             <button
               onClick={() => setActiveTab('recipes')}
-              className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
+              className={`px-3.5 py-1.5 rounded-lg text-xs lg:text-sm font-medium transition-all ${
                 activeTab === 'recipes'
-                  ? 'bg-white text-[#111C1E] shadow-sm'
+                  ? 'bg-white text-[#111C1E] shadow-xs'
                   : 'text-[#586F73] hover:text-[#111C1E]'
               }`}
             >
@@ -95,9 +95,9 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
             <button
               onClick={() => setActiveTab('shopping')}
-              className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
+              className={`px-3.5 py-1.5 rounded-lg text-xs lg:text-sm font-medium transition-all ${
                 activeTab === 'shopping'
-                  ? 'bg-white text-[#111C1E] shadow-sm'
+                  ? 'bg-white text-[#111C1E] shadow-xs'
                   : 'text-[#586F73] hover:text-[#111C1E]'
               }`}
             >
@@ -105,18 +105,18 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           </nav>
 
-          {/* Action CTAs: Smart Responsive Layout */}
-          <div className="flex items-center gap-1.5 sm:gap-2">
+          {/* Action CTAs: All Tools Accessible Directly in Header */}
+          <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
             
-            {/* 1. Barcode Scanner Button (Always accessible) */}
+            {/* 1. Barcode Scanner Button */}
             {onOpenProductScanner && (
               <button
                 onClick={onOpenProductScanner}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-1.5 rounded-xl text-xs font-semibold bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 transition-all cursor-pointer shadow-xs active:scale-95"
-                title="Supermarkt-Produkt & Barcode scannen (Nicole-Ampel)"
+                className="flex items-center justify-center gap-1 w-7 h-7 sm:w-8 sm:h-8 xl:w-auto xl:px-2.5 xl:py-1.5 rounded-xl text-xs font-semibold bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 transition-all cursor-pointer shadow-2xs active:scale-95 shrink-0"
+                title="Supermarkt-Produkt & Barcode scannen"
               >
-                <Barcode className="w-4 h-4 text-emerald-700" />
-                <span className="hidden xl:inline">Supermarkt-Check</span>
+                <Barcode className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-700 shrink-0" />
+                <span className="hidden xl:inline">Supermarkt</span>
               </button>
             )}
 
@@ -124,10 +124,10 @@ export const Header: React.FC<HeaderProps> = ({
             {onOpenFoodScanner && (
               <button
                 onClick={onOpenFoodScanner}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-1.5 rounded-xl text-xs font-semibold bg-[#FAF5F2] hover:bg-[#F5ECE8] text-[#994931] border border-[#FFD2C2] transition-all cursor-pointer shadow-xs active:scale-95"
+                className="flex items-center justify-center gap-1 w-7 h-7 sm:w-8 sm:h-8 xl:w-auto xl:px-2.5 xl:py-1.5 rounded-xl text-xs font-semibold bg-[#FAF5F2] hover:bg-[#F5ECE8] text-[#994931] border border-[#FFD2C2] transition-all cursor-pointer shadow-2xs active:scale-95 shrink-0"
                 title="Teller fotografieren & Nährwerte prüfen"
               >
-                <Camera className="w-4 h-4 text-[#994931]" />
+                <Camera className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#994931] shrink-0" />
                 <span className="hidden xl:inline">Teller-Scan</span>
               </button>
             )}
@@ -135,55 +135,54 @@ export const Header: React.FC<HeaderProps> = ({
             {/* 3. KI Rezept Generator */}
             <button
               onClick={onOpenAiGenerator}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-1.5 rounded-xl text-xs font-semibold bg-[#789A99] hover:bg-[#658584] text-white shadow-xs transition-all active:scale-95 cursor-pointer"
-              title="Neues Rezept mit KI nach Nicole-Vorgaben generieren"
+              className="flex items-center justify-center gap-1 w-7 h-7 sm:w-8 sm:h-8 xl:w-auto xl:px-2.5 xl:py-1.5 rounded-xl text-xs font-semibold bg-[#789A99] hover:bg-[#658584] text-white shadow-2xs transition-all active:scale-95 cursor-pointer shrink-0"
+              title="Neues Rezept mit KI generieren"
             >
-              <Sparkles className="w-4 h-4 text-[#FFD2C2]" />
-              <span className="hidden sm:inline">KI-Rezept</span>
+              <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#FFD2C2] shrink-0" />
+              <span className="hidden xl:inline">KI-Rezept</span>
             </button>
 
-            {/* 4. Resteverwerter (Desktop & iPad) */}
+            {/* 4. Resteverwerter (Now directly visible on all screens!) */}
             {onOpenFridgeLeftovers && (
               <button
                 onClick={onOpenFridgeLeftovers}
-                className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-[#EBF2F2] hover:bg-[#DEE9E8] text-[#3D5B5A] border border-[#C5D8D7] transition-all cursor-pointer"
+                className="flex items-center justify-center gap-1 w-7 h-7 sm:w-8 sm:h-8 2xl:w-auto 2xl:px-2.5 2xl:py-1.5 rounded-xl text-xs font-semibold bg-[#EBF2F2] hover:bg-[#DEE9E8] text-[#3D5B5A] border border-[#C5D8D7] transition-all cursor-pointer shadow-2xs active:scale-95 shrink-0"
                 title="Kühlschrank-Reste eingeben & passende Rezepte finden"
               >
-                <Utensils className="w-3.5 h-3.5 text-[#789A99]" />
-                <span className="hidden xl:inline">Resteverwerter</span>
+                <Utensils className="w-3.5 h-3.5 text-[#789A99] shrink-0" />
+                <span className="hidden 2xl:inline">Reste-Retter</span>
               </button>
             )}
 
-            {/* 5. Druck-Studio (Desktop & iPad) */}
+            {/* 5. Druck-Studio (Now directly visible on all screens!) */}
             {onOpenPrintStudio && (
               <button
                 onClick={onOpenPrintStudio}
-                className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 transition-all cursor-pointer shadow-xs active:scale-95"
+                className="flex items-center justify-center gap-1 w-7 h-7 sm:w-8 sm:h-8 2xl:w-auto 2xl:px-2.5 2xl:py-1.5 rounded-xl text-xs font-semibold bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 transition-all cursor-pointer shadow-2xs active:scale-95 shrink-0"
                 title="Wochenplan & Einkaufszettel drucken / PDF speichern"
               >
-                <Printer className="w-3.5 h-3.5 text-slate-600" />
-                <span className="hidden xl:inline">Drucken / PDF</span>
+                <Printer className="w-3.5 h-3.5 text-slate-600 shrink-0" />
+                <span className="hidden 2xl:inline">Drucken / PDF</span>
               </button>
             )}
 
-            {/* 6. Dokumentenanalyse Button (Desktop & iPad) */}
+            {/* 6. Dokumentenanalyse Button (Now directly visible on all screens!) */}
             <button
               onClick={onOpenDocAnalyzer}
-              className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-[#EBF2F2] hover:bg-[#DEE9E8] text-[#3D5B5A] border border-[#C5D8D7] transition-all cursor-pointer"
-              title="Neues Ernährungsdokument / PDF analysieren"
+              className="flex items-center justify-center gap-1 w-7 h-7 sm:w-8 sm:h-8 2xl:w-auto 2xl:px-2.5 2xl:py-1.5 rounded-xl text-xs font-medium bg-[#EBF2F2] hover:bg-[#DEE9E8] text-[#3D5B5A] border border-[#C5D8D7] transition-all cursor-pointer shadow-2xs active:scale-95 shrink-0"
+              title="Ernährungsbericht / PDF hochladen & analysieren"
             >
-              <FileText className="w-3.5 h-3.5 text-[#789A99]" />
-              <span className="hidden xl:inline">Analyse-Update</span>
+              <FileText className="w-3.5 h-3.5 text-[#789A99] shrink-0" />
+              <span className="hidden 2xl:inline">Plan-PDF</span>
             </button>
 
             {/* 7. Cloud Sync Status Badge */}
             {isCloudConnected && (
               <button
                 onClick={onOpenSettings}
-                className="flex items-center gap-1.5 px-2 py-1.5 rounded-xl text-xs font-medium bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200/80 transition-all cursor-pointer"
+                className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-xl text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200/80 transition-all cursor-pointer shadow-2xs active:scale-95 shrink-0"
                 title="Firebase Cloud Echtzeit-Synchronisation aktiv"
               >
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 <Cloud className={`w-3.5 h-3.5 text-emerald-600 ${isSyncing ? 'animate-spin' : ''}`} />
               </button>
             )}
@@ -192,125 +191,38 @@ export const Header: React.FC<HeaderProps> = ({
             {onToggleDark && (
               <button
                 onClick={onToggleDark}
-                className="p-2 rounded-xl text-[#586F73] hover:text-[#111C1E] hover:bg-[#F1F6F5] transition-colors cursor-pointer"
+                className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-xl text-[#586F73] hover:text-[#111C1E] hover:bg-[#F1F6F5] border border-slate-200/60 transition-colors cursor-pointer shadow-2xs active:scale-95 shrink-0"
                 title={isDark ? 'Heller Modus aktivieren' : 'OLED Dark Mode aktivieren'}
               >
-                {isDark ? <Sun className="w-4 h-4 text-amber-500" /> : <Moon className="w-4 h-4" />}
+                {isDark ? <Sun className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-500" /> : <Moon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
               </button>
             )}
 
-            {/* 9. Profile Avatar Button (Always visible on all screens!) */}
+            {/* 9. Einstellungen Button */}
             <button
               onClick={onOpenSettings}
-              className="flex items-center justify-center w-8 h-8 rounded-xl bg-[#EBF2F2] hover:bg-[#DEE9E8] text-[#3D5B5A] border border-[#C5D8D7] text-xs font-bold transition-all cursor-pointer active:scale-95 shadow-2xs shrink-0"
-              title={`Aktives Profil: ${activeProfileName || 'Nicole Keller'} (Klicken zum Wechseln)`}
+              className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-xl text-[#586F73] hover:text-[#111C1E] hover:bg-[#F1F6F5] border border-slate-200/60 transition-colors cursor-pointer shadow-2xs active:scale-95 shrink-0"
+              title="Einstellungen, Profile & Cloud-Sync"
+            >
+              <Settings className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            </button>
+
+            {/* 10. Profile Avatar Button */}
+            <button
+              onClick={onOpenSettings}
+              className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-[#EBF2F2] hover:bg-[#DEE9E8] text-[#3D5B5A] border border-[#C5D8D7] text-[10px] sm:text-xs font-bold transition-all cursor-pointer active:scale-95 shadow-2xs shrink-0"
+              title={`Aktives Profil: ${activeProfileName || 'Nicole Keller'} (Klicken zum Verwalten)`}
             >
               {activeProfileName ? (
                 <span>{activeProfileName.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()}</span>
               ) : (
-                <User className="w-4 h-4 text-[#789A99]" />
+                <User className="w-3.5 h-3.5 text-[#789A99]" />
               )}
-            </button>
-
-            {/* 10. Mobile 'More Tools' Dropdown Toggle (shown on small screens) */}
-            <button
-              onClick={() => setShowMobileTools(!showMobileTools)}
-              className="md:hidden p-2 rounded-xl text-[#586F73] hover:text-[#111C1E] hover:bg-[#F1F6F5] border border-slate-200 transition-colors cursor-pointer active:scale-95"
-              title="Weitere Werkzeuge anzeigen"
-            >
-              {showMobileTools ? <X className="w-4 h-4" /> : <MoreHorizontal className="w-4 h-4" />}
-            </button>
-
-            {/* 11. Einstellungen Button (Desktop & iPad; on iPhone reachable via More Tools drawer) */}
-            <button
-              onClick={onOpenSettings}
-              className="hidden md:block p-2 rounded-xl text-[#586F73] hover:text-[#111C1E] hover:bg-[#F1F6F5] transition-colors cursor-pointer"
-              title="Einstellungen & API-Key"
-            >
-              <Settings className="w-4 h-4" />
             </button>
           </div>
 
         </div>
       </div>
-
-      {/* Mobile Tools Drawer (Only on small screens when triggered) */}
-      {showMobileTools && (
-        <div className="md:hidden border-t border-slate-200 bg-white/98 backdrop-blur-md px-4 py-3 animate-in slide-in-from-top-2 duration-150 space-y-2.5">
-          {/* Active Profile Quick Row */}
-          <button
-            onClick={() => {
-              setShowMobileTools(false);
-              onOpenSettings();
-            }}
-            className="w-full flex items-center justify-between p-2.5 rounded-xl bg-[#EBF2F2] hover:bg-[#DEE9E8] border border-[#C5D8D7] transition-all cursor-pointer text-left shadow-2xs"
-          >
-            <div className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-lg bg-[#789A99] text-white flex items-center justify-center text-xs font-bold shadow-2xs">
-                {activeProfileName ? activeProfileName.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase() : 'NK'}
-              </div>
-              <div>
-                <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Aktives Profil</span>
-                <span className="text-xs font-bold text-[#111C1E]">{activeProfileName || 'Nicole Keller'}</span>
-              </div>
-            </div>
-            <span className="text-[11px] font-semibold text-[#789A99]">Wechseln →</span>
-          </button>
-
-          <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">
-            Weitere Schnell-Aktionen:
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            {onOpenFridgeLeftovers && (
-              <button
-                onClick={() => {
-                  setShowMobileTools(false);
-                  onOpenFridgeLeftovers();
-                }}
-                className="flex items-center gap-2 p-2.5 rounded-xl bg-[#EBF2F2] text-[#3D5B5A] text-xs font-semibold border border-[#C5D8D7] active:scale-95 transition-all text-left"
-              >
-                <Utensils className="w-4 h-4 text-[#789A99] shrink-0" />
-                <span>Resteverwerter</span>
-              </button>
-            )}
-
-            {onOpenPrintStudio && (
-              <button
-                onClick={() => {
-                  setShowMobileTools(false);
-                  onOpenPrintStudio();
-                }}
-                className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 text-slate-700 text-xs font-semibold border border-slate-200 active:scale-95 transition-all text-left"
-              >
-                <Printer className="w-4 h-4 text-slate-600 shrink-0" />
-                <span>Drucken / PDF</span>
-              </button>
-            )}
-
-            <button
-              onClick={() => {
-                setShowMobileTools(false);
-                onOpenDocAnalyzer();
-              }}
-              className="flex items-center gap-2 p-2.5 rounded-xl bg-[#EBF2F2] text-[#3D5B5A] text-xs font-semibold border border-[#C5D8D7] active:scale-95 transition-all text-left"
-            >
-              <FileText className="w-4 h-4 text-[#789A99] shrink-0" />
-              <span>Analyse-Update</span>
-            </button>
-
-            <button
-              onClick={() => {
-                setShowMobileTools(false);
-                onOpenSettings();
-              }}
-              className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 text-slate-700 text-xs font-semibold border border-slate-200 active:scale-95 transition-all text-left"
-            >
-              <Settings className="w-4 h-4 text-slate-600 shrink-0" />
-              <span>Einstellungen</span>
-            </button>
-          </div>
-        </div>
-      )}
     </header>
   );
 };
