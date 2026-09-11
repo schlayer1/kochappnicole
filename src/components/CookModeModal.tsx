@@ -295,15 +295,23 @@ export const CookModeModal: React.FC<CookModeModalProps> = ({
     <div className="fixed inset-0 z-50 bg-[#111C1E]/95 backdrop-blur-md flex flex-col justify-between text-white p-4 sm:p-8 animate-in fade-in duration-200">
       
       {/* Top Header */}
-      <div className="flex items-center justify-between gap-4 max-w-4xl mx-auto w-full pb-4 border-b border-[#2D4348]">
-        <div>
-          <span className="text-[11px] font-bold uppercase tracking-wider text-[#FFD2C2]">
-            Koch-Modus • {recipe.category}
-          </span>
-          <h2 className="text-xl sm:text-2xl font-bold mt-0.5">{recipe.title}</h2>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 max-w-4xl mx-auto w-full pb-3 sm:pb-4 border-b border-[#2D4348]">
+        <div className="flex items-center justify-between sm:block">
+          <div>
+            <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-[#FFD2C2]">
+              Koch-Modus • {recipe.category}
+            </span>
+            <h2 className="text-lg sm:text-2xl font-bold mt-0.5 truncate max-w-[260px] sm:max-w-md">{recipe.title}</h2>
+          </div>
+          <button
+            onClick={onClose}
+            className="sm:hidden p-2 rounded-full bg-[#182629] text-slate-300 hover:text-white"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
           {/* Portion Selector */}
           <div className="flex items-center gap-1 bg-[#182629] px-2 py-1 rounded-xl border border-[#2D4348]">
             <Users className="w-3.5 h-3.5 text-[#789A99]" />
@@ -312,7 +320,7 @@ export const CookModeModal: React.FC<CookModeModalProps> = ({
               <button
                 key={s}
                 onClick={() => setServings(s)}
-                className={`px-2 py-0.5 rounded-lg text-xs font-semibold transition-all ${
+                className={`px-2 py-0.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                   servings === s
                     ? 'bg-[#789A99] text-white shadow-xs'
                     : 'text-slate-400 hover:text-white'
@@ -368,7 +376,7 @@ export const CookModeModal: React.FC<CookModeModalProps> = ({
 
           <button
             onClick={onClose}
-            className="p-2 rounded-full bg-[#182629] text-slate-300 hover:text-white hover:bg-[#203135] transition-colors"
+            className="hidden sm:block p-2 rounded-full bg-[#182629] text-slate-300 hover:text-white hover:bg-[#203135] transition-colors"
           >
             <X className="w-5 h-5" />
           </button>

@@ -15,8 +15,8 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   shoppingBadgeCount = 0,
 }) => {
   return (
-    <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-[#E0EAE9] px-4 py-2">
-      <div className="flex items-center justify-around">
+    <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-[#0a0f10]/95 backdrop-blur-md border-t border-[#E0EAE9] dark:border-[#1e2c2f] px-4 pt-2 pb-5 sm:pb-3 shadow-lg">
+      <div className="flex items-center justify-around max-w-md mx-auto">
         
         <button
           onClick={() => setActiveTab('plan')}

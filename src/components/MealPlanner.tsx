@@ -139,7 +139,7 @@ export const MealPlanner: React.FC<MealPlannerProps> = ({
       </div>
 
       {/* 7-Days Linear/macOS Style Segmented Switcher */}
-      <div className="bg-slate-200/50 p-1.5 rounded-2xl border border-slate-200/60 overflow-x-auto scrollbar-none flex items-center gap-1.5 print:hidden">
+      <div className="bg-slate-200/50 dark:bg-slate-800/50 p-1.5 rounded-2xl border border-slate-200/60 dark:border-slate-700/60 overflow-x-auto scrollbar-none flex items-center gap-1.5 print:hidden">
         {weeklyPlan.map((day, idx) => {
           const isSelected = idx === selectedDayIdx;
           const mealCount = [day.breakfast, day.lunch, day.dinner, day.snack].filter(Boolean).length;
@@ -148,24 +148,25 @@ export const MealPlanner: React.FC<MealPlannerProps> = ({
             <button
               key={day.dayName}
               onClick={() => setSelectedDayIdx(idx)}
-              className={`flex-1 min-w-[105px] py-2.5 px-3 rounded-xl text-left transition-all duration-150 active:scale-[0.98] ${
+              className={`flex-1 min-w-[78px] sm:min-w-[105px] py-2 sm:py-2.5 px-2 sm:px-3 rounded-xl text-left transition-all duration-150 active:scale-[0.98] cursor-pointer ${
                 isSelected
-                  ? 'bg-slate-900 text-white shadow-sm ring-1 ring-black/5'
-                  : 'bg-white/80 hover:bg-white text-slate-800 border border-transparent hover:border-slate-200/60'
+                  ? 'bg-slate-900 dark:bg-[#789A99] text-white shadow-sm ring-1 ring-black/5'
+                  : 'bg-white/80 dark:bg-[#182629] hover:bg-white text-slate-800 dark:text-slate-200 border border-transparent hover:border-slate-200/60'
               }`}
             >
-              <div className="text-[10px] font-mono uppercase tracking-wider opacity-60">
+              <div className="text-[9px] sm:text-[10px] font-mono uppercase tracking-wider opacity-60">
                 {day.dayName.slice(0, 2)}
               </div>
               <div className="text-xs sm:text-sm font-bold truncate tracking-tight">
-                {day.dayName}
+                <span className="inline sm:hidden">{day.dayName.slice(0, 2)}</span>
+                <span className="hidden sm:inline">{day.dayName}</span>
               </div>
-              <div className="flex items-center gap-1.5 mt-1.5">
+              <div className="flex items-center gap-1.5 mt-1 sm:mt-1.5">
                 <span className={`w-1.5 h-1.5 rounded-full transition-colors ${
                   mealCount === 4 ? 'bg-[#789A99]' : mealCount > 0 ? 'bg-[#FFD2C2]' : 'bg-slate-300'
                 }`} />
-                <span className={`text-[10px] font-mono tabular-nums ${isSelected ? 'text-slate-300' : 'text-slate-400'}`}>
-                  {day.fastingMode === '16:8' ? '16:8 Fasten' : `${mealCount}/4 Slots`}
+                <span className={`text-[9px] sm:text-[10px] font-mono tabular-nums ${isSelected ? 'text-slate-200' : 'text-slate-400'}`}>
+                  {day.fastingMode === '16:8' ? '16:8' : `${mealCount}/4`}
                 </span>
               </div>
             </button>
