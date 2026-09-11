@@ -61,8 +61,6 @@ export const FridgeLeftoversModal: React.FC<FridgeLeftoversModalProps> = ({
   const [selectedIngredients, setSelectedIngredients] = useState<string[]>([]);
   const [customInput, setCustomInput] = useState('');
 
-  if (!isOpen) return null;
-
   const handleToggleIngredient = (ing: string) => {
     setSelectedIngredients((prev) =>
       prev.includes(ing) ? prev.filter((i) => i !== ing) : [...prev, ing]
@@ -80,7 +78,7 @@ export const FridgeLeftoversModal: React.FC<FridgeLeftoversModalProps> = ({
 
   // Score recipes by matching ingredients
   const matchedRecipes = useMemo(() => {
-    if (selectedIngredients.length === 0 || !Array.isArray(recipes)) return [];
+    if (!isOpen || selectedIngredients.length === 0 || !Array.isArray(recipes)) return [];
 
     const scored = recipes
       .filter((r) => r && r.id)
@@ -117,7 +115,9 @@ export const FridgeLeftoversModal: React.FC<FridgeLeftoversModalProps> = ({
     return scored
       .filter((s) => s.matchCount > 0)
       .sort((a, b) => b.matchCount - a.matchCount);
-  }, [recipes, selectedIngredients]);
+  }, [isOpen, recipes, selectedIngredients]);
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 bg-[#111C1E]/80 backdrop-blur-xs flex items-center justify-center p-4">
