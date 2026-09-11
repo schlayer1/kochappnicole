@@ -64,19 +64,7 @@ export const Header: React.FC<HeaderProps> = ({
               <ChefHat className="w-5 h-5 text-white" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <span className="font-bold text-[#111C1E] text-base tracking-tight">fit und healthy</span>
-                {activeProfileName && (
-                  <button
-                    onClick={onOpenSettings}
-                    className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#EBF2F2] hover:bg-[#DEE9E8] text-[#3D5B5A] text-[11px] font-semibold transition-colors cursor-pointer border border-[#C5D8D7]"
-                    title="Aktives Profil / Haushalt wechseln"
-                  >
-                    <User className="w-3 h-3 text-[#789A99]" />
-                    <span className="max-w-[110px] truncate">{activeProfileName}</span>
-                  </button>
-                )}
-              </div>
+              <span className="font-bold text-[#111C1E] text-base tracking-tight block">fit und healthy</span>
               <p className="text-xs text-[#586F73] hidden sm:block">
                 Ziel: <span className="font-semibold text-[#111C1E]">{profile.targetGoals.calories} kcal</span> • Max. {profile.targetGoals.fat}g Fett • Min. {profile.targetGoals.protein}g Protein
               </p>
@@ -211,7 +199,20 @@ export const Header: React.FC<HeaderProps> = ({
               </button>
             )}
 
-            {/* 9. Mobile 'More Tools' Dropdown Toggle (shown on small screens) */}
+            {/* 9. Profile Avatar Button (Always visible on all screens!) */}
+            <button
+              onClick={onOpenSettings}
+              className="flex items-center justify-center w-8 h-8 rounded-xl bg-[#EBF2F2] hover:bg-[#DEE9E8] text-[#3D5B5A] border border-[#C5D8D7] text-xs font-bold transition-all cursor-pointer active:scale-95 shadow-2xs shrink-0"
+              title={`Aktives Profil: ${activeProfileName || 'Nicole Keller'} (Klicken zum Wechseln)`}
+            >
+              {activeProfileName ? (
+                <span>{activeProfileName.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()}</span>
+              ) : (
+                <User className="w-4 h-4 text-[#789A99]" />
+              )}
+            </button>
+
+            {/* 10. Mobile 'More Tools' Dropdown Toggle (shown on small screens) */}
             <button
               onClick={() => setShowMobileTools(!showMobileTools)}
               className="md:hidden p-2 rounded-xl text-[#586F73] hover:text-[#111C1E] hover:bg-[#F1F6F5] border border-slate-200 transition-colors cursor-pointer active:scale-95"
@@ -220,7 +221,7 @@ export const Header: React.FC<HeaderProps> = ({
               {showMobileTools ? <X className="w-4 h-4" /> : <MoreHorizontal className="w-4 h-4" />}
             </button>
 
-            {/* 10. Einstellungen Button (Desktop & iPad; on iPhone reachable via More Tools drawer) */}
+            {/* 11. Einstellungen Button (Desktop & iPad; on iPhone reachable via More Tools drawer) */}
             <button
               onClick={onOpenSettings}
               className="hidden md:block p-2 rounded-xl text-[#586F73] hover:text-[#111C1E] hover:bg-[#F1F6F5] transition-colors cursor-pointer"
@@ -235,7 +236,27 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* Mobile Tools Drawer (Only on small screens when triggered) */}
       {showMobileTools && (
-        <div className="md:hidden border-t border-slate-200 bg-white/98 backdrop-blur-md px-4 py-3 animate-in slide-in-from-top-2 duration-150">
+        <div className="md:hidden border-t border-slate-200 bg-white/98 backdrop-blur-md px-4 py-3 animate-in slide-in-from-top-2 duration-150 space-y-2.5">
+          {/* Active Profile Quick Row */}
+          <button
+            onClick={() => {
+              setShowMobileTools(false);
+              onOpenSettings();
+            }}
+            className="w-full flex items-center justify-between p-2.5 rounded-xl bg-[#EBF2F2] hover:bg-[#DEE9E8] border border-[#C5D8D7] transition-all cursor-pointer text-left shadow-2xs"
+          >
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-lg bg-[#789A99] text-white flex items-center justify-center text-xs font-bold shadow-2xs">
+                {activeProfileName ? activeProfileName.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase() : 'NK'}
+              </div>
+              <div>
+                <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Aktives Profil</span>
+                <span className="text-xs font-bold text-[#111C1E]">{activeProfileName || 'Nicole Keller'}</span>
+              </div>
+            </div>
+            <span className="text-[11px] font-semibold text-[#789A99]">Wechseln →</span>
+          </button>
+
           <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">
             Weitere Schnell-Aktionen:
           </div>
