@@ -29,7 +29,11 @@ export async function POST(req: NextRequest) {
     const effectiveGroqKey =
       groqApiKey || (provider === 'groq' ? userApiKey : '') || process.env.GROQ_API_KEY;
     const effectiveGeminiKey =
-      geminiApiKey || (provider === 'gemini' ? userApiKey : '') || process.env.GEMINI_API_KEY;
+      geminiApiKey ||
+      (provider === 'gemini' ? userApiKey : '') ||
+      process.env.GEMINI_API_KEY ||
+      process.env.GOOGLE_GEMINI_API_KEY ||
+      process.env.NEXT_PUBLIC_GEMINI_API_KEY;
 
     const systemPrompt = `Du bist die hochpräzise Foto-Food-Scanner KI der Ernährungs-App "fit und healthy" für Nicole Keller.
 Deine Aufgabe ist es, das Foto eines Tellers/Gerichts (im Restaurant, Kantine oder zuhause) visuell zu analysieren und ernährungsphysiologisch nach Nicoles strikten Leitlinien zu bewerten.
@@ -61,8 +65,57 @@ ANTWORTE AUSSCHLIESSLICH IM FOLGENDEN VALIDE JSON-FORMAT:
 }
 WICHTIG: Antworte NUR im reinen JSON-Format, ohne Begleittext und ohne Markdown-Fences.`;
 
-    // 1. GROQ VISION API (Ultraschnell & 100% Free)
-    if (provider === 'groq' && effectiveGroqKey) {
+    // 1. GOOGLE GEMINI FLASH VISION API (Höchste Erkennungsrate für Food-Fotos)
+    if (effectiveGeminiKey) {
+      const geminiModels = ['gemini-1.5-flash', 'gemini-2.0-flash'];
+
+      for (const model of geminiModels) {
+        try {
+          const geminiRes = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${effectiveGeminiKey}`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                contents: [
+                  {
+                    parts: [
+                      { text: systemPrompt },
+                      {
+                        inlineData: {
+                          mimeType,
+                          data: cleanBase64,
+                        },
+                      },
+                    ],
+                  },
+                ],
+                generationConfig: {
+                  responseMimeType: 'application/json',
+                  temperature: 0.2,
+                },
+              }),
+            }
+          );
+
+          if (geminiRes.ok) {
+            const data = await geminiRes.json();
+            let rawJson = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+            rawJson = rawJson.replace(/```(?:json)?/gi, '').trim();
+            const result = JSON.parse(rawJson);
+            return NextResponse.json({ result, source: model });
+          } else {
+            const errText = await geminiRes.text();
+            console.warn(`Gemini model ${model} failed: ${geminiRes.status} - ${errText}`);
+          }
+        } catch (err) {
+          console.warn(`Gemini vision API (${model}) failed:`, err);
+        }
+      }
+    }
+
+    // 2. GROQ VISION API (Fallback-Option)
+    if (effectiveGroqKey) {
       const groqVisionModels = [
         'qwen/qwen3.6-27b',
         'meta-llama/llama-4-scout-17b-16e-instruct',
@@ -101,7 +154,7 @@ WICHTIG: Antworte NUR im reinen JSON-Format, ohne Begleittext und ohne Markdown-
           if (res.ok) {
             const data = await res.json();
             let rawText = data.choices?.[0]?.message?.content || '';
-            rawText = rawText.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
+            rawText = rawText.replace(/```(?:json)?/gi, '').trim();
             const result = JSON.parse(rawText);
             return NextResponse.json({ result, source: `groq-${model}` });
           } else {
@@ -109,52 +162,6 @@ WICHTIG: Antworte NUR im reinen JSON-Format, ohne Begleittext und ohne Markdown-
           }
         } catch (e) {
           console.warn(`Groq vision error on ${model}:`, e);
-        }
-      }
-    }
-
-    // 2. GOOGLE GEMINI FLASH VISION API (Höchste Erkennungsrate für Food)
-    if (effectiveGeminiKey) {
-      const geminiModels = ['gemini-1.5-flash', 'gemini-2.0-flash'];
-
-      for (const model of geminiModels) {
-        try {
-          const geminiRes = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${effectiveGeminiKey}`,
-            {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                contents: [
-                  {
-                    parts: [
-                      { text: systemPrompt },
-                      {
-                        inlineData: {
-                          mimeType,
-                          data: cleanBase64,
-                        },
-                      },
-                    ],
-                  },
-                ],
-                generationConfig: {
-                  responseMimeType: 'application/json',
-                  temperature: 0.2,
-                },
-              }),
-            }
-          );
-
-          if (geminiRes.ok) {
-            const data = await geminiRes.json();
-            let rawJson = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-            rawJson = rawJson.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
-            const result = JSON.parse(rawJson);
-            return NextResponse.json({ result, source: model });
-          }
-        } catch (err) {
-          console.warn(`Gemini vision API (${model}) failed:`, err);
         }
       }
     }
