@@ -15,7 +15,8 @@ import {
   Flame,
   Utensils,
   Users,
-  Shuffle
+  Shuffle,
+  Coffee
 } from 'lucide-react';
 import { DayPlan, MealType, Recipe } from '@/lib/types';
 import { RecipeImage } from './RecipeImage';
@@ -35,6 +36,8 @@ interface MealPlannerProps {
   onOpenImagePicker?: (recipe: Recipe) => void;
   onUpdateServings?: (dayIdx: number, slot: MealType, servings: number) => void;
   onOpenSwapModal?: (dayIdx: number, slot: MealType, recipe: Recipe) => void;
+  onSetFastingMode?: (dayIdx: number, mode: 'none' | '16:8' | 'full') => void;
+  onOpenPrintModal?: () => void;
 }
 
 export const MealPlanner: React.FC<MealPlannerProps> = ({
@@ -52,6 +55,8 @@ export const MealPlanner: React.FC<MealPlannerProps> = ({
   onOpenImagePicker,
   onUpdateServings,
   onOpenSwapModal,
+  onSetFastingMode,
+  onOpenPrintModal,
 }) => {
   const [copiedSlot, setCopiedSlot] = useState<string | null>(null);
   const currentDay = weeklyPlan[selectedDayIdx] || weeklyPlan[0];
@@ -123,8 +128,8 @@ export const MealPlanner: React.FC<MealPlannerProps> = ({
           )}
 
           <button
-            onClick={handlePrint}
-            className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-medium bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 transition-all active:scale-[0.98]"
+            onClick={onOpenPrintModal || handlePrint}
+            className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-medium bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 transition-all active:scale-[0.98] cursor-pointer"
             title="Druckfertige A4-Ansicht des Wochenplans für die Kühlschranktür"
           >
             <Printer className="w-4 h-4 text-slate-500" />
@@ -160,7 +165,7 @@ export const MealPlanner: React.FC<MealPlannerProps> = ({
                   mealCount === 4 ? 'bg-[#789A99]' : mealCount > 0 ? 'bg-[#FFD2C2]' : 'bg-slate-300'
                 }`} />
                 <span className={`text-[10px] font-mono tabular-nums ${isSelected ? 'text-slate-300' : 'text-slate-400'}`}>
-                  {mealCount}/4 Slots
+                  {day.fastingMode === '16:8' ? '16:8 Fasten' : `${mealCount}/4 Slots`}
                 </span>
               </div>
             </button>
@@ -168,22 +173,53 @@ export const MealPlanner: React.FC<MealPlannerProps> = ({
         })}
       </div>
 
-      {/* Fast Day Bar */}
-      <div className="flex items-center justify-between p-3.5 rounded-xl bg-white border border-slate-200/70 shadow-[0_1px_2px_rgba(0,0,0,0.02)] print:hidden">
-        <span className="text-xs text-slate-500 flex items-center gap-2">
-          <Calendar className="w-3.5 h-3.5 text-slate-400" />
-          Status für {currentDay?.dayName}:
+      {/* Fast Day & 16:8 Fasten-Balancer Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-white border border-slate-200/70 shadow-xs print:hidden">
+        <span className="text-xs text-slate-600 font-medium flex items-center gap-2">
+          <Calendar className="w-3.5 h-3.5 text-[#789A99]" />
+          Ernährungsrhythmus für <strong>{currentDay?.dayName}</strong>:
         </span>
-        <button
-          onClick={() => onToggleFastDay(selectedDayIdx)}
-          className={`px-3 py-1 rounded-lg text-xs font-medium border transition-all duration-150 active:scale-[0.98] ${
-            currentDay?.isFastDay
-              ? 'bg-[#FFD2C2]/40 text-[#994931] border-[#FFD2C2]'
-              : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
-          }`}
-        >
-          {currentDay?.isFastDay ? 'Fastentag Aktiv' : 'Als Entlastungstag markieren'}
-        </button>
+
+        <div className="flex items-center gap-1.5 self-end sm:self-auto">
+          <button
+            type="button"
+            onClick={() => onSetFastingMode && onSetFastingMode(selectedDayIdx, 'none')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+              !currentDay?.fastingMode || currentDay.fastingMode === 'none'
+                ? 'bg-slate-900 text-white shadow-xs'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            }`}
+          >
+            Normal
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onSetFastingMode && onSetFastingMode(selectedDayIdx, '16:8')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1 ${
+              currentDay?.fastingMode === '16:8'
+                ? 'bg-amber-600 text-white shadow-xs font-bold'
+                : 'bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100'
+            }`}
+            title="16:8 Intervallfasten: Frühstück entfällt, Makros werden automatisch auf Mittag und Abend verteilt"
+          >
+            <Coffee className="w-3 h-3" />
+            16:8 Fasten
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onSetFastingMode && onSetFastingMode(selectedDayIdx, 'full')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+              currentDay?.fastingMode === 'full' || (currentDay?.isFastDay && currentDay?.fastingMode !== '16:8')
+                ? 'bg-[#FFD2C2] text-[#994931] border border-[#FFD2C2] shadow-xs font-bold'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            }`}
+            title="Ganztägiger Entlastungstag"
+          >
+            Entlastungstag
+          </button>
+        </div>
       </div>
 
       {/* 4 Meal Slots Grid */}
@@ -333,6 +369,21 @@ export const MealPlanner: React.FC<MealPlannerProps> = ({
                       <span className="font-bold text-[#789A99]">Nicole-Vorgabe: </span>
                       {recipe.whyNicole}
                     </div>
+                  </div>
+                ) : slot.type === 'breakfast' && currentDay?.fastingMode === '16:8' ? (
+                  <div className="py-7 text-center flex flex-col items-center justify-center space-y-2.5">
+                    <div className="w-11 h-11 rounded-2xl bg-amber-50 border border-amber-200 text-amber-700 flex items-center justify-center shadow-xs">
+                      <Coffee className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-900">16:8 Fastenfenster aktiv</h4>
+                      <p className="text-[11px] text-slate-500 mt-0.5 max-w-xs leading-relaxed">
+                        Frühstück gefastet (Wasser, ungesüßter Kräutertee &amp; schwarzer Kaffee erlaubt).
+                      </p>
+                    </div>
+                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-800 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
+                      ⚡ Protein-Balancer: 103g Ziel auf Mittag &amp; Abend verteilt
+                    </span>
                   </div>
                 ) : (
                   <div className="py-8 text-center flex flex-col items-center justify-center">

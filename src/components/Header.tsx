@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sparkles, FileText, Settings, ChefHat, Cloud, Utensils, Camera } from 'lucide-react';
+import { Sparkles, FileText, Settings, ChefHat, Cloud, Utensils, Camera, Barcode, Printer } from 'lucide-react';
 import { NutritionProfile } from '@/lib/types';
 
 interface HeaderProps {
@@ -11,6 +11,8 @@ interface HeaderProps {
   onOpenSettings: () => void;
   onOpenFridgeLeftovers?: () => void;
   onOpenFoodScanner?: () => void;
+  onOpenProductScanner?: () => void;
+  onOpenPrintStudio?: () => void;
   isCloudConnected?: boolean;
   isSyncing?: boolean;
 }
@@ -24,6 +26,8 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenSettings,
   onOpenFridgeLeftovers,
   onOpenFoodScanner,
+  onOpenProductScanner,
+  onOpenPrintStudio,
   isCloudConnected = false,
   isSyncing = false,
 }) => {
@@ -83,6 +87,18 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Action CTAs */}
           <div className="flex items-center gap-2">
+            {/* Supermarkt-Check Barcode Scanner Button */}
+            {onOpenProductScanner && (
+              <button
+                onClick={onOpenProductScanner}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 transition-all cursor-pointer shadow-xs active:scale-95"
+                title="Supermarkt-Produkt & Barcode scannen (Nicole-Ampel)"
+              >
+                <Barcode className="w-3.5 h-3.5 text-emerald-700" />
+                <span className="hidden sm:inline">Supermarkt-Check</span>
+              </button>
+            )}
+
             {/* Teller-Scan Foto Scanner Button */}
             {onOpenFoodScanner && (
               <button
@@ -92,6 +108,18 @@ export const Header: React.FC<HeaderProps> = ({
               >
                 <Camera className="w-3.5 h-3.5 text-[#994931]" />
                 <span className="hidden sm:inline">Teller-Scan</span>
+              </button>
+            )}
+
+            {/* Druck-Studio Button */}
+            {onOpenPrintStudio && (
+              <button
+                onClick={onOpenPrintStudio}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 transition-all cursor-pointer shadow-xs active:scale-95"
+                title="Wochenplan & Einkaufszettel drucken / PDF speichern"
+              >
+                <Printer className="w-3.5 h-3.5 text-slate-600" />
+                <span className="hidden xl:inline">Drucken / PDF</span>
               </button>
             )}
 

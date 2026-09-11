@@ -54,7 +54,32 @@ export interface DayPlan {
     snack?: number;
   };
   isFastDay?: boolean;
+  fastingMode?: 'none' | '16:8' | 'full';
   notes?: string;
+}
+
+export interface ProductNutrition {
+  barcode?: string;
+  name: string;
+  brand?: string;
+  servingSize?: string;
+  kcal: number;
+  protein: number;
+  fat: number;
+  saturatedFat?: number;
+  carbs: number;
+  fiber?: number;
+  imageUrl?: string;
+  source: 'open-food-facts' | 'vision-ocr' | 'manual';
+}
+
+export interface NicoleProductEvaluation {
+  suitability: 'great' | 'caution-fat' | 'fat-trap';
+  fatVerdict: string;
+  proteinVerdict: string;
+  summary: string;
+  dailyFatPercent: number; // % of 44g
+  dailyProteinPercent: number; // % of 103g
 }
 
 export interface NutritionProfile {

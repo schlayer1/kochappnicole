@@ -44,9 +44,15 @@ export const MacroCockpit: React.FC<MacroCockpitProps> = ({ dayPlan, targetGoals
             <h2 className="text-sm sm:text-base font-bold text-slate-900 tracking-tight">
               Tages-Nährwertcockpit: {dayPlan.dayName}
             </h2>
-            <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-[#EBF2F2] text-[#3D5B5A] border border-[#C5D8D7]/60">
-              {meals.length} / 4 Slots belegt
-            </span>
+            {dayPlan.fastingMode === '16:8' ? (
+              <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 flex items-center gap-1">
+                ☕ 16:8 Fastentag
+              </span>
+            ) : (
+              <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-[#EBF2F2] text-[#3D5B5A] border border-[#C5D8D7]/60">
+                {meals.length} / 4 Slots belegt
+              </span>
+            )}
           </div>
           <p className="text-xs text-slate-400 mt-0.5">
             Echtzeit-Synchronisation mit Vorgaben der Ernährungstagebuchanalyse

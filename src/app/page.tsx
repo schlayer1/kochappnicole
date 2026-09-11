@@ -15,6 +15,8 @@ import { ImagePickerModal } from '@/components/ImagePickerModal';
 import { FridgeLeftoversModal } from '@/components/FridgeLeftoversModal';
 import { MealSwapModal } from '@/components/MealSwapModal';
 import { FoodScannerModal } from '@/components/FoodScannerModal';
+import { ProductScannerModal } from '@/components/ProductScannerModal';
+import { PrintExportModal } from '@/components/PrintExportModal';
 import { BottomNav } from '@/components/BottomNav';
 
 import { DayPlan, MealType, NutritionProfile, Recipe, ShoppingItem } from '@/lib/types';
@@ -77,6 +79,8 @@ export default function Home() {
   const [imagePickerRecipe, setImagePickerRecipe] = useState<Recipe | null>(null);
   const [isFridgeModalOpen, setIsFridgeModalOpen] = useState(false);
   const [isFoodScannerOpen, setIsFoodScannerOpen] = useState(false);
+  const [isProductScannerOpen, setIsProductScannerOpen] = useState(false);
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [swapState, setSwapState] = useState<{
     isOpen: boolean;
     dayIdx: number;
@@ -412,9 +416,26 @@ export default function Home() {
       updated[dayIdx] = {
         ...updated[dayIdx],
         isFastDay: !updated[dayIdx].isFastDay,
+        fastingMode: !updated[dayIdx].isFastDay ? 'full' : 'none',
       };
       updateWeeklyPlan(updated);
     }
+  };
+
+  const handleSetFastingMode = (dayIdx: number, mode: 'none' | '16:8' | 'full') => {
+    const updated = [...weeklyPlan];
+    if (updated[dayIdx]) {
+      updated[dayIdx] = {
+        ...updated[dayIdx],
+        fastingMode: mode,
+        isFastDay: mode === 'full' || mode === '16:8',
+      };
+      updateWeeklyPlan(updated);
+    }
+  };
+
+  const handleAddProductToShopping = (name: string, amount?: string) => {
+    handleAddCustomShoppingItem(name, amount || '', 'Vorrat & Gewürze');
   };
 
   const handleSaveAiRecipe = (newRecipe: Recipe) => {
@@ -524,6 +545,8 @@ export default function Home() {
         onOpenSettings={() => setIsSettingsOpen(true)}
         onOpenFridgeLeftovers={() => setIsFridgeModalOpen(true)}
         onOpenFoodScanner={() => setIsFoodScannerOpen(true)}
+        onOpenProductScanner={() => setIsProductScannerOpen(true)}
+        onOpenPrintStudio={() => setIsPrintModalOpen(true)}
         isCloudConnected={isCloudActive}
         isSyncing={isSyncing}
       />
@@ -563,6 +586,8 @@ export default function Home() {
               onOpenSwapModal={(dayIdx, slot, recipe) =>
                 setSwapState({ isOpen: true, dayIdx, slot, recipe })
               }
+              onSetFastingMode={handleSetFastingMode}
+              onOpenPrintModal={() => setIsPrintModalOpen(true)}
             />
           </div>
         )}
@@ -703,6 +728,26 @@ export default function Home() {
           setIsFoodScannerOpen(false);
           setIsSettingsOpen(true);
         }}
+      />
+
+      <ProductScannerModal
+        isOpen={isProductScannerOpen}
+        onClose={() => setIsProductScannerOpen(false)}
+        onAddToShoppingList={handleAddProductToShopping}
+        onLogAsMeal={(recipe, slot) => {
+          handleLogScannedFood(recipe, slot);
+        }}
+        userApiKey={settings.apiKey}
+        groqApiKey={settings.groqApiKey}
+        geminiApiKey={settings.geminiApiKey}
+        aiProvider={settings.aiProvider}
+      />
+
+      <PrintExportModal
+        isOpen={isPrintModalOpen}
+        onClose={() => setIsPrintModalOpen(false)}
+        weeklyPlan={weeklyPlan}
+        shoppingItems={shoppingItems}
       />
 
       <DocAnalyzerModal
