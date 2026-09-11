@@ -16,7 +16,11 @@ import {
   Utensils,
   Users,
   Shuffle,
-  Coffee
+  Coffee,
+  ChevronDown,
+  ChevronUp,
+  ChevronsUpDown,
+  ChevronsDownUp
 } from 'lucide-react';
 import { DayPlan, MealType, Recipe } from '@/lib/types';
 import { RecipeImage } from './RecipeImage';
@@ -59,6 +63,32 @@ export const MealPlanner: React.FC<MealPlannerProps> = ({
   onOpenPrintModal,
 }) => {
   const [copiedSlot, setCopiedSlot] = useState<string | null>(null);
+  const [collapsedSlots, setCollapsedSlots] = useState<Record<MealType, boolean>>({
+    breakfast: false,
+    lunch: false,
+    dinner: false,
+    snack: false,
+  });
+
+  const toggleSlotCollapse = (slotType: MealType) => {
+    setCollapsedSlots((prev) => ({
+      ...prev,
+      [slotType]: !prev[slotType],
+    }));
+  };
+
+  const allSlotsCollapsed = Object.values(collapsedSlots).every(Boolean);
+
+  const toggleAllSlots = () => {
+    const nextState = !allSlotsCollapsed;
+    setCollapsedSlots({
+      breakfast: nextState,
+      lunch: nextState,
+      dinner: nextState,
+      snack: nextState,
+    });
+  };
+
   const currentDay = weeklyPlan[selectedDayIdx] || weeklyPlan[0];
 
   const mealSlots: { type: MealType; title: string; subtitle: string; recipe: Recipe | null | undefined }[] = [
@@ -223,11 +253,87 @@ export const MealPlanner: React.FC<MealPlannerProps> = ({
         </div>
       </div>
 
+      {/* 4 Meal Slots Header & Quick Toolbar */}
+      <div className="flex items-center justify-between pt-1 print:hidden">
+        <div className="flex items-center gap-2">
+          <Utensils className="w-4 h-4 text-[#789A99]" />
+          <span className="text-xs sm:text-sm font-bold text-slate-800">
+            Gerichte für {currentDay?.dayName}
+          </span>
+        </div>
+
+        <button
+          type="button"
+          onClick={toggleAllSlots}
+          className="text-xs text-[#789A99] hover:text-[#3D5B5A] font-semibold flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-colors cursor-pointer active:scale-95"
+          title={allSlotsCollapsed ? 'Alle Mahlzeiten aufklappen' : 'Alle Mahlzeiten kompakt einklappen'}
+        >
+          {allSlotsCollapsed ? (
+            <>
+              <ChevronsUpDown className="w-3.5 h-3.5 text-[#789A99]" />
+              <span>Alle aufklappen</span>
+            </>
+          ) : (
+            <>
+              <ChevronsDownUp className="w-3.5 h-3.5 text-[#789A99]" />
+              <span>Kompakt / Alle einklappen</span>
+            </>
+          )}
+        </button>
+      </div>
+
       {/* 4 Meal Slots Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 print:hidden">
         {mealSlots.map((slot) => {
           const { recipe } = slot;
           const isCopied = copiedSlot === `${selectedDayIdx}-${slot.type}`;
+          const isCollapsed = Boolean(collapsedSlots[slot.type]);
+
+          if (recipe && isCollapsed) {
+            return (
+              <div
+                key={slot.type}
+                onClick={() => toggleSlotCollapse(slot.type)}
+                className="bg-white rounded-2xl border border-slate-200/80 p-3.5 shadow-2xs hover:border-[#789A99]/50 hover:bg-[#F8FAF9] transition-all cursor-pointer flex items-center justify-between gap-3 group"
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-9 h-9 rounded-xl bg-[#789A99]/10 text-[#789A99] font-bold flex items-center justify-center shrink-0 border border-[#789A99]/20 text-sm">
+                    {slot.type === 'breakfast' ? '🥣' : slot.type === 'lunch' ? '🥗' : slot.type === 'dinner' ? '🍲' : '🍎'}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#789A99]">
+                        {slot.title}
+                      </span>
+                      {(currentDay?.servings?.[slot.type] || 1) > 1 && (
+                        <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md bg-slate-100 text-slate-600">
+                          {currentDay?.servings?.[slot.type]}x
+                        </span>
+                      )}
+                    </div>
+                    <h4 className="font-bold text-slate-900 text-xs sm:text-sm truncate">
+                      {recipe.title}
+                    </h4>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <div className="hidden sm:flex items-center gap-1.5 text-[11px] font-mono font-semibold bg-slate-50 px-2 py-1 rounded-lg border border-slate-200">
+                    <span className="text-slate-800">{recipe.kcal * (currentDay?.servings?.[slot.type] || 1)} kcal</span>
+                    <span className="text-slate-300">•</span>
+                    <span className="text-emerald-600 font-bold">{recipe.protein * (currentDay?.servings?.[slot.type] || 1)}g P</span>
+                    <span className="text-slate-300">•</span>
+                    <span className={recipe.fat > 14 ? 'text-rose-600 font-bold' : 'text-[#789A99]'}>
+                      {recipe.fat * (currentDay?.servings?.[slot.type] || 1)}g F
+                    </span>
+                  </div>
+                  <div className="p-1 text-slate-400 group-hover:text-slate-700 transition-colors">
+                    <ChevronDown className="w-4 h-4" />
+                  </div>
+                </div>
+              </div>
+            );
+          }
 
           return (
             <div
@@ -253,15 +359,27 @@ export const MealPlanner: React.FC<MealPlannerProps> = ({
                     </p>
                   </div>
 
-                  {recipe && (
-                    <button
-                      onClick={() => onRemoveMeal(selectedDayIdx, slot.type)}
-                      className="text-xs text-slate-400 hover:text-rose-600 transition-colors p-1"
-                      title="Aus Slot entfernen"
-                    >
-                      Entfernen
-                    </button>
-                  )}
+                  <div className="flex items-center gap-1">
+                    {recipe && (
+                      <button
+                        type="button"
+                        onClick={() => toggleSlotCollapse(slot.type)}
+                        className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+                        title="Diesen Slot einklappen"
+                      >
+                        <ChevronUp className="w-4 h-4" />
+                      </button>
+                    )}
+                    {recipe && (
+                      <button
+                        onClick={() => onRemoveMeal(selectedDayIdx, slot.type)}
+                        className="text-xs text-slate-400 hover:text-rose-600 transition-colors p-1 cursor-pointer"
+                        title="Aus Slot entfernen"
+                      >
+                        Entfernen
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {/* Slot Content */}

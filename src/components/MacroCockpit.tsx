@@ -12,7 +12,10 @@ import {
   Salad,
   Fish,
   Wheat,
-  Info
+  Info,
+  ChevronDown,
+  ChevronUp,
+  Sparkles
 } from 'lucide-react';
 import { DayPlan, MacroGoals } from '@/lib/types';
 
@@ -24,6 +27,16 @@ interface MacroCockpitProps {
 
 export const MacroCockpit: React.FC<MacroCockpitProps> = ({ dayPlan, targetGoals, weeklyPlan = [] }) => {
   const [showPlateInfo, setShowPlateInfo] = useState(false);
+  const [plateMode, setPlateMode] = useState<'target' | 'week'>('target');
+  const [isPlateCollapsed, setIsPlateCollapsed] = useState(false);
+
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('fit_plate_collapsed');
+      if (saved === 'true') setIsPlateCollapsed(true);
+    }
+  }, []);
+
   const meals = [dayPlan.breakfast, dayPlan.lunch, dayPlan.dinner, dayPlan.snack].filter(Boolean);
 
   const total = meals.reduce(
@@ -63,6 +76,100 @@ export const MacroCockpit: React.FC<MacroCockpitProps> = ({ dayPlan, targetGoals
     }
     return Math.max(streak, 1);
   }, [weeklyPlan, targetGoals.fat]);
+
+  // Week Analysis Calculation
+  const weekStats = React.useMemo(() => {
+    if (!weeklyPlan || weeklyPlan.length === 0) {
+      return {
+        veggiePct: 50,
+        proteinPct: 25,
+        carbPct: 25,
+        totalMeals: 0,
+        avgProtein: 0,
+        avgFat: 0,
+        avgFiber: 0,
+        score: 100,
+        feedback: 'Noch keine Mahlzeiten für die Woche eingetragen.',
+      };
+    }
+
+    let sumProtein = 0;
+    let sumFat = 0;
+    let sumCarbs = 0;
+    let sumFiber = 0;
+    let totalMeals = 0;
+    let daysWithMeals = 0;
+
+    weeklyPlan.forEach((d) => {
+      const dMeals = [d.breakfast, d.lunch, d.dinner, d.snack].filter(Boolean);
+      if (dMeals.length > 0) daysWithMeals++;
+      dMeals.forEach((m) => {
+        if (!m) return;
+        sumProtein += m.protein;
+        sumFat += m.fat;
+        sumCarbs += m.carbs;
+        sumFiber += m.fiber;
+        totalMeals++;
+      });
+    });
+
+    if (totalMeals === 0) {
+      return {
+        veggiePct: 50,
+        proteinPct: 25,
+        carbPct: 25,
+        totalMeals: 0,
+        avgProtein: 0,
+        avgFat: 0,
+        avgFiber: 0,
+        score: 100,
+        feedback: 'Noch keine Mahlzeiten in der Woche eingetragen.',
+      };
+    }
+
+    const veggieVolume = sumFiber * 7.5;
+    const proteinVolume = sumProtein * 1.0;
+    const carbFatVolume = sumCarbs * 0.9 + sumFat * 0.6;
+    const totalVolume = Math.max(1, veggieVolume + proteinVolume + carbFatVolume);
+
+    let veggiePct = Math.round((veggieVolume / totalVolume) * 100);
+    let proteinPct = Math.round((proteinVolume / totalVolume) * 100);
+    veggiePct = Math.max(25, Math.min(65, veggiePct));
+    proteinPct = Math.max(15, Math.min(45, proteinPct));
+    const carbPct = 100 - veggiePct - proteinPct;
+
+    const diff = Math.abs(veggiePct - 50) + Math.abs(proteinPct - 25) + Math.abs(carbPct - 25);
+    const score = Math.max(68, Math.min(100, Math.round(100 - diff * 0.9)));
+
+    let feedback = 'Hervorragende Teller-Balance über alle 7 Tage! Eiweiß und Frischeanteil sind ideal abgestimmt.';
+    if (veggiePct < 40) {
+      feedback = 'Tipp für die Woche: Ergänze bei 1–2 Mahlzeiten noch etwas Rohkost, Brokkoli oder einen Beilagensalat.';
+    } else if (proteinPct < 22) {
+      feedback = 'Tipp für die Woche: Baue noch etwas mehr Magerquark, Geflügel oder Hülsenfrüchte ein, um die 25% Protein voll zu treffen.';
+    } else if (carbPct > 35) {
+      feedback = 'Tipp für die Woche: Achte auf das Fettbudget bei Dressings und Soßen, um den Carbs/Fett-Sektor schlank zu halten.';
+    }
+
+    return {
+      veggiePct,
+      proteinPct,
+      carbPct,
+      totalMeals,
+      avgProtein: Math.round(sumProtein / (daysWithMeals || 1)),
+      avgFat: Math.round(sumFat / (daysWithMeals || 1)),
+      avgFiber: Math.round(sumFiber / (daysWithMeals || 1)),
+      score,
+      feedback,
+    };
+  }, [weeklyPlan]);
+
+  const currentVeggiePct = plateMode === 'week' ? weekStats.veggiePct : 50;
+  const currentProteinPct = plateMode === 'week' ? weekStats.proteinPct : 25;
+  const currentCarbPct = plateMode === 'week' ? weekStats.carbPct : 25;
+
+  const slice1Len = (currentVeggiePct / 100) * 226.2;
+  const slice2Len = (currentProteinPct / 100) * 226.2;
+  const slice3Len = (currentCarbPct / 100) * 226.2;
 
   return (
     <div className="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/80 shadow-[0_1px_3px_rgba(0,0,0,0.03)] transition-all space-y-6">
@@ -251,131 +358,256 @@ export const MacroCockpit: React.FC<MacroCockpitProps> = ({ dayPlan, targetGoals
         </div>
       </div>
 
-      {/* Runder Teller-Visualizer "Der gesunde Teller" (50% Gemüse, 25% Protein, 25% Carbs) */}
-      <div className="p-4 sm:p-5 rounded-2xl bg-linear-to-br from-slate-50 to-[#EBF2F2]/40 border border-slate-200/80">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <PieChart className="w-4 h-4 text-[#789A99]" />
-            <h3 className="text-xs sm:text-sm font-bold text-slate-800">
-              Der gesunde Teller • Nicole-Aufteilung
-            </h3>
+      {/* Runder Teller-Visualizer "Der gesunde Teller" (Collapsible + Wochen-Analyse) */}
+      <div className="rounded-2xl bg-linear-to-br from-slate-50 to-[#EBF2F2]/40 border border-slate-200/80 overflow-hidden transition-all">
+        {/* Header Bar with Accordion Toggle */}
+        <div className="p-4 sm:p-5 flex items-center justify-between gap-2 border-b border-slate-200/50">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-[#789A99]/15 flex items-center justify-center text-[#789A99]">
+              <PieChart className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-xs sm:text-sm font-bold text-slate-900">
+                  Der gesunde Teller
+                </h3>
+                {plateMode === 'week' && (
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    Wochen-Score: {weekStats.score}%
+                  </span>
+                )}
+              </div>
+              <p className="text-[11px] text-slate-400">
+                {plateMode === 'target'
+                  ? 'Optimal-Verteilung: 50% Gemüse • 25% Protein • 25% Carbs'
+                  : `Deine echte Woche: ${weekStats.totalMeals} Mahlzeiten analysiert`}
+              </p>
+            </div>
           </div>
-          <button
-            onClick={() => setShowPlateInfo(!showPlateInfo)}
-            className="text-[11px] text-[#789A99] hover:text-[#3D5B5A] flex items-center gap-1 font-semibold cursor-pointer"
-          >
-            <Info className="w-3.5 h-3.5" />
-            <span>{showPlateInfo ? 'Ausblenden' : 'Erklärung'}</span>
-          </button>
+
+          <div className="flex items-center gap-1.5">
+            {/* Mode Switcher Tabs */}
+            <div className="hidden sm:flex items-center bg-white/80 p-0.5 rounded-xl border border-slate-200">
+              <button
+                type="button"
+                onClick={() => setPlateMode('target')}
+                className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all cursor-pointer ${
+                  plateMode === 'target'
+                    ? 'bg-[#789A99] text-white shadow-2xs'
+                    : 'text-slate-500 hover:text-slate-900'
+                }`}
+              >
+                Soll-Ziel
+              </button>
+              <button
+                type="button"
+                onClick={() => setPlateMode('week')}
+                className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all cursor-pointer ${
+                  plateMode === 'week'
+                    ? 'bg-[#789A99] text-white shadow-2xs'
+                    : 'text-slate-500 hover:text-slate-900'
+                }`}
+              >
+                Wochen-Analyse
+              </button>
+            </div>
+
+            {/* Accordion Collapse Toggle */}
+            <button
+              type="button"
+              onClick={() => {
+                const next = !isPlateCollapsed;
+                setIsPlateCollapsed(next);
+                if (typeof window !== 'undefined') {
+                  localStorage.setItem('fit_plate_collapsed', String(next));
+                }
+              }}
+              className="p-1.5 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-white/80 transition-colors cursor-pointer border border-transparent hover:border-slate-200"
+              title={isPlateCollapsed ? 'Teller ausklappen' : 'Teller einklappen'}
+            >
+              {isPlateCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+            </button>
+          </div>
         </div>
 
-        {showPlateInfo && (
-          <p className="text-xs text-slate-600 mb-4 bg-white p-3 rounded-xl border border-slate-200 leading-relaxed animate-in fade-in duration-150">
-            <strong>Das Harvard- &amp; Nicole-Tellerprinzip:</strong> Für maximale Sättigung bei geringem Fettbudget besteht die Hauptmahlzeit zur Hälfte aus frischem Gemüse/Salat (50%), zu einem Viertel aus fettarmem Eiweiß (25%) und zu einem Viertel aus ballaststoffreichen Kohlenhydraten (25%).
-          </p>
+        {/* Collapsible Content */}
+        {!isPlateCollapsed && (
+          <div className="p-4 sm:p-5 pt-3 space-y-4 animate-in fade-in duration-200">
+            {/* Mobile Mode Switcher */}
+            <div className="flex sm:hidden items-center bg-white/80 p-0.5 rounded-xl border border-slate-200">
+              <button
+                type="button"
+                onClick={() => setPlateMode('target')}
+                className={`flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer text-center ${
+                  plateMode === 'target'
+                    ? 'bg-[#789A99] text-white shadow-2xs'
+                    : 'text-slate-500'
+                }`}
+              >
+                Soll-Ziel
+              </button>
+              <button
+                type="button"
+                onClick={() => setPlateMode('week')}
+                className={`flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer text-center ${
+                  plateMode === 'week'
+                    ? 'bg-[#789A99] text-white shadow-2xs'
+                    : 'text-slate-500'
+                }`}
+              >
+                Wochen-Analyse
+              </button>
+            </div>
+
+            {/* Info or Weekly Feedback banner */}
+            {plateMode === 'week' ? (
+              <div className="p-3 rounded-xl bg-white border border-emerald-200 text-xs text-slate-700 flex items-start gap-2.5 shadow-2xs leading-relaxed">
+                <Sparkles className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                <div>
+                  <div className="font-bold text-slate-900 mb-0.5">
+                    Wochen-Fazit ({weekStats.score}% Übereinstimmung mit deinem Teller-Ziel):
+                  </div>
+                  <p className="text-slate-600 text-[11px]">{weekStats.feedback}</p>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between bg-white/60 p-2 rounded-xl border border-slate-200/60">
+                <p className="text-[11px] text-slate-500 leading-relaxed">
+                  💡 <strong>Harvard- &amp; Nicole-Prinzip:</strong> 50% Frische/Gemüse, 25% mageres Eiweiß und 25% komplexe Kohlenhydrate.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setShowPlateInfo(!showPlateInfo)}
+                  className="text-[11px] text-[#789A99] hover:underline shrink-0 ml-2 font-semibold cursor-pointer"
+                >
+                  {showPlateInfo ? 'Schließen' : 'Details'}
+                </button>
+              </div>
+            )}
+
+            {showPlateInfo && plateMode === 'target' && (
+              <p className="text-xs text-slate-600 bg-white p-3 rounded-xl border border-slate-200 leading-relaxed animate-in fade-in duration-150">
+                Für maximale Sättigung bei geringem Fettbudget besteht jede Mahlzeit zur Hälfte aus frischem Gemüse/Salat (50%), zu einem Viertel aus fettarmem Eiweiß (25%) und zu einem Viertel aus ballaststoffreichen Kohlenhydraten (25%).
+              </p>
+            )}
+
+            <div className="flex flex-col md:flex-row items-center justify-around gap-6 pt-1">
+              {/* Stilisierter Runder Teller mit dynamischen Sektoren */}
+              <div className="relative w-44 h-44 sm:w-48 sm:h-48 rounded-full bg-white dark:bg-[#111a1c] shadow-md border-4 border-[#E0EAE9] dark:border-[#1e2c2f] flex items-center justify-center shrink-0">
+                {/* Porzellan-Rand Effekt */}
+                <div className="absolute inset-1 rounded-full border border-[#C5D8D7]/60 dark:border-[#2D4348] pointer-events-none" />
+                <div className="absolute inset-3 rounded-full border border-slate-200/40 dark:border-slate-800 pointer-events-none" />
+
+                {/* Sektoren via SVG Donut */}
+                <svg viewBox="0 0 100 100" className="w-36 h-36 -rotate-90">
+                  {/* Sektor 1: Gemüse / Ballaststoffe -> Aqua Mist (#789A99) */}
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="36"
+                    fill="transparent"
+                    stroke="#789A99"
+                    strokeWidth="20"
+                    strokeDasharray={`${slice1Len} ${226.2 - slice1Len}`}
+                    strokeDashoffset="0"
+                    className="opacity-95 hover:opacity-100 transition-all duration-300"
+                  />
+                  {/* Sektor 2: Protein -> Deep Slate (#3D5B5A) */}
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="36"
+                    fill="transparent"
+                    stroke="#3D5B5A"
+                    strokeWidth="20"
+                    strokeDasharray={`${slice2Len} ${226.2 - slice2Len}`}
+                    strokeDashoffset={`${-slice1Len}`}
+                    className="opacity-95 hover:opacity-100 transition-all duration-300"
+                  />
+                  {/* Sektor 3: Carbs & Fette -> Peach Ice (#FFD2C2) */}
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="36"
+                    fill="transparent"
+                    stroke="#FFD2C2"
+                    strokeWidth="20"
+                    strokeDasharray={`${slice3Len} ${226.2 - slice3Len}`}
+                    strokeDashoffset={`${-(slice1Len + slice2Len)}`}
+                    className="opacity-95 hover:opacity-100 transition-all duration-300"
+                  />
+                </svg>
+
+                {/* Teller Zentrum */}
+                <div className="absolute w-14 h-14 rounded-full bg-white dark:bg-[#182629] shadow-xs border border-[#C5D8D7] dark:border-[#2D4348] flex flex-col items-center justify-center text-center">
+                  <span className="text-[9px] font-bold uppercase text-[#586F73] dark:text-slate-400">
+                    {plateMode === 'week' ? 'Ø Woche' : 'Balance'}
+                  </span>
+                  <span className="text-[11px] font-black text-[#789A99]">
+                    {plateMode === 'week' ? `${weekStats.score}%` : '100%'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Legende & Nährstoff-Sektoren */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-1 gap-2.5 w-full max-w-md">
+                {/* Sektor 1: Gemüse & Frische */}
+                <div className="p-2.5 rounded-xl bg-white dark:bg-[#182629] border border-[#C5D8D7] dark:border-[#2D4348] flex items-center justify-between shadow-2xs">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-lg bg-[#EBF2F2] dark:bg-[#203135] text-[#789A99] flex items-center justify-center shrink-0 font-bold text-[10px]">
+                      {currentVeggiePct}%
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-slate-900 dark:text-white">Gemüse, Salat &amp; Frische</div>
+                      <div className="text-[10px] text-slate-500 dark:text-slate-400">
+                        {plateMode === 'week' ? `Ø ${weekStats.avgFiber}g Ballaststoffe / Tag` : 'Ziel: 50% der Mahlzeit'}
+                      </div>
+                    </div>
+                  </div>
+                  <span className="text-xs font-mono font-bold text-[#789A99]">
+                    {plateMode === 'week' ? `${currentVeggiePct}%` : `${total.fiber}g heute`}
+                  </span>
+                </div>
+
+                {/* Sektor 2: Protein */}
+                <div className="p-2.5 rounded-xl bg-white dark:bg-[#182629] border border-[#C5D8D7] dark:border-[#2D4348] flex items-center justify-between shadow-2xs">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-lg bg-[#DEE9E8] dark:bg-[#203135] text-[#3D5B5A] dark:text-[#789A99] flex items-center justify-center shrink-0 font-bold text-[10px]">
+                      {currentProteinPct}%
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-slate-900 dark:text-white">Mageres Protein (Prio 103g)</div>
+                      <div className="text-[10px] text-slate-500 dark:text-slate-400">
+                        {plateMode === 'week' ? `Ø ${weekStats.avgProtein}g Protein / Tag` : 'Ziel: 25% der Mahlzeit'}
+                      </div>
+                    </div>
+                  </div>
+                  <span className="text-xs font-mono font-bold text-[#3D5B5A] dark:text-[#789A99]">
+                    {plateMode === 'week' ? `${currentProteinPct}%` : `${total.protein}g / 103g`}
+                  </span>
+                </div>
+
+                {/* Sektor 3: Carbs & Fette */}
+                <div className="p-2.5 rounded-xl bg-white dark:bg-[#182629] border border-[#FFD2C2] dark:border-[#FFD2C2]/30 flex items-center justify-between shadow-2xs">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-lg bg-[#FFF4F0] dark:bg-[#203135] text-[#994931] flex items-center justify-center shrink-0 font-bold text-[10px]">
+                      {currentCarbPct}%
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-slate-900 dark:text-white">Carbs &amp; gesunde Fette</div>
+                      <div className="text-[10px] text-slate-500 dark:text-slate-400">
+                        {plateMode === 'week' ? `Ø ${weekStats.avgFat}g Fett / Tag (Budget ≤44g)` : 'Ziel: 25% der Mahlzeit'}
+                      </div>
+                    </div>
+                  </div>
+                  <span className={`text-xs font-mono font-bold ${isFatWarning ? 'text-rose-600' : 'text-[#994931]'}`}>
+                    {plateMode === 'week' ? `${currentCarbPct}%` : `${total.fat}g Fett`}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
         )}
-
-        <div className="flex flex-col md:flex-row items-center justify-around gap-6 pt-2">
-          {/* Stilisierter Runder Teller mit Sektoren im App-Farbraster (Aqua Mist, Slate, Peach Ice) */}
-          <div className="relative w-44 h-44 sm:w-48 sm:h-48 rounded-full bg-white dark:bg-[#111a1c] shadow-md border-4 border-[#E0EAE9] dark:border-[#1e2c2f] flex items-center justify-center shrink-0">
-            {/* Porzellan-Rand Effekt */}
-            <div className="absolute inset-1 rounded-full border border-[#C5D8D7]/60 dark:border-[#2D4348] pointer-events-none" />
-            <div className="absolute inset-3 rounded-full border border-slate-200/40 dark:border-slate-800 pointer-events-none" />
-
-            {/* Sektoren via SVG Donut im Aqua Mist / Deep Slate / Peach Ice Farbraster */}
-            <svg viewBox="0 0 100 100" className="w-36 h-36 -rotate-90">
-              {/* 50% Gemüse / Ballaststoffe -> Aqua Mist (#789A99) */}
-              <circle
-                cx="50"
-                cy="50"
-                r="36"
-                fill="transparent"
-                stroke="#789A99"
-                strokeWidth="20"
-                strokeDasharray="113.1 113.1"
-                strokeDashoffset="0"
-                className="opacity-95 hover:opacity-100 transition-opacity cursor-pointer"
-              />
-              {/* 25% Protein (Prio) -> Slate Blue/Slate Surface (#2D4348 / #3D5B5A) */}
-              <circle
-                cx="50"
-                cy="50"
-                r="36"
-                fill="transparent"
-                stroke="#3D5B5A"
-                strokeWidth="20"
-                strokeDasharray="56.5 169.7"
-                strokeDashoffset="-113.1"
-                className="opacity-95 hover:opacity-100 transition-opacity cursor-pointer"
-              />
-              {/* 25% Carbs & Fette im Budget -> Peach Ice (#FFD2C2) */}
-              <circle
-                cx="50"
-                cy="50"
-                r="36"
-                fill="transparent"
-                stroke="#FFD2C2"
-                strokeWidth="20"
-                strokeDasharray="56.5 169.7"
-                strokeDashoffset="-169.6"
-                className="opacity-95 hover:opacity-100 transition-opacity cursor-pointer"
-              />
-            </svg>
-
-            {/* Teller Zentrum */}
-            <div className="absolute w-14 h-14 rounded-full bg-white dark:bg-[#182629] shadow-xs border border-[#C5D8D7] dark:border-[#2D4348] flex flex-col items-center justify-center text-center">
-              <span className="text-[9px] font-bold uppercase text-[#586F73] dark:text-slate-400">Balance</span>
-              <span className="text-[11px] font-black text-[#789A99]">100%</span>
-            </div>
-          </div>
-
-          {/* Legende & Nährstoff-Sektoren im edlen App-Design */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-1 gap-2.5 w-full max-w-md">
-            {/* Sektor 1: 50% Frische & Gemüse (Aqua Mist) */}
-            <div className="p-2.5 rounded-xl bg-white dark:bg-[#182629] border border-[#C5D8D7] dark:border-[#2D4348] flex items-center justify-between shadow-2xs">
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-lg bg-[#EBF2F2] dark:bg-[#203135] text-[#789A99] flex items-center justify-center shrink-0">
-                  <Salad className="w-3.5 h-3.5" />
-                </div>
-                <div>
-                  <div className="text-xs font-bold text-slate-900 dark:text-white">50% Gemüse &amp; Salat</div>
-                  <div className="text-[10px] text-slate-500 dark:text-slate-400">Ballaststoffe, Sättigung, Frische</div>
-                </div>
-              </div>
-              <span className="text-xs font-mono font-bold text-[#789A99]">{total.fiber}g Ballastst.</span>
-            </div>
-
-            {/* Sektor 2: 25% Protein (Deep Slate / Slate Teal) */}
-            <div className="p-2.5 rounded-xl bg-white dark:bg-[#182629] border border-[#C5D8D7] dark:border-[#2D4348] flex items-center justify-between shadow-2xs">
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-lg bg-[#DEE9E8] dark:bg-[#203135] text-[#3D5B5A] dark:text-[#789A99] flex items-center justify-center shrink-0">
-                  <Fish className="w-3.5 h-3.5" />
-                </div>
-                <div>
-                  <div className="text-xs font-bold text-slate-900 dark:text-white">25% Protein (Prio 103g)</div>
-                  <div className="text-[10px] text-slate-500 dark:text-slate-400">Quark, Geflügel, Fisch, Hülsenfrüchte</div>
-                </div>
-              </div>
-              <span className="text-xs font-mono font-bold text-[#3D5B5A] dark:text-[#789A99]">{total.protein}g / 103g</span>
-            </div>
-
-            {/* Sektor 3: 25% Carbs & Fette (Peach Ice) */}
-            <div className="p-2.5 rounded-xl bg-white dark:bg-[#182629] border border-[#FFD2C2] dark:border-[#FFD2C2]/30 flex items-center justify-between shadow-2xs">
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-lg bg-[#FFF4F0] dark:bg-[#203135] text-[#994931] flex items-center justify-center shrink-0">
-                  <Wheat className="w-3.5 h-3.5" />
-                </div>
-                <div>
-                  <div className="text-xs font-bold text-slate-900 dark:text-white">25% Carbs &amp; Fette</div>
-                  <div className="text-[10px] text-slate-500 dark:text-slate-400">Vollkorn, Haferflocken, max. 44g Fett</div>
-                </div>
-              </div>
-              <span className={`text-xs font-mono font-bold ${isFatWarning ? 'text-rose-600' : 'text-[#994931]'}`}>
-                {total.fat}g Fett
-              </span>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );
