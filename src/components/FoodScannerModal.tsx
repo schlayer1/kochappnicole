@@ -83,8 +83,8 @@ export const FoodScannerModal: React.FC<FoodScannerModalProps> = ({
       const img = new Image();
       img.onload = () => {
         const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 1024;
-        const MAX_HEIGHT = 1024;
+        const MAX_WIDTH = 800;
+        const MAX_HEIGHT = 800;
         let width = img.width;
         let height = img.height;
 
@@ -105,7 +105,7 @@ export const FoodScannerModal: React.FC<FoodScannerModalProps> = ({
         const ctx = canvas.getContext('2d');
         if (ctx) {
           ctx.drawImage(img, 0, 0, width, height);
-          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.80);
           setSelectedImage(compressedDataUrl);
           analyzeImage(compressedDataUrl);
         }

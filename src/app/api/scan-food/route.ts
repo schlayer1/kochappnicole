@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+let cachedWorkingGemini: { model: string; apiVer: string } | null = null;
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -65,87 +67,69 @@ ANTWORTE AUSSCHLIESSLICH IM FOLGENDEN VALIDE JSON-FORMAT:
 }
 WICHTIG: Antworte NUR im reinen JSON-Format, ohne Begleittext und ohne Markdown-Fences.`;
 
-    // 1. GOOGLE GEMINI FLASH VISION API (Höchste Erkennungsrate für Food-Fotos)
+    // 1. GOOGLE GEMINI FLASH VISION API (Höchste Erkennungsrate & Schnelligkeit)
     if (effectiveGeminiKey) {
-      let activeGeminiModels: string[] = [];
-
-      // Query ListModels to find the exact model names supported by this API key
-      try {
-        const listRes = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models?key=${effectiveGeminiKey}`
-        );
-        if (listRes.ok) {
-          const listData = await listRes.json();
-          if (Array.isArray(listData.models)) {
-            activeGeminiModels = listData.models
-              .filter(
-                (m: any) =>
-                  m.supportedGenerationMethods?.includes('generateContent') &&
-                  !m.name.includes('embedding') &&
-                  !m.name.includes('aqa')
-              )
-              .map((m: any) => m.name.replace(/^models\//, ''));
-          }
-        }
-      } catch (err) {
-        console.warn('Gemini ListModels query failed:', err);
-      }
-
-      // Prioritize flash models
-      const fallbackGemini = [
-        'gemini-1.5-flash',
-        'gemini-2.0-flash',
-        'gemini-2.0-flash-exp',
-        'gemini-1.5-flash-latest',
-        'gemini-1.5-pro',
+      // Prioritized vision-capable models (fastest first)
+      // Gemma / TTS / Embedding models are intentionally excluded as they don't support image vision
+      const targetVisionModels = [
+        { model: 'gemini-2.0-flash', apiVer: 'v1beta' },
+        { model: 'gemini-1.5-flash', apiVer: 'v1beta' },
+        { model: 'gemini-1.5-flash-8b', apiVer: 'v1beta' },
+        { model: 'gemini-1.5-flash-latest', apiVer: 'v1beta' },
+        { model: 'gemini-1.5-flash', apiVer: 'v1' },
       ];
-      
-      const modelsToTry = Array.from(new Set([...activeGeminiModels, ...fallbackGemini]));
 
-      for (const model of modelsToTry) {
-        for (const apiVer of ['v1beta', 'v1']) {
-          try {
-            const geminiRes = await fetch(
-              `https://generativelanguage.googleapis.com/${apiVer}/models/${model}:generateContent?key=${effectiveGeminiKey}`,
-              {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  contents: [
-                    {
-                      role: 'user',
-                      parts: [
-                        { text: `${systemPrompt}\n\nBitte analysiere dieses Gericht auf dem Foto präzise im geforderten JSON-Format:` },
-                        {
-                          inlineData: {
-                            mimeType,
-                            data: cleanBase64,
-                          },
+      // If we already know which model works for this server instance, try it first
+      const orderedCandidates = cachedWorkingGemini
+        ? [cachedWorkingGemini, ...targetVisionModels.filter(m => m.model !== cachedWorkingGemini?.model || m.apiVer !== cachedWorkingGemini?.apiVer)]
+        : targetVisionModels;
+
+      for (const candidate of orderedCandidates) {
+        try {
+          const geminiRes = await fetch(
+            `https://generativelanguage.googleapis.com/${candidate.apiVer}/models/${candidate.model}:generateContent?key=${effectiveGeminiKey}`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                contents: [
+                  {
+                    role: 'user',
+                    parts: [
+                      { text: `${systemPrompt}\n\nBitte analysiere dieses Gericht auf dem Foto präzise im geforderten JSON-Format:` },
+                      {
+                        inlineData: {
+                          mimeType,
+                          data: cleanBase64,
                         },
-                      ],
-                    },
-                  ],
-                  generationConfig: {
-                    responseMimeType: 'application/json',
-                    temperature: 0.2,
+                      },
+                    ],
                   },
-                }),
-              }
-            );
-
-            if (geminiRes.ok) {
-              const data = await geminiRes.json();
-              let rawJson = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-              rawJson = rawJson.replace(/```(?:json)?/gi, '').trim();
-              const result = JSON.parse(rawJson);
-              return NextResponse.json({ result, source: `${model} (${apiVer})` });
-            } else {
-              const errText = await geminiRes.text();
-              console.warn(`Gemini (${apiVer}/${model}) returned ${geminiRes.status}:`, errText);
+                ],
+                generationConfig: {
+                  responseMimeType: 'application/json',
+                  temperature: 0.2,
+                  maxOutputTokens: 1024,
+                },
+              }),
             }
-          } catch (err) {
-            console.warn(`Gemini call error (${apiVer}/${model}):`, err);
+          );
+
+          if (geminiRes.ok) {
+            const data = await geminiRes.json();
+            let rawJson = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+            rawJson = rawJson.replace(/```(?:json)?/gi, '').trim();
+            const result = JSON.parse(rawJson);
+            
+            // Cache the successful model configuration for ultra-fast subsequent requests
+            cachedWorkingGemini = candidate;
+            return NextResponse.json({ result, source: `${candidate.model} (${candidate.apiVer})` });
+          } else {
+            const errText = await geminiRes.text();
+            console.warn(`Gemini (${candidate.apiVer}/${candidate.model}) returned ${geminiRes.status}:`, errText);
           }
+        } catch (err) {
+          console.warn(`Gemini call error (${candidate.apiVer}/${candidate.model}):`, err);
         }
       }
     }
