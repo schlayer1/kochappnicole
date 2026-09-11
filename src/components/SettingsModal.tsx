@@ -1,9 +1,17 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, Key, Sliders, RotateCcw, Download, ExternalLink, Check, Zap, Sparkles } from 'lucide-react';
+import { X, Key, Sliders, RotateCcw, Download, ExternalLink, Check, Zap, Sparkles, Cloud, Database } from 'lucide-react';
 import { AppSettings } from '@/lib/storage';
 import { NutritionProfile } from '@/lib/types';
+import {
+  getSavedHouseholdKey,
+  saveHouseholdKey,
+  isFirebaseConfigured,
+  getSavedCustomFirebaseConfig,
+  saveCustomFirebaseConfig,
+  FirebaseClientConfig,
+} from '@/lib/firebase';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -13,6 +21,7 @@ interface SettingsModalProps {
   profile: NutritionProfile;
   onSaveProfile: (p: NutritionProfile) => void;
   onResetAllData: () => void;
+  onManualCloudSync?: () => Promise<void>;
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
@@ -23,9 +32,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   profile,
   onSaveProfile,
   onResetAllData,
+  onManualCloudSync,
 }) => {
   const [localSettings, setLocalSettings] = useState<AppSettings>(settings);
   const [localGoals, setLocalGoals] = useState(profile.targetGoals);
+  const [householdKey, setHouseholdKey] = useState(getSavedHouseholdKey());
+  const [showAdvancedFirebase, setShowAdvancedFirebase] = useState(false);
+  const [customFirebase, setCustomFirebase] = useState<FirebaseClientConfig>(
+    getSavedCustomFirebaseConfig() || {}
+  );
+  const [syncingCloud, setSyncingCloud] = useState(false);
   const [savedNotice, setSavedNotice] = useState(false);
 
   if (!isOpen) return null;
@@ -36,6 +52,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       ...profile,
       targetGoals: localGoals,
     });
+    saveHouseholdKey(householdKey);
+    if (customFirebase.apiKey && customFirebase.projectId) {
+      saveCustomFirebaseConfig(customFirebase);
+    }
     setSavedNotice(true);
     setTimeout(() => {
       setSavedNotice(false);
@@ -197,6 +217,105 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </p>
               </div>
             )}
+          </div>
+
+          {/* Cloud Synchronisation (Firebase) */}
+          <div className="space-y-3 p-4 rounded-2xl bg-slate-50/80 border border-slate-200/80">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                <Cloud className="w-3.5 h-3.5 text-[#789A99]" />
+                Geräte-Synchronisation (Firebase Cloud)
+              </label>
+              <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full flex items-center gap-1.5 ${
+                isFirebaseConfigured() ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-500'
+              }`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${isFirebaseConfigured() ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`} />
+                {isFirebaseConfigured() ? 'Firestore Aktiv' : 'Lokaler Modus'}
+              </span>
+            </div>
+
+            <div>
+              <label className="text-[11px] text-slate-600 font-medium block mb-1">
+                Haushalts-Sync-Schlüssel (auf Handy &amp; Mac identisch eintragen):
+              </label>
+              <input
+                type="text"
+                value={householdKey}
+                onChange={(e) => setHouseholdKey(e.target.value)}
+                placeholder="z. B. nicole-keller"
+                className="w-full p-2.5 text-xs rounded-xl bg-white border border-slate-200 text-slate-900 font-mono focus:outline-none focus:border-[#789A99]"
+              />
+              <p className="text-[10px] text-slate-400 mt-1">
+                Alle Geräte (iPhone, Mac, iPad) mit diesem Schlüssel teilen denselben Wochenplan, Einkaufsliste und Favoriten.
+              </p>
+            </div>
+
+            {onManualCloudSync && isFirebaseConfigured() && (
+              <button
+                type="button"
+                onClick={async () => {
+                  setSyncingCloud(true);
+                  await onManualCloudSync();
+                  setSyncingCloud(false);
+                }}
+                disabled={syncingCloud}
+                className="flex items-center justify-center gap-1.5 w-full py-2 rounded-xl text-xs font-semibold bg-[#EBF2F2] hover:bg-[#DEE9E8] text-[#3D5B5A] border border-[#C5D8D7] transition-all active:scale-[0.98]"
+              >
+                <Cloud className="w-3.5 h-3.5 text-[#789A99]" />
+                {syncingCloud ? 'Synchronisiere mit Cloud...' : 'Jetzt mit Cloud synchronisieren'}
+              </button>
+            )}
+
+            {/* Optional: Firebase Web Config Eingabefelder (für manuelle Eingabe ohne .env) */}
+            <div className="pt-2 border-t border-slate-200/60">
+              <button
+                type="button"
+                onClick={() => setShowAdvancedFirebase(!showAdvancedFirebase)}
+                className="text-[11px] text-[#789A99] hover:underline font-medium flex items-center gap-1"
+              >
+                <Database className="w-3 h-3" />
+                {showAdvancedFirebase ? 'Firebase-Keys ausblenden' : 'Firebase-Keys manuell im Browser eingeben (optional)'}
+              </button>
+
+              {showAdvancedFirebase && (
+                <div className="mt-2 space-y-2 p-3 bg-white rounded-xl border border-slate-200 text-xs">
+                  <p className="text-[10px] text-slate-400">
+                    Tipp: Wenn du die Variablen in <code>.env.local</code> oder Vercel eingetragen hast, brauchst du hier nichts auszufüllen.
+                  </p>
+                  <div>
+                    <label className="text-[10px] text-slate-500 block">API Key (AIzaSy...):</label>
+                    <input
+                      type="password"
+                      value={customFirebase.apiKey || ''}
+                      onChange={(e) => setCustomFirebase({ ...customFirebase, apiKey: e.target.value })}
+                      placeholder="AIzaSy..."
+                      className="w-full p-1.5 text-xs rounded bg-slate-50 border border-slate-200 font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-slate-500 block">Project ID:</label>
+                    <input
+                      type="text"
+                      value={customFirebase.projectId || ''}
+                      onChange={(e) => setCustomFirebase({ ...customFirebase, projectId: e.target.value })}
+                      placeholder="z. B. fit-und-healthy-nicole"
+                      className="w-full p-1.5 text-xs rounded bg-slate-50 border border-slate-200 font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-slate-500 block">Auth Domain:</label>
+                    <input
+                      type="text"
+                      value={customFirebase.authDomain || ''}
+                      onChange={(e) => setCustomFirebase({ ...customFirebase, authDomain: e.target.value })}
+                      placeholder="z. B. fit-und-healthy-nicole.firebaseapp.com"
+                      className="w-full p-1.5 text-xs rounded bg-slate-50 border border-slate-200 font-mono"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
           </div>
 
           {/* Portions Selector */}

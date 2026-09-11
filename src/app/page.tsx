@@ -36,6 +36,12 @@ import {
 } from '@/lib/storage';
 import { NICOLE_NUTRITION_PROFILE } from '@/lib/nutrition-profile';
 import { CURATED_NICOLE_RECIPES } from '@/lib/recipes-data';
+import {
+  getSavedHouseholdKey,
+  isFirebaseConfigured,
+  pushDataToCloud,
+  subscribeToCloudSync,
+} from '@/lib/firebase';
 
 export default function Home() {
   const [mounted, setMounted] = useState(false);
@@ -63,7 +69,7 @@ export default function Home() {
     mealType: 'lunch',
   });
 
-  // Load state on mount
+  // Load state on mount & connect realtime Firebase listener
   useEffect(() => {
     const loadedProf = loadProfile();
     const loadedRecs = loadAllRecipes();
@@ -83,15 +89,45 @@ export default function Home() {
     setFavorites(loadedFavs);
     setRecipeNotes(loadedNotes);
     setMounted(true);
+
+    // Realtime synchronization if Firebase is configured
+    if (isFirebaseConfigured()) {
+      const household = getSavedHouseholdKey();
+      const unsub = subscribeToCloudSync(household, (remoteData) => {
+        if (remoteData.weeklyPlan && Array.isArray(remoteData.weeklyPlan)) {
+          setWeeklyPlan(remoteData.weeklyPlan);
+          saveWeeklyPlan(remoteData.weeklyPlan);
+        }
+        if (remoteData.shoppingItems && Array.isArray(remoteData.shoppingItems)) {
+          setShoppingItems(remoteData.shoppingItems);
+          saveShoppingItems(remoteData.shoppingItems);
+        }
+        if (remoteData.favorites && Array.isArray(remoteData.favorites)) {
+          setFavorites(remoteData.favorites);
+          saveFavoriteRecipeIds(remoteData.favorites);
+        }
+        if (remoteData.recipeNotes) {
+          setRecipeNotes(remoteData.recipeNotes);
+        }
+      });
+      return () => unsub();
+    }
   }, []);
 
-  // Save weekly plan updates
+  // Save weekly plan updates & push to Cloud
   const updateWeeklyPlan = (newPlan: DayPlan[]) => {
     setWeeklyPlan(newPlan);
     saveWeeklyPlan(newPlan);
     const updatedShop = generateShoppingListFromPlan(newPlan, shoppingItems);
     setShoppingItems(updatedShop);
     saveShoppingItems(updatedShop);
+
+    if (isFirebaseConfigured()) {
+      pushDataToCloud(getSavedHouseholdKey(), {
+        weeklyPlan: newPlan,
+        shoppingItems: updatedShop,
+      });
+    }
   };
 
   const handleAutoGeneratePlan = () => {
@@ -110,6 +146,9 @@ export default function Home() {
         ? prev.filter((id) => id !== recipeId)
         : [...prev, recipeId];
       saveFavoriteRecipeIds(updated);
+      if (isFirebaseConfigured()) {
+        pushDataToCloud(getSavedHouseholdKey(), { favorites: updated });
+      }
       return updated;
     });
   };
@@ -118,7 +157,20 @@ export default function Home() {
     setRecipeNotes((prev) => {
       const updated = { ...prev, [recipeId]: note };
       saveRecipeNote(recipeId, note);
+      if (isFirebaseConfigured()) {
+        pushDataToCloud(getSavedHouseholdKey(), { recipeNotes: updated });
+      }
       return updated;
+    });
+  };
+
+  const handleManualCloudSync = async () => {
+    if (!isFirebaseConfigured()) return;
+    await pushDataToCloud(getSavedHouseholdKey(), {
+      weeklyPlan,
+      shoppingItems,
+      favorites,
+      recipeNotes,
     });
   };
 
@@ -348,6 +400,7 @@ export default function Home() {
         profile={profile}
         onSaveProfile={handleUpdateProfile}
         onResetAllData={handleResetAll}
+        onManualCloudSync={handleManualCloudSync}
       />
 
       <MealPickerModal
