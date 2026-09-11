@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>fit und healthy — Dein Genuss- & Ernährungsguide</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600&display=swap');
+
+    @page {
+      size: A4;
+      margin: 11mm 13mm 11mm 13mm;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: #111C1E;
+      background-color: #FFFFFF;
+      font-size: 10pt;
+      line-height: 1.5;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .page-container {
+      position: relative;
+      min-height: 270mm;
+    }
+
+    .header-banner {
+      background: linear-gradient(135deg, #789A99 0%, #587978 100%);
+      color: white;
+      border-radius: 18px;
+      padding: 20px 24px;
+      margin-bottom: 14px;
+      box-shadow: 0 4px 12px rgba(120, 154, 153, 0.2);
+    }
+
+    .brand-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.22);
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 9.5pt;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    .header-banner h1 {
+      font-size: 20pt;
+      font-weight: 800;
+      line-height: 1.15;
+      margin-bottom: 6px;
+      letter-spacing: -0.4px;
+    }
+
+    .header-banner p {
+      font-size: 10.5pt;
+      opacity: 0.95;
+      font-weight: 400;
+      max-width: 95%;
+    }
+
+    .badges {
+      display: flex;
+      gap: 7px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      font-size: 8pt;
+      font-weight: 600;
+      padding: 3px 9px;
+      border-radius: 7px;
+      background: white;
+      color: #111C1E;
+    }
+
+    .badge.emerald {
+      background: #EBF3E8;
+      color: #1B4332;
+    }
+
+    .badge.peach {
+      background: #FFF4F0;
+      color: #994931;
+    }
+
+    .badge.teal {
+      background: #EBF2F2;
+      color: #3D5B5A;
+    }
+
+    h2 {
+      font-size: 12.5pt;
+      font-weight: 700;
+      color: #111C1E;
+      margin-top: 16px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      border-bottom: 1.5px solid #EBF2F2;
+      padding-bottom: 4px;
+    }
+
+    .section-intro {
+      color: #4A6366;
+      font-size: 9.5pt;
+      margin-bottom: 12px;
+      line-height: 1.45;
+    }
+
+    /* Header Table */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 14px;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    }
+
+    th, td {
+      padding: 7px 10px;
+      text-align: left;
+      font-size: 9pt;
+    }
+
+    th {
+      background: #EBF2F2;
+      color: #3D5B5A;
+      font-weight: 700;
+      border-bottom: 1.5px solid #C5D8D7;
+      text-transform: uppercase;
+      font-size: 7.5pt;
+      letter-spacing: 0.4px;
+    }
+
+    td {
+      border-bottom: 1px solid #F0F5F4;
+      background: #FAFCFC;
+    }
+
+    tr:nth-child(even) td {
+      background: #FFFFFF;
+    }
+
+    .icon-cell {
+      text-align: center;
+      font-size: 12pt;
+      width: 38px;
+    }
+
+    .func-name {
+      font-weight: 700;
+      color: #111C1E;
+      width: 155px;
+    }
+
+    /* Cards Grid */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 9px;
+      margin-bottom: 12px;
+    }
+
+    .card {
+      background: #FAFCFC;
+      border: 1px solid #E0EAE9;
+      border-radius: 12px;
+      padding: 10px 12px;
+      break-inside: avoid;
+    }
+
+    .card-title {
+      font-size: 10pt;
+      font-weight: 700;
+      color: #111C1E;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .card p, .card ul {
+      font-size: 8.8pt;
+      color: #586F73;
+      line-height: 1.4;
+    }
+
+    .card ul {
+      list-style-type: none;
+      padding-left: 0;
+      margin-top: 4px;
+    }
+
+    .card ul li {
+      margin-bottom: 2px;
+      position: relative;
+      padding-left: 12px;
+    }
+
+    .card ul li::before {
+      content: "•";
+      color: #789A99;
+      font-weight: bold;
+      position: absolute;
+      left: 1px;
+    }
+
+    /* Callout Box */
+    .callout {
+      background: #FFF4F0;
+      border: 1px solid #FFD2C2;
+      border-radius: 12px;
+      padding: 9px 13px;
+      margin: 10px 0;
+      color: #994931;
+      font-size: 8.8pt;
+      break-inside: avoid;
+    }
+
+    .callout-title {
+      font-weight: 700;
+      margin-bottom: 2px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    /* Steps row */
+    .steps-row {
+      display: flex;
+      gap: 10px;
+      margin: 10px 0 14px;
+    }
+
+    .step-box {
+      flex: 1;
+      background: #EBF2F2;
+      border: 1px solid #C5D8D7;
+      border-radius: 11px;
+      padding: 10px 8px;
+      text-align: center;
+    }
+
+    .step-number {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #789A99;
+      color: white;
+      font-weight: 800;
+      font-size: 8.5pt;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 5px;
+    }
+
+    .step-title {
+      font-weight: 700;
+      font-size: 9pt;
+      color: #111C1E;
+      margin-bottom: 2px;
+    }
+
+    .step-desc {
+      font-size: 8pt;
+      color: #586F73;
+      line-height: 1.3;
+    }
+
+    .footer-note {
+      text-align: center;
+      margin-top: 16px;
+      padding-top: 10px;
+      border-top: 1px solid #E0EAE9;
+      font-size: 8pt;
+      color: #789A99;
+      font-weight: 600;
+    }
+
+    .page-break {
+      page-break-before: always;
+    }
+
+    .page-tag {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      font-size: 7.5pt;
+      color: #A0B5B5;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ==================== SEITE 1 ==================== -->
+  <div class="page-container">
+    <div class="header-banner">
+      <div class="brand-pill">
+        <span>👨‍🍳 fit und healthy</span>
+        <span>•</span>
+        <span>Offizieller Nutzer-Guide</span>
+      </div>
+      <h1>🥗 fit und healthy</h1>
+      <p>Deine smarte Ernährungs- & Koch-App — gesund essen, spielend leicht planen & genussvoll kochen ohne Kalorienzählstress.</p>
+      
+      <div class="badges">
+        <span class="badge emerald">✓ Für Einsteiger & Alltag</span>
+        <span class="badge peach">✨ KI-Küchenchef</span>
+        <span class="badge teal">📱 iPhone & Android Ready</span>
+        <span class="badge">☁️ Cloud-Haushaltssync</span>
+      </div>
+    </div>
+
+    <p class="section-intro">
+      <strong>Schön, dass Du da bist!</strong> Diese App wurde entwickelt, um gesunde Ernährung im Alltag so unkompliziert und lecker wie möglich zu machen. Du musst keine Kalorientabellen pauken: Die App berechnet die Nährwerte im Hintergrund, plant Deine Woche, erstellt Deinen Einkaufszettel und verwandelt Kühlschrankreste auf Knopfdruck in geniale Rezepte.
+    </p>
+
+    <h2>🧭 Die Leiste oben: Alle Funktionen auf einen Blick</h2>
+    <table>
+      <thead>
+        <tr>
+          <th class="icon-cell">Symbol</th>
+          <th class="func-name">Name</th>
+          <th>Das macht die Funktion im Alltag</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="icon-cell">👨‍🍳</td>
+          <td class="func-name">fit und healthy</td>
+          <td>Dein Logo: Signalisiert stets, dass Du in Deiner persönlichen Genusszentrale bist.</td>
+        </tr>
+        <tr>
+          <td class="icon-cell">🛒</td>
+          <td class="func-name">Supermarkt-Check</td>
+          <td>Scanne den Barcode eines Lebensmittels im Laden. Eine smarte Ampel zeigt sofort, ob es in Dein Fett- und Nährwertbudget passt.</td>
+        </tr>
+        <tr>
+          <td class="icon-cell">📸</td>
+          <td class="func-name">Teller-Scan</td>
+          <td>Fotografiere Deinen Teller – die KI erkennt Zutaten und schätzt Portionsgrößen sowie Makro-Nährwerte für Dich ein.</td>
+        </tr>
+        <tr>
+          <td class="icon-cell">✨</td>
+          <td class="func-name">KI-Rezept</td>
+          <td>Dein digitaler Küchenchef! Erfindet neue Gerichte punktgenau passend zu Deinem individuellen Kalorien- & Makro-Budget.</td>
+        </tr>
+        <tr>
+          <td class="icon-cell">👤</td>
+          <td class="func-name">Profil-Avatar (z.B. NK)</td>
+          <td>Zeigt das aktive Profil. Klicke darauf, um sekundenschnell zwischen Personen oder Haushaltsmitgliedern zu wechseln.</td>
+        </tr>
+        <tr>
+          <td class="icon-cell">···</td>
+          <td class="func-name">Mehr Werkzeuge</td>
+          <td>Öffnet das Schnell-Menü für Reste-Retter, Drucken / PDF, Plan-Analyse und Einstellungen.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="card" style="margin-top: 10px;">
+      <div class="card-title">💡 Tipp für den Header auf dem Smartphone</div>
+      <p>Auf dem Handy findest Du die 4 wichtigsten Schnell-Aktionen (Barcode, Teller-Scan, KI-Rezept, Profil) direkt in der Leiste oben. Alle weiteren Funktionen erreichst Du bequem mit einem Fingertipp auf <strong>···</strong>.</p>
+    </div>
+
+    <div class="page-tag">Seite 1 von 3</div>
+  </div>
+
+  <div class="page-break"></div>
+
+  <!-- ==================== SEITE 2 ==================== -->
+  <div class="page-container">
+    <h2>📱 Die 3 Kernbereiche der App</h2>
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">📅 Wochenplan</div>
+        <p>Plane Deine 7 Tage im Handumdrehen:</p>
+        <ul>
+          <li><strong>Der gesunde Teller</strong>: 50% Gemüse, 25% Eiweiß, 25% Kohlenhydrate.</li>
+          <li><strong>Mahlzeit tauschen 🔄</strong>: Schneller Wechsel zu einem passenden Alternativrezept.</li>
+          <li><strong>Woche neu würfeln 🎲</strong>: Automatische Woche mit 1 Klick.</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-title">📖 Rezepte-Bibliothek</div>
+        <p>Über 160 praxiserprobte Lieblingsgerichte:</p>
+        <ul>
+          <li><strong>Filter & Sprache 🎙️</strong>: Diktieren statt Tippen.</li>
+          <li><strong>Kochmodus 👨‍🍳</strong>: Schritt-für-Schritt Großansicht mit integriertem Koch-Timer.</li>
+          <li><strong>Portions-Rechner</strong>: Skaliert Zutaten auf 1x, 2x oder 4x.</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🛒 Smarte Einkaufsliste</div>
+        <p>Schluss mit Zettelwirtschaft:</p>
+        <ul>
+          <li><strong>Supermarkt-Sortierung</strong>: Automatisch geordnet nach Kühlregal, Frische & Vorrat.</li>
+          <li><strong>KI-Frische-Tipp ✨</strong>: Sagt Dir, was Du zuerst verkochen solltest.</li>
+          <li><strong>Haptisches Abhaken</strong>: Ein Klick archiviert Erledigtes.</li>
+        </ul>
+      </div>
+    </div>
+
+    <h2>🤖 Deine cleveren Küchen-Helfer</h2>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">🥫 Der Reste-Retter (Zero Waste)</div>
+        <p>Reste im Kühlschrank? Einfach eingeben oder einsprechen (z. B. <em>„halbe Zucchini, 2 Eier, etwas Quark“</em>). Die App schlägt passende Gerichte vor oder kreiert ein ganz neues Rezept im Handumdrehen!</p>
+      </div>
+
+      <div class="card">
+        <div class="card-title">📦 1-Klick Starter-Kochbuch</div>
+        <p>Neues Profil angelegt? Wähle im KI-Generator den Reiter <strong>Starter-Paket (6)</strong>. Die KI erstellt automatisch 2x Frühstück, 2x Mittagessen und 2x Abendbrot, perfekt gerechnet auf das eigene Tagesbudget.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🖨️ Druck- & PDF-Studio</div>
+        <p>Wochenplan an den Kühlschrank hängen oder Einkaufszettel teilen: Exportiere Pläne und Zutatenlisten mit 1 Klick als sauberes PDF, Druckansicht oder kopiere sie direkt in WhatsApp.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-title">📄 PDF-Ernährungsplan Scan</div>
+        <p>Hast Du einen neuen Ernährungsbericht vom Coach oder Arzt? Lade das PDF einfach hoch – die App liest Kalorien- und Makro-Grenzwerte automatisch aus und übernimmt sie in Dein Profil.</p>
+      </div>
+    </div>
+
+    <div class="callout">
+      <div class="callout-title">💡 Tipp: Maßgeschneidert für jedes Familienmitglied</div>
+      <div>
+        Jedes Profil hat sein eigenes Tagesbudget (z. B. 1.500 kcal oder 2.200 kcal) und Ernährungsformen wie <strong>Omnivor, Vegetarisch, Vegan oder Pescetarisch</strong>. Die KI-Rezepte passen Mengenangaben und Fette automatisch an!
+      </div>
+    </div>
+
+    <div class="page-tag">Seite 2 von 3</div>
+  </div>
+
+  <div class="page-break"></div>
+
+  <!-- ==================== SEITE 3 ==================== -->
+  <div class="page-container">
+    <h2>👥 Profile & Haushalts-Synchronisation</h2>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">🔑 Gemeinsamer Haushaltsschlüssel</div>
+        <p>Tragt in den Einstellungen ⚙️ denselben Schlüssel (z. B. <em>„KUECHE-2026“</em>) ein. Wochenpläne und Einkaufslisten synchronisieren sich in Echtzeit zwischen Euren Smartphones!</p>
+      </div>
+
+      <div class="card">
+        <div class="card-title">👤 Eigene Profile</div>
+        <p>Trotz gemeinsamen Haushalts kann jede Person ihr eigenes Profil mit individuellen Zielen anlegen und mit einem Fingertipp im Header wechseln.</p>
+      </div>
+    </div>
+
+    <h2>📲 Als App auf dem Smartphone installieren (PWA)</h2>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">🍏 Auf dem iPhone (Safari)</div>
+        <ul>
+          <li>1. Website in <strong>Safari</strong> öffnen.</li>
+          <li>2. Unten auf das <strong>Teilen-Symbol ⎋</strong> tippen.</li>
+          <li>3. <strong>„Zum Home-Bildschirm“</strong> auswählen.</li>
+          <li>4. Fertig! Öffnet sich im Vollbild ohne Browserleisten.</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🤖 Auf Android (Google Chrome)</div>
+        <ul>
+          <li>1. Website in <strong>Chrome</strong> öffnen.</li>
+          <li>2. Oben rechts auf das <strong>Menü (⋮)</strong> tippen.</li>
+          <li>3. <strong>„App installieren“</strong> auswählen.</li>
+          <li>4. Die App liegt nun direkt zwischen Deinen normalen Apps.</li>
+        </ul>
+      </div>
+    </div>
+
+    <h2>🚀 Schnellstart in 3 Schritten</h2>
+    <div class="steps-row">
+      <div class="step-box">
+        <div class="step-number">1</div>
+        <div class="step-title">Profil prüfen</div>
+        <div class="step-desc">Tippe oben auf Dein Avatar-Icon 👤 und passe Deine Nährwertziele an.</div>
+      </div>
+      <div class="step-box">
+        <div class="step-number">2</div>
+        <div class="step-title">Woche planen</div>
+        <div class="step-desc">Gehe in den Wochenplan 📅, tausche Gerichte oder würfle neu.</div>
+      </div>
+      <div class="step-box">
+        <div class="step-number">3</div>
+        <div class="step-title">Einkaufen & Kochen</div>
+        <div class="step-desc">Nutze die Einkaufsliste 🛒 und starte mit Spaß ins Kochen!</div>
+      </div>
+    </div>
+
+    <div class="footer-note">
+      fit und healthy • Gesund, genussvoll & alltagstauglich • Entwickelt mit Liebe für Deine Küche 🥑🍅🥗
+    </div>
+
+    <div class="page-tag">Seite 3 von 3</div>
+  </div>
+
+</body>
+</html>
