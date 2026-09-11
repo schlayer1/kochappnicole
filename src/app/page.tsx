@@ -42,6 +42,7 @@ import {
   saveCustomRecipe,
   saveFavoriteRecipeIds,
   saveProfile,
+  saveProfileEntry,
   saveRecipeNote,
   saveSettings,
   saveShoppingItems,
@@ -492,15 +493,16 @@ export default function Home() {
 
   const handleSaveAiRecipe = (newRecipe: Recipe) => {
     saveCustomRecipe(newRecipe);
-    const updatedRecipes = [newRecipe, ...recipes.filter((r) => r.id !== newRecipe.id)];
-    setRecipes(updatedRecipes);
-
-    if (isFirebaseConfigured()) {
-      setIsSyncing(true);
-      pushDataToCloud(getSavedHouseholdKey(), {
-        customRecipes: updatedRecipes.filter((r) => r.isAiGenerated),
-      }).finally(() => setIsSyncing(false));
-    }
+    setRecipes((prev) => {
+      const updatedRecipes = [newRecipe, ...prev.filter((r) => r.id !== newRecipe.id)];
+      if (isFirebaseConfigured()) {
+        setIsSyncing(true);
+        pushDataToCloud(getSavedHouseholdKey(), {
+          customRecipes: updatedRecipes.filter((r) => r.isAiGenerated),
+        }).finally(() => setIsSyncing(false));
+      }
+      return updatedRecipes;
+    });
 
     // If generated specifically for a slot
     if (aiSlotTarget.dayIdx !== undefined && aiSlotTarget.mealType) {
@@ -512,6 +514,14 @@ export default function Home() {
   const handleUpdateProfile = (newProfile: NutritionProfile) => {
     setProfile(newProfile);
     saveProfile(newProfile);
+    if (activeProfile) {
+      const updatedActive: UserProfileEntry = {
+        ...activeProfile,
+        targetGoals: newProfile.targetGoals,
+      };
+      setActiveProfile(updatedActive);
+      saveProfileEntry(updatedActive);
+    }
   };
 
   const handleSaveSettings = (newSettings: AppSettings) => {
@@ -745,6 +755,8 @@ export default function Home() {
         aiProvider={settings.aiProvider}
         initialMealType={aiSlotTarget.mealType || 'lunch'}
         initialFridgeIngredients={aiInitialFridgeIngredients}
+        profileGoals={profile.targetGoals}
+        profileName={activeProfile?.name}
       />
 
       <FridgeLeftoversModal
@@ -825,6 +837,7 @@ export default function Home() {
         currentProfile={profile}
         onUpdateProfile={handleUpdateProfile}
         userApiKey={settings.apiKey}
+        profileName={activeProfile?.name}
       />
 
       <SettingsModal

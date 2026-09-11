@@ -10,6 +10,7 @@ interface DocAnalyzerModalProps {
   currentProfile: NutritionProfile;
   onUpdateProfile: (newProfile: NutritionProfile) => void;
   userApiKey?: string;
+  profileName?: string;
 }
 
 export const DocAnalyzerModal: React.FC<DocAnalyzerModalProps> = ({
@@ -18,6 +19,7 @@ export const DocAnalyzerModal: React.FC<DocAnalyzerModalProps> = ({
   currentProfile,
   onUpdateProfile,
   userApiKey,
+  profileName,
 }) => {
   const [file, setFile] = useState<File | null>(null);
   const [pastedText, setPastedText] = useState('');
@@ -96,7 +98,9 @@ export const DocAnalyzerModal: React.FC<DocAnalyzerModalProps> = ({
             </div>
             <div>
               <h3 className="font-bold text-[#111C1E] text-base">Ernährungsanalyse einlesen</h3>
-              <p className="text-xs text-[#586F73]">Künftige PDF-Reports hochladen & App-Ziele angleichen</p>
+              <p className="text-xs text-[#586F73]">
+                Aktualisiert Zielwerte für Profil: <span className="font-semibold text-[#1B4332] bg-[#EBF3E8] px-1.5 py-0.5 rounded-md border border-[#D5E5D0]">{profileName || 'Aktives Profil'}</span>
+              </p>
             </div>
           </div>
 
