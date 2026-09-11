@@ -359,6 +359,42 @@ export default function Home() {
     }
   };
 
+  const handleAddFridgeMissingItemsToShopping = (items: string[]) => {
+    const newItems: ShoppingItem[] = items.map((name, idx) => ({
+      id: `fridge_missing_${Date.now()}_${idx}`,
+      name,
+      category: 'Vorrat & Gewürze',
+      checked: false,
+      isPantry: false,
+      isCustom: true,
+    }));
+    setShoppingItems((prev) => {
+      const updated = [...newItems, ...prev];
+      saveShoppingItems(updated);
+      if (isFirebaseConfigured()) {
+        setIsSyncing(true);
+        pushDataToCloud(getSavedHouseholdKey(), { shoppingItems: updated })
+          .finally(() => setIsSyncing(false));
+      }
+      return updated;
+    });
+  };
+
+  const handleLogFridgeRecipeToPlan = (recipe: Recipe, slot: MealType) => {
+    saveCustomRecipe(recipe);
+    const updatedRecipes = [recipe, ...recipes.filter((r) => r.id !== recipe.id)];
+    setRecipes(updatedRecipes);
+    handleAssignMeal(selectedDayIdx, slot, recipe);
+    setActiveTab('plan');
+
+    if (isFirebaseConfigured()) {
+      setIsSyncing(true);
+      pushDataToCloud(getSavedHouseholdKey(), {
+        customRecipes: updatedRecipes.filter((r) => r.isAiGenerated),
+      }).finally(() => setIsSyncing(false));
+    }
+  };
+
   const handleRemoveMeal = (dayIdx: number, mealType: MealType) => {
     const updated = [...weeklyPlan];
     if (updated[dayIdx]) {
@@ -622,8 +658,18 @@ export default function Home() {
         onClose={() => setIsFridgeModalOpen(false)}
         recipes={recipes}
         customImages={customImages}
-        onOpenCookMode={(r) => setCookModeRecipe(r)}
+        onOpenCookMode={(r) => {
+          saveCustomRecipe(r);
+          setRecipes(loadAllRecipes());
+          setCookModeRecipe(r);
+        }}
         onGenerateAiWithIngredients={handleGenerateAiWithIngredients}
+        userApiKey={settings.apiKey}
+        groqApiKey={settings.groqApiKey}
+        geminiApiKey={settings.geminiApiKey}
+        aiProvider={settings.aiProvider}
+        onAddMissingToShoppingList={handleAddFridgeMissingItemsToShopping}
+        onLogGeneratedRecipeToPlan={handleLogFridgeRecipeToPlan}
       />
 
       <MealSwapModal
