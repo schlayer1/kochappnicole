@@ -276,101 +276,101 @@ export const MacroCockpit: React.FC<MacroCockpitProps> = ({ dayPlan, targetGoals
         )}
 
         <div className="flex flex-col md:flex-row items-center justify-around gap-6 pt-2">
-          {/* Stilisierter Runder Teller mit Sektoren */}
-          <div className="relative w-44 h-44 sm:w-48 sm:h-48 rounded-full bg-white shadow-md border-4 border-slate-100 flex items-center justify-center shrink-0">
+          {/* Stilisierter Runder Teller mit Sektoren im App-Farbraster (Aqua Mist, Slate, Peach Ice) */}
+          <div className="relative w-44 h-44 sm:w-48 sm:h-48 rounded-full bg-white dark:bg-[#111a1c] shadow-md border-4 border-[#E0EAE9] dark:border-[#1e2c2f] flex items-center justify-center shrink-0">
             {/* Porzellan-Rand Effekt */}
-            <div className="absolute inset-1 rounded-full border border-slate-200/80 pointer-events-none" />
-            <div className="absolute inset-3 rounded-full border border-slate-200/40 pointer-events-none" />
+            <div className="absolute inset-1 rounded-full border border-[#C5D8D7]/60 dark:border-[#2D4348] pointer-events-none" />
+            <div className="absolute inset-3 rounded-full border border-slate-200/40 dark:border-slate-800 pointer-events-none" />
 
-            {/* Sektoren via SVG Donut */}
+            {/* Sektoren via SVG Donut im Aqua Mist / Deep Slate / Peach Ice Farbraster */}
             <svg viewBox="0 0 100 100" className="w-36 h-36 -rotate-90">
-              {/* 50% Gemüse / Ballaststoffe (0 bis 180 Grad) */}
+              {/* 50% Gemüse / Ballaststoffe -> Aqua Mist (#789A99) */}
               <circle
                 cx="50"
                 cy="50"
                 r="36"
                 fill="transparent"
-                stroke="#10B981"
+                stroke="#789A99"
                 strokeWidth="20"
                 strokeDasharray="113.1 113.1"
                 strokeDashoffset="0"
-                className="opacity-90 hover:opacity-100 transition-opacity cursor-pointer"
+                className="opacity-95 hover:opacity-100 transition-opacity cursor-pointer"
               />
-              {/* 25% Protein (180 bis 270 Grad) */}
+              {/* 25% Protein (Prio) -> Slate Blue/Slate Surface (#2D4348 / #3D5B5A) */}
               <circle
                 cx="50"
                 cy="50"
                 r="36"
                 fill="transparent"
-                stroke="#0EA5E9"
+                stroke="#3D5B5A"
                 strokeWidth="20"
                 strokeDasharray="56.5 169.7"
                 strokeDashoffset="-113.1"
-                className="opacity-90 hover:opacity-100 transition-opacity cursor-pointer"
+                className="opacity-95 hover:opacity-100 transition-opacity cursor-pointer"
               />
-              {/* 25% Carbs & Fette im Budget (270 bis 360 Grad) */}
+              {/* 25% Carbs & Fette im Budget -> Peach Ice (#FFD2C2) */}
               <circle
                 cx="50"
                 cy="50"
                 r="36"
                 fill="transparent"
-                stroke="#F59E0B"
+                stroke="#FFD2C2"
                 strokeWidth="20"
                 strokeDasharray="56.5 169.7"
                 strokeDashoffset="-169.6"
-                className="opacity-90 hover:opacity-100 transition-opacity cursor-pointer"
+                className="opacity-95 hover:opacity-100 transition-opacity cursor-pointer"
               />
             </svg>
 
             {/* Teller Zentrum */}
-            <div className="absolute w-14 h-14 rounded-full bg-white shadow-xs border border-slate-200 flex flex-col items-center justify-center text-center">
-              <span className="text-[9px] font-bold uppercase text-slate-400">Balance</span>
-              <span className="text-[11px] font-black text-emerald-700">100%</span>
+            <div className="absolute w-14 h-14 rounded-full bg-white dark:bg-[#182629] shadow-xs border border-[#C5D8D7] dark:border-[#2D4348] flex flex-col items-center justify-center text-center">
+              <span className="text-[9px] font-bold uppercase text-[#586F73] dark:text-slate-400">Balance</span>
+              <span className="text-[11px] font-black text-[#789A99]">100%</span>
             </div>
           </div>
 
-          {/* Legende & Nährstoff-Sektoren */}
+          {/* Legende & Nährstoff-Sektoren im edlen App-Design */}
           <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-1 gap-2.5 w-full max-w-md">
-            {/* Sektor 1 */}
-            <div className="p-2.5 rounded-xl bg-white border border-emerald-200/80 flex items-center justify-between shadow-2xs">
+            {/* Sektor 1: 50% Frische & Gemüse (Aqua Mist) */}
+            <div className="p-2.5 rounded-xl bg-white dark:bg-[#182629] border border-[#C5D8D7] dark:border-[#2D4348] flex items-center justify-between shadow-2xs">
               <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                <div className="w-6 h-6 rounded-lg bg-[#EBF2F2] dark:bg-[#203135] text-[#789A99] flex items-center justify-center shrink-0">
                   <Salad className="w-3.5 h-3.5" />
                 </div>
                 <div>
-                  <div className="text-xs font-bold text-slate-900">50% Gemüse &amp; Salat</div>
-                  <div className="text-[10px] text-slate-500">Ballaststoffe, Volumen, Vitamine</div>
+                  <div className="text-xs font-bold text-slate-900 dark:text-white">50% Gemüse &amp; Salat</div>
+                  <div className="text-[10px] text-slate-500 dark:text-slate-400">Ballaststoffe, Sättigung, Frische</div>
                 </div>
               </div>
-              <span className="text-xs font-mono font-bold text-emerald-700">{total.fiber}g Ballastst.</span>
+              <span className="text-xs font-mono font-bold text-[#789A99]">{total.fiber}g Ballastst.</span>
             </div>
 
-            {/* Sektor 2 */}
-            <div className="p-2.5 rounded-xl bg-white border border-sky-200/80 flex items-center justify-between shadow-2xs">
+            {/* Sektor 2: 25% Protein (Deep Slate / Slate Teal) */}
+            <div className="p-2.5 rounded-xl bg-white dark:bg-[#182629] border border-[#C5D8D7] dark:border-[#2D4348] flex items-center justify-between shadow-2xs">
               <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center shrink-0">
+                <div className="w-6 h-6 rounded-lg bg-[#DEE9E8] dark:bg-[#203135] text-[#3D5B5A] dark:text-[#789A99] flex items-center justify-center shrink-0">
                   <Fish className="w-3.5 h-3.5" />
                 </div>
                 <div>
-                  <div className="text-xs font-bold text-slate-900">25% Protein (Prio 1)</div>
-                  <div className="text-[10px] text-slate-500">Quark, Geflügel, Fisch, Hülsenfrüchte</div>
+                  <div className="text-xs font-bold text-slate-900 dark:text-white">25% Protein (Prio 103g)</div>
+                  <div className="text-[10px] text-slate-500 dark:text-slate-400">Quark, Geflügel, Fisch, Hülsenfrüchte</div>
                 </div>
               </div>
-              <span className="text-xs font-mono font-bold text-sky-700">{total.protein}g / 103g</span>
+              <span className="text-xs font-mono font-bold text-[#3D5B5A] dark:text-[#789A99]">{total.protein}g / 103g</span>
             </div>
 
-            {/* Sektor 3 */}
-            <div className="p-2.5 rounded-xl bg-white border border-amber-200/80 flex items-center justify-between shadow-2xs">
+            {/* Sektor 3: 25% Carbs & Fette (Peach Ice) */}
+            <div className="p-2.5 rounded-xl bg-white dark:bg-[#182629] border border-[#FFD2C2] dark:border-[#FFD2C2]/30 flex items-center justify-between shadow-2xs">
               <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+                <div className="w-6 h-6 rounded-lg bg-[#FFF4F0] dark:bg-[#203135] text-[#994931] flex items-center justify-center shrink-0">
                   <Wheat className="w-3.5 h-3.5" />
                 </div>
                 <div>
-                  <div className="text-xs font-bold text-slate-900">25% Carbs &amp; Fette</div>
-                  <div className="text-[10px] text-slate-500">Vollkorn, Haferflocken, max. 44g Fett</div>
+                  <div className="text-xs font-bold text-slate-900 dark:text-white">25% Carbs &amp; Fette</div>
+                  <div className="text-[10px] text-slate-500 dark:text-slate-400">Vollkorn, Haferflocken, max. 44g Fett</div>
                 </div>
               </div>
-              <span className={`text-xs font-mono font-bold ${isFatWarning ? 'text-rose-600' : 'text-amber-700'}`}>
+              <span className={`text-xs font-mono font-bold ${isFatWarning ? 'text-rose-600' : 'text-[#994931]'}`}>
                 {total.fat}g Fett
               </span>
             </div>

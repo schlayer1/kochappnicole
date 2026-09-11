@@ -207,10 +207,10 @@ export const Header: React.FC<HeaderProps> = ({
               {showMobileTools ? <X className="w-4 h-4" /> : <MoreHorizontal className="w-4 h-4" />}
             </button>
 
-            {/* 10. Einstellungen Button */}
+            {/* 10. Einstellungen Button (Desktop & iPad; on iPhone reachable via More Tools drawer) */}
             <button
               onClick={onOpenSettings}
-              className="p-2 rounded-xl text-[#586F73] hover:text-[#111C1E] hover:bg-[#F1F6F5] transition-colors cursor-pointer"
+              className="hidden md:block p-2 rounded-xl text-[#586F73] hover:text-[#111C1E] hover:bg-[#F1F6F5] transition-colors cursor-pointer"
               title="Einstellungen & API-Key"
             >
               <Settings className="w-4 h-4" />

@@ -222,8 +222,8 @@ export const RecipeCatalog: React.FC<RecipeCatalogProps> = ({
                     </div>
 
                     {/* Why Nicole fits rule */}
-                    <p className="text-xs text-[#3D5B5A] bg-[#EBF2F2]/60 p-2.5 rounded-lg border border-[#C5D8D7]/60 line-clamp-3">
-                      <span className="font-semibold text-[#789A99]">Nicole-Vorgabe: </span>
+                    <p className="text-xs text-[#3D5B5A] dark:text-slate-300 bg-[#EBF2F2]/60 dark:bg-[#182629] p-2.5 rounded-lg border border-[#C5D8D7]/60 dark:border-[#2D4348] line-clamp-3">
+                      <span className="font-semibold text-[#789A99]">Warum es passt: </span>
                       {recipe.whyNicole}
                     </p>
 

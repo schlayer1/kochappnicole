@@ -366,8 +366,8 @@ export const MealPlanner: React.FC<MealPlannerProps> = ({
                     </div>
 
                     {/* Why Nicole Fits Badge */}
-                    <div className="text-xs text-[#3D5B5A] bg-[#789A99]/10 p-2.5 rounded-xl border border-[#789A99]/20 leading-relaxed">
-                      <span className="font-bold text-[#789A99]">Nicole-Vorgabe: </span>
+                    <div className="text-xs text-[#3D5B5A] dark:text-slate-300 bg-[#789A99]/10 dark:bg-[#789A99]/20 p-2.5 rounded-xl border border-[#789A99]/20 leading-relaxed">
+                      <span className="font-bold text-[#789A99]">Warum es passt: </span>
                       {recipe.whyNicole}
                     </div>
                   </div>

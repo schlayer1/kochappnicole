@@ -315,8 +315,8 @@ export const AiRecipeGeneratorModal: React.FC<AiRecipeGeneratorModalProps> = ({
               </div>
 
               {/* Why Nicole */}
-              <div className="text-xs text-[#3D5B5A] bg-[#EBF2F2]/60 p-2.5 rounded-xl border border-[#C5D8D7]/60">
-                <span className="font-semibold text-[#789A99]">Nicole-Vorgabe: </span>
+              <div className="text-xs text-[#3D5B5A] dark:text-slate-300 bg-[#EBF2F2]/60 dark:bg-[#182629] p-2.5 rounded-xl border border-[#C5D8D7]/60 dark:border-[#2D4348]">
+                <span className="font-semibold text-[#789A99]">Warum es passt: </span>
                 {generatedRecipe.whyNicole}
               </div>
 
