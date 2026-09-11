@@ -1,7 +1,5 @@
-'use client';
-
 import React from 'react';
-import { Sparkles, FileText, Settings, ChefHat } from 'lucide-react';
+import { Sparkles, FileText, Settings, ChefHat, Cloud } from 'lucide-react';
 import { NutritionProfile } from '@/lib/types';
 
 interface HeaderProps {
@@ -11,6 +9,8 @@ interface HeaderProps {
   onOpenAiGenerator: () => void;
   onOpenDocAnalyzer: () => void;
   onOpenSettings: () => void;
+  isCloudConnected?: boolean;
+  isSyncing?: boolean;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -20,6 +20,8 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenAiGenerator,
   onOpenDocAnalyzer,
   onOpenSettings,
+  isCloudConnected = false,
+  isSyncing = false,
 }) => {
   return (
     <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-[#E0EAE9]">
@@ -96,6 +98,19 @@ export const Header: React.FC<HeaderProps> = ({
               <FileText className="w-3.5 h-3.5 text-[#789A99]" />
               <span className="hidden md:inline">Analyse-Update</span>
             </button>
+
+            {/* Cloud Sync Status Badge */}
+            {isCloudConnected && (
+              <button
+                onClick={onOpenSettings}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-medium bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200/80 transition-all cursor-pointer"
+                title="Firebase Cloud Echtzeit-Synchronisation aktiv (Klicken für Details)"
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <Cloud className={`w-3.5 h-3.5 text-emerald-600 ${isSyncing ? 'animate-spin' : ''}`} />
+                <span className="hidden sm:inline text-[11px] font-semibold">{isSyncing ? 'Sync...' : 'Cloud Sync'}</span>
+              </button>
+            )}
 
             {/* Einstellungen Button */}
             <button

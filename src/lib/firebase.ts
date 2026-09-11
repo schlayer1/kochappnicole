@@ -115,7 +115,7 @@ export interface CloudUserData {
  */
 export function subscribeToCloudSync(
   householdKey: string,
-  onRemoteChange: (data: CloudUserData) => void
+  onRemoteChange: (data: CloudUserData, isFromRemote: boolean) => void
 ): () => void {
   const db = getFirebaseDb();
   if (!db) return () => {};
@@ -127,13 +127,17 @@ export function subscribeToCloudSync(
     const unsubscribe = onSnapshot(
       docRef,
       (snap) => {
+        const isFromRemote = !snap.metadata.hasPendingWrites;
         if (snap.exists()) {
           const data = snap.data() as CloudUserData;
-          onRemoteChange(data);
+          onRemoteChange(data, isFromRemote);
+        } else {
+          // Document does not exist yet
+          onRemoteChange({}, isFromRemote);
         }
       },
       (err) => {
-        console.warn('Firestore subscription error (offline?):', err);
+        console.warn('Firestore subscription warning (offline or permissions?):', err);
       }
     );
     return unsubscribe;
@@ -144,30 +148,38 @@ export function subscribeToCloudSync(
 }
 
 /**
- * Speichert Daten in Firestore in die 'households/{cleanKey}' Document-Collection
+ * Speichert Daten in Firestore in die 'households/{cleanKey}' Document-Collection.
+ * Entfernt automatisch undefined-Werte (da Firestore sonst einen Fehler wirft).
  */
 export async function pushDataToCloud(
   householdKey: string,
   dataToSave: Partial<CloudUserData>
 ): Promise<boolean> {
   const db = getFirebaseDb();
-  if (!db) return false;
+  if (!db) {
+    console.warn('pushDataToCloud: Firebase DB is not initialized.');
+    return false;
+  }
 
   const cleanKey = (householdKey || 'nicole-keller').trim().toLowerCase();
   const docRef = doc(db, 'households', cleanKey);
 
   try {
+    // Strips any undefined fields which Firestore strictly forbids
+    const sanitized = JSON.parse(JSON.stringify(dataToSave));
+    
     await setDoc(
       docRef,
       {
-        ...dataToSave,
+        ...sanitized,
         updatedAt: serverTimestamp(),
       },
       { merge: true }
     );
     return true;
   } catch (e) {
-    console.error('Failed to push data to cloud Firestore', e);
+    console.error('Failed to push data to cloud Firestore:', e);
     return false;
   }
 }
+

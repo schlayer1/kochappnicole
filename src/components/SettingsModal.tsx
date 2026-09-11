@@ -21,7 +21,7 @@ interface SettingsModalProps {
   profile: NutritionProfile;
   onSaveProfile: (p: NutritionProfile) => void;
   onResetAllData: () => void;
-  onManualCloudSync?: () => Promise<void>;
+  onManualCloudSync?: () => Promise<boolean>;
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
@@ -42,6 +42,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     getSavedCustomFirebaseConfig() || {}
   );
   const [syncingCloud, setSyncingCloud] = useState(false);
+  const [syncSuccess, setSyncSuccess] = useState(false);
   const [savedNotice, setSavedNotice] = useState(false);
 
   if (!isOpen) return null;
@@ -255,14 +256,31 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 type="button"
                 onClick={async () => {
                   setSyncingCloud(true);
-                  await onManualCloudSync();
+                  const ok = await onManualCloudSync();
                   setSyncingCloud(false);
+                  if (ok !== false) {
+                    setSyncSuccess(true);
+                    setTimeout(() => setSyncSuccess(false), 3500);
+                  }
                 }}
                 disabled={syncingCloud}
-                className="flex items-center justify-center gap-1.5 w-full py-2 rounded-xl text-xs font-semibold bg-[#EBF2F2] hover:bg-[#DEE9E8] text-[#3D5B5A] border border-[#C5D8D7] transition-all active:scale-[0.98]"
+                className={`flex items-center justify-center gap-1.5 w-full py-2.5 rounded-xl text-xs font-semibold transition-all active:scale-[0.98] ${
+                  syncSuccess
+                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-300 shadow-xs'
+                    : 'bg-[#EBF2F2] hover:bg-[#DEE9E8] text-[#3D5B5A] border border-[#C5D8D7]'
+                }`}
               >
-                <Cloud className="w-3.5 h-3.5 text-[#789A99]" />
-                {syncingCloud ? 'Synchronisiere mit Cloud...' : 'Jetzt mit Cloud synchronisieren'}
+                {syncSuccess ? (
+                  <>
+                    <Check className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Erfolgreich mit Cloud synchronisiert!</span>
+                  </>
+                ) : (
+                  <>
+                    <Cloud className={`w-3.5 h-3.5 text-[#789A99] ${syncingCloud ? 'animate-spin' : ''}`} />
+                    <span>{syncingCloud ? 'Synchronisiere mit Cloud...' : 'Jetzt mit Cloud synchronisieren'}</span>
+                  </>
+                )}
               </button>
             )}
 

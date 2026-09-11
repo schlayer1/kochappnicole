@@ -56,6 +56,8 @@ export default function Home() {
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
   const [favorites, setFavorites] = useState<string[]>([]);
   const [recipeNotes, setRecipeNotes] = useState<Record<string, string>>({});
+  const [isCloudActive, setIsCloudActive] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   // Modals
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
@@ -92,22 +94,48 @@ export default function Home() {
 
     // Realtime synchronization if Firebase is configured
     if (isFirebaseConfigured()) {
+      setIsCloudActive(true);
       const household = getSavedHouseholdKey();
-      const unsub = subscribeToCloudSync(household, (remoteData) => {
-        if (remoteData.weeklyPlan && Array.isArray(remoteData.weeklyPlan)) {
-          setWeeklyPlan(remoteData.weeklyPlan);
-          saveWeeklyPlan(remoteData.weeklyPlan);
+      const unsub = subscribeToCloudSync(household, (remoteData, isFromRemote) => {
+        // If Firestore has a weekly plan, adopt it
+        if (remoteData.weeklyPlan && Array.isArray(remoteData.weeklyPlan) && remoteData.weeklyPlan.length > 0) {
+          if (isFromRemote) {
+            setWeeklyPlan(remoteData.weeklyPlan);
+            saveWeeklyPlan(remoteData.weeklyPlan);
+          }
+        } else {
+          // Cloud is empty: Initial seed from this device!
+          setIsSyncing(true);
+          pushDataToCloud(household, {
+            weeklyPlan: loadedPlan,
+            shoppingItems: initialShop,
+            favorites: loadedFavs,
+            recipeNotes: loadedNotes,
+          }).finally(() => setIsSyncing(false));
         }
+
         if (remoteData.shoppingItems && Array.isArray(remoteData.shoppingItems)) {
-          setShoppingItems(remoteData.shoppingItems);
-          saveShoppingItems(remoteData.shoppingItems);
+          if (isFromRemote) {
+            setShoppingItems(remoteData.shoppingItems);
+            saveShoppingItems(remoteData.shoppingItems);
+          }
         }
         if (remoteData.favorites && Array.isArray(remoteData.favorites)) {
-          setFavorites(remoteData.favorites);
-          saveFavoriteRecipeIds(remoteData.favorites);
+          if (isFromRemote) {
+            setFavorites(remoteData.favorites);
+            saveFavoriteRecipeIds(remoteData.favorites);
+          }
         }
         if (remoteData.recipeNotes) {
-          setRecipeNotes(remoteData.recipeNotes);
+          if (isFromRemote) {
+            setRecipeNotes(remoteData.recipeNotes);
+          }
+        }
+        if (remoteData.customRecipes && Array.isArray(remoteData.customRecipes)) {
+          if (isFromRemote) {
+            remoteData.customRecipes.forEach((cr: Recipe) => saveCustomRecipe(cr));
+            setRecipes(loadAllRecipes());
+          }
         }
       });
       return () => unsub();
@@ -123,10 +151,11 @@ export default function Home() {
     saveShoppingItems(updatedShop);
 
     if (isFirebaseConfigured()) {
+      setIsSyncing(true);
       pushDataToCloud(getSavedHouseholdKey(), {
         weeklyPlan: newPlan,
         shoppingItems: updatedShop,
-      });
+      }).finally(() => setIsSyncing(false));
     }
   };
 
@@ -147,7 +176,9 @@ export default function Home() {
         : [...prev, recipeId];
       saveFavoriteRecipeIds(updated);
       if (isFirebaseConfigured()) {
-        pushDataToCloud(getSavedHouseholdKey(), { favorites: updated });
+        setIsSyncing(true);
+        pushDataToCloud(getSavedHouseholdKey(), { favorites: updated })
+          .finally(() => setIsSyncing(false));
       }
       return updated;
     });
@@ -158,20 +189,27 @@ export default function Home() {
       const updated = { ...prev, [recipeId]: note };
       saveRecipeNote(recipeId, note);
       if (isFirebaseConfigured()) {
-        pushDataToCloud(getSavedHouseholdKey(), { recipeNotes: updated });
+        setIsSyncing(true);
+        pushDataToCloud(getSavedHouseholdKey(), { recipeNotes: updated })
+          .finally(() => setIsSyncing(false));
       }
       return updated;
     });
   };
 
   const handleManualCloudSync = async () => {
-    if (!isFirebaseConfigured()) return;
-    await pushDataToCloud(getSavedHouseholdKey(), {
-      weeklyPlan,
-      shoppingItems,
-      favorites,
-      recipeNotes,
-    });
+    if (!isFirebaseConfigured()) return false;
+    setIsSyncing(true);
+    try {
+      return await pushDataToCloud(getSavedHouseholdKey(), {
+        weeklyPlan,
+        shoppingItems,
+        favorites,
+        recipeNotes,
+      });
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
   const handleAssignMeal = (dayIdx: number, mealType: MealType, recipe: Recipe) => {
@@ -212,6 +250,13 @@ export default function Home() {
     const updatedRecipes = [newRecipe, ...recipes.filter((r) => r.id !== newRecipe.id)];
     setRecipes(updatedRecipes);
 
+    if (isFirebaseConfigured()) {
+      setIsSyncing(true);
+      pushDataToCloud(getSavedHouseholdKey(), {
+        customRecipes: updatedRecipes.filter((r) => r.isAiGenerated),
+      }).finally(() => setIsSyncing(false));
+    }
+
     // If generated specifically for a slot
     if (aiSlotTarget.dayIdx !== undefined && aiSlotTarget.mealType) {
       handleAssignMeal(aiSlotTarget.dayIdx, aiSlotTarget.mealType, newRecipe);
@@ -241,6 +286,16 @@ export default function Home() {
       saveShoppingItems(resetShop);
       setSettings(DEFAULT_SETTINGS);
       setIsSettingsOpen(false);
+
+      if (isFirebaseConfigured()) {
+        setIsSyncing(true);
+        pushDataToCloud(getSavedHouseholdKey(), {
+          weeklyPlan: resetPlan,
+          shoppingItems: resetShop,
+          favorites: [],
+          recipeNotes: {},
+        }).finally(() => setIsSyncing(false));
+      }
     }
   };
 
@@ -249,6 +304,11 @@ export default function Home() {
     setShoppingItems((prev) => {
       const updated = prev.map((it) => (it.id === id ? { ...it, checked: !it.checked } : it));
       saveShoppingItems(updated);
+      if (isFirebaseConfigured()) {
+        setIsSyncing(true);
+        pushDataToCloud(getSavedHouseholdKey(), { shoppingItems: updated })
+          .finally(() => setIsSyncing(false));
+      }
       return updated;
     });
   };
@@ -257,6 +317,11 @@ export default function Home() {
     setShoppingItems((prev) => {
       const updated = prev.map((it) => (it.id === id ? { ...it, isPantry: !it.isPantry } : it));
       saveShoppingItems(updated);
+      if (isFirebaseConfigured()) {
+        setIsSyncing(true);
+        pushDataToCloud(getSavedHouseholdKey(), { shoppingItems: updated })
+          .finally(() => setIsSyncing(false));
+      }
       return updated;
     });
   };
@@ -285,6 +350,8 @@ export default function Home() {
         }}
         onOpenDocAnalyzer={() => setIsDocAnalyzerOpen(true)}
         onOpenSettings={() => setIsSettingsOpen(true)}
+        isCloudConnected={isCloudActive}
+        isSyncing={isSyncing}
       />
 
       {/* Main Content Area */}
@@ -349,6 +416,11 @@ export default function Home() {
               const fresh = generateShoppingListFromPlan(weeklyPlan, shoppingItems);
               setShoppingItems(fresh);
               saveShoppingItems(fresh);
+              if (isFirebaseConfigured()) {
+                setIsSyncing(true);
+                pushDataToCloud(getSavedHouseholdKey(), { shoppingItems: fresh })
+                  .finally(() => setIsSyncing(false));
+              }
             }}
           />
         )}
