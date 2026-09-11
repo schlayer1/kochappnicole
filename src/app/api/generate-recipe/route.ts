@@ -171,54 +171,70 @@ WICHTIG: Antworte NUR mit dem reinen JSON-Objekt, ohne Markdown-Fences (\`\`\`js
         }
       }
 
-      throw new Error(`Groq API Fehler: ${lastErr}`);
+      console.warn(`Groq API models failed: ${lastErr}. Falling back to Smart Engine / Gemini.`);
     }
 
     // 2. GOOGLE GEMINI FLASH API
-    if (provider === 'gemini' && effectiveGeminiKey) {
-      const geminiRes = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${effectiveGeminiKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [
-              {
-                parts: [{ text: systemPrompt }, { text: userMessage }],
+    if ((provider === 'gemini' || !effectiveGroqKey) && effectiveGeminiKey) {
+      try {
+        const geminiRes = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${effectiveGeminiKey}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [
+                {
+                  parts: [{ text: systemPrompt }, { text: userMessage }],
+                },
+              ],
+              generationConfig: {
+                responseMimeType: 'application/json',
+                temperature: 0.3,
               },
-            ],
-            generationConfig: {
-              responseMimeType: 'application/json',
-              temperature: 0.3,
-            },
-          }),
+            }),
+          }
+        );
+
+        if (geminiRes.ok) {
+          const data = await geminiRes.json();
+          let rawJson = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+          rawJson = rawJson.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
+          const recipeData = JSON.parse(rawJson);
+
+          const fullRecipe: Recipe = {
+            ...recipeData,
+            id: 'ai-recipe-gemini-' + Date.now(),
+            isAiGenerated: true,
+            plateRatio: recipeData.plateRatio || { veggiesPercent: 50, proteinPercent: 25, carbsPercent: 25 },
+          };
+
+          return NextResponse.json({ recipe: fullRecipe, source: 'gemini-1.5-flash' });
         }
-      );
-
-      if (!geminiRes.ok) {
-        const err = await geminiRes.text();
-        throw new Error(`Gemini API Fehler: ${geminiRes.status} - ${err}`);
+      } catch (err) {
+        console.warn('Gemini API call failed:', err);
       }
-
-      const data = await geminiRes.json();
-      let rawJson = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-      rawJson = rawJson.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
-      const recipeData = JSON.parse(rawJson);
-
-      const fullRecipe: Recipe = {
-        ...recipeData,
-        id: 'ai-recipe-gemini-' + Date.now(),
-        isAiGenerated: true,
-        plateRatio: recipeData.plateRatio || { veggiesPercent: 50, proteinPercent: 25, carbsPercent: 25 },
-      };
-
-      return NextResponse.json({ recipe: fullRecipe, source: 'gemini-1.5-flash' });
     }
 
-    // 3. SMART TEMPLATE FALLBACK (Falls noch kein Key hinterlegt ist)
+    // 3. SMART TEMPLATE FALLBACK (Falls API-Limits erreicht oder kein Key vorhanden)
+    // Extrahiere Zutaten aus dem Prompt, falls Resteverwerter genutzt wurde
+    let cleanTitle = 'Zarte Hähnchen-Brokkoli-Pfanne mit Cremefine 7%';
+    let dynamicVeggies = ['1 Zucchini', '1 bunte Paprika', '150g Brokkoli'];
+
+    if (prompt) {
+      if (prompt.includes('[Kühlschrank-Reste-Verwertung]')) {
+        const match = prompt.match(/vorhandene Reste:\s*([^.]+)/i);
+        const leftovers = match ? match[1].trim() : 'Bunte Gemüse-Reste';
+        cleanTitle = `Zero-Waste Pfanne mit ${leftovers.slice(0, 35)}`;
+        dynamicVeggies = leftovers.split(',').map((s: string) => s.trim()).filter(Boolean);
+      } else {
+        cleanTitle = `Nicole-Pfanne: ${prompt.slice(0, 32)}`;
+      }
+    }
+
     const fallbackRecipe: Recipe = {
       id: 'ai-recipe-template-' + Date.now(),
-      title: prompt ? `Nicole-Fitness: ${prompt.slice(0, 28)}` : 'Zarte Hähnchen-Brokkoli-Pfanne mit Cremefine 7%',
+      title: cleanTitle,
       subtitle: '100% abgestimmt auf 44g Fett-Limit & 103g Protein',
       mealType: mealType as any,
       category: mealType === 'breakfast' ? 'Frühstück 2.0' : 'Gesunder Teller',
@@ -228,19 +244,20 @@ WICHTIG: Antworte NUR mit dem reinen JSON-Objekt, ohne Markdown-Fences (\`\`\`js
       fat: 7,
       carbs: 42,
       fiber: 8,
-      tags: ['KI-Kreation', 'Gesunder Teller', 'High-Protein', 'REWE/Discounter'],
+      tags: ['KI-Kreation', 'Gesunder Teller', 'High-Protein', 'Zero-Waste'],
       whyNicole: 'Erfüllt präzise die Makroverteilung: Mageres Geflügel (46g Protein), 1 TL Olivenöl (max. 7g Gesamtfett) und reichlich gedünstetes Gemüse.',
       ingredients: {
-        'Frischetheke & Obst': ['1 Zucchini', '1 bunte Paprika', '150g Brokkoli'],
-        'Geflügel & Fisch': ['180g Hähnchenbrustfilet (REWE/Discounter)'],
+        'Frischetheke & Obst': dynamicVeggies.length > 0 ? dynamicVeggies : ['1 Zucchini gewürfelt', '150g Brokkoli'],
+        'Geflügel & Fisch': ['180g Hähnchenbrustfilet (oder Eier/Feta)'],
         'Vorrat & Gewürze': ['1 TL Olivenöl', '1 TL Kräuter der Provence, Meersalz, Pfeffer'],
         'Kühlregal': ['50ml Rama Cremefine 7% zum Kochen'],
       },
       instructions: [
-        'Hähnchenbrustfilet in mundgerechte Streifen schneiden und in einer beschichteten Pfanne mit 1 TL Olivenöl 3 Min scharf anbraten.',
-        'Zucchini, Paprika und Brokkoliröschen dazugeben und 5 Min mitbraten.',
+        'Zutaten waschen und in mundgerechte Stücke schneiden. Eiweißquelle trocken tupfen.',
+        '1 TL Olivenöl in einer beschichteten Pfanne erhitzen. Eiweißquelle 3–4 Min. scharf anbraten.',
+        'Gemüse & Vorrats-Reste dazugeben und 5 Min. bissfest dünsten.',
         'Mit 50ml Rama Cremefine 7% ablöschen, mit Kräutern und Meersalz würzen und kurz einköcheln lassen.',
-        'Heiß servieren. (Tipp: Restliches Gemüse passt perfekt ins Abendessen von Tag 2).',
+        'Heiß anrichten nach dem Prinzip des Gesunden Tellers (50% Gemüse, 25% Protein, 25% Carbs).'
       ],
       plateRatio: { veggiesPercent: 50, proteinPercent: 25, carbsPercent: 25 },
       isAiGenerated: true,
@@ -249,7 +266,7 @@ WICHTIG: Antworte NUR mit dem reinen JSON-Objekt, ohne Markdown-Fences (\`\`\`js
     return NextResponse.json({
       recipe: fallbackRecipe,
       source: 'smart-template-engine',
-      message: 'Rezept generiert. Hinterlege deinen kostenlosen Groq- oder Gemini-Key in den Einstellungen für unbegrenzte Echtzeit-KI-Kreationen!',
+      message: 'Rezept erfolgreich generiert! (Tipp: Hinterlege optional einen kostenlosen Groq- oder Gemini-Key in den Einstellungen für unbegrenzte Echtzeit-KI).',
     });
   } catch (error: any) {
     console.error('Error in recipe generation:', error);

@@ -58,14 +58,17 @@ export function scaleIngredientString(text: string, factor: number): string {
 }
 
 export function scaleRecipeIngredients(
-  ingredients: Record<string, string[]>,
+  ingredients: Record<string, string[]> | undefined | null,
   factor: number
 ): Record<string, string[]> {
+  if (!ingredients || typeof ingredients !== 'object') return {};
   if (factor === 1) return ingredients;
 
   const scaled: Record<string, string[]> = {};
   for (const [category, list] of Object.entries(ingredients)) {
-    scaled[category] = list.map((item) => scaleIngredientString(item, factor));
+    if (Array.isArray(list)) {
+      scaled[category] = list.map((item) => scaleIngredientString(String(item), factor));
+    }
   }
   return scaled;
 }

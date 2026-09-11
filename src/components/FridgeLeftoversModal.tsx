@@ -80,21 +80,39 @@ export const FridgeLeftoversModal: React.FC<FridgeLeftoversModalProps> = ({
 
   // Score recipes by matching ingredients
   const matchedRecipes = useMemo(() => {
-    if (selectedIngredients.length === 0) return [];
+    if (selectedIngredients.length === 0 || !Array.isArray(recipes)) return [];
 
-    const scored = recipes.map((recipe) => {
-      const allIngs = Object.values(recipe.ingredients).flat().map((i) => i.toLowerCase());
-      const matched = selectedIngredients.filter((sel) => {
-        const lowerSel = sel.toLowerCase();
-        return allIngs.some((ing) => ing.includes(lowerSel));
+    const scored = recipes
+      .filter((r) => r && r.id)
+      .map((recipe) => {
+        let allIngs: string[] = [];
+
+        if (recipe.ingredients) {
+          if (Array.isArray(recipe.ingredients)) {
+            allIngs = recipe.ingredients.map((i: any) =>
+              typeof i === 'string' ? i.toLowerCase() : JSON.stringify(i).toLowerCase()
+            );
+          } else if (typeof recipe.ingredients === 'object') {
+            allIngs = Object.values(recipe.ingredients)
+              .flat()
+              .filter(Boolean)
+              .map((i: any) =>
+                typeof i === 'string' ? i.toLowerCase() : String(i).toLowerCase()
+              );
+          }
+        }
+
+        const matched = selectedIngredients.filter((sel) => {
+          const lowerSel = sel.toLowerCase();
+          return allIngs.some((ing) => ing.includes(lowerSel));
+        });
+
+        return {
+          recipe,
+          matchCount: matched.length,
+          matchedIngredients: matched,
+        };
       });
-
-      return {
-        recipe,
-        matchCount: matched.length,
-        matchedIngredients: matched,
-      };
-    });
 
     return scored
       .filter((s) => s.matchCount > 0)
