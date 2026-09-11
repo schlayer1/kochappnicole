@@ -11,6 +11,7 @@ const STORAGE_KEYS = {
   API_KEY: 'nicole_gemini_api_key_v2',
   FAVORITES: 'nicole_favorite_recipes_v2',
   NOTES: 'nicole_recipe_notes_v2',
+  CUSTOM_IMAGES: 'nicole_custom_recipe_images_v2',
 };
 
 export interface AppSettings {
@@ -307,3 +308,32 @@ export function generateShoppingListFromPlan(
 
   return aggregated;
 }
+
+export function loadCustomImages(): Record<string, string> {
+  if (typeof window === 'undefined') return {};
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.CUSTOM_IMAGES);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {
+    console.error('Failed to load custom images', e);
+  }
+  return {};
+}
+
+export function saveCustomImage(recipeId: string, imageUrl: string) {
+  if (typeof window === 'undefined') return;
+  const current = loadCustomImages();
+  if (!imageUrl || imageUrl.trim().length === 0) {
+    delete current[recipeId];
+  } else {
+    current[recipeId] = imageUrl.trim();
+  }
+  localStorage.setItem(STORAGE_KEYS.CUSTOM_IMAGES, JSON.stringify(current));
+}
+
+export function saveAllCustomImages(images: Record<string, string>) {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(STORAGE_KEYS.CUSTOM_IMAGES, JSON.stringify(images));
+}
+
+

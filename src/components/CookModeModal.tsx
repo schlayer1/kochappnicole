@@ -14,7 +14,8 @@ import {
   VolumeX,
   FileEdit,
   Sparkles,
-  Timer
+  Timer,
+  Camera
 } from 'lucide-react';
 import { Recipe } from '@/lib/types';
 import { RecipeImage } from './RecipeImage';
@@ -24,6 +25,8 @@ interface CookModeModalProps {
   onClose: () => void;
   recipeNote?: string;
   onSaveNote?: (recipeId: string, note: string) => void;
+  customImages?: Record<string, string>;
+  onOpenImagePicker?: (recipe: Recipe) => void;
 }
 
 export const CookModeModal: React.FC<CookModeModalProps> = ({
@@ -31,6 +34,8 @@ export const CookModeModal: React.FC<CookModeModalProps> = ({
   onClose,
   recipeNote = '',
   onSaveNote,
+  customImages,
+  onOpenImagePicker,
 }) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [timerSeconds, setTimerSeconds] = useState(0);
@@ -208,13 +213,26 @@ export const CookModeModal: React.FC<CookModeModalProps> = ({
       <div className="max-w-4xl mx-auto w-full py-2 sm:py-4 flex-1 flex flex-col justify-center">
         
         {/* Dish Hero Photo Banner */}
-        <div className="relative w-full h-28 sm:h-36 rounded-2xl overflow-hidden mb-4 border border-[#2D4348] shadow-lg shrink-0 bg-slate-900">
+        <div className="relative w-full h-28 sm:h-36 rounded-2xl overflow-hidden mb-4 border border-[#2D4348] shadow-lg shrink-0 bg-slate-900 group">
           <RecipeImage
             recipe={recipe}
             aspectRatio="banner"
+            customImages={customImages}
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-linear-to-t from-[#182629] via-transparent to-black/30" />
+          
+          {onOpenImagePicker && (
+            <button
+              onClick={() => onOpenImagePicker(recipe)}
+              className="absolute top-2.5 right-2.5 z-10 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white text-xs hover:bg-black/80 transition-colors shadow-xs"
+              title="Foto für dieses Gericht anpassen"
+            >
+              <Camera className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline text-[11px]">Foto anpassen</span>
+            </button>
+          )}
+
           <div className="absolute bottom-2.5 left-3.5 right-3.5 flex items-center justify-between">
             <span className="text-xs font-semibold text-white drop-shadow-md">
               {recipe.kcal} kcal • <span className="text-emerald-400 font-bold">{recipe.protein}g Protein</span> • <span className="text-[#FFD2C2]">{recipe.fat}g Fett</span>

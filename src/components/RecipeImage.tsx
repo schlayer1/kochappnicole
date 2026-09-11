@@ -11,6 +11,7 @@ interface RecipeImageProps {
   className?: string;
   aspectRatio?: '16/9' | 'square' | 'banner' | 'auto';
   sizes?: string;
+  customImages?: Record<string, string>;
 }
 
 export const RecipeImage: React.FC<RecipeImageProps> = ({
@@ -18,11 +19,12 @@ export const RecipeImage: React.FC<RecipeImageProps> = ({
   alt,
   className = '',
   aspectRatio = '16/9',
+  customImages,
 }) => {
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState(false);
 
-  const imageUrl = getRecipeImageUrl(recipe);
+  const imageUrl = getRecipeImageUrl(recipe, customImages);
   const title = alt || recipe.title || 'Rezeptbild';
 
   const aspectClass =

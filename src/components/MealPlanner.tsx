@@ -23,6 +23,7 @@ interface MealPlannerProps {
   weeklyPlan: DayPlan[];
   selectedDayIdx: number;
   setSelectedDayIdx: (idx: number) => void;
+  customImages?: Record<string, string>;
   onOpenMealPicker: (dayIdx: number, mealType: MealType) => void;
   onOpenAiForSlot: (dayIdx: number, mealType: MealType) => void;
   onOpenCookMode: (recipe: Recipe) => void;
@@ -30,12 +31,14 @@ interface MealPlannerProps {
   onToggleFastDay: (dayIdx: number) => void;
   onAutoGeneratePlan?: () => void;
   onMealPrepTomorrow?: (dayIdx: number, recipe: Recipe) => void;
+  onOpenImagePicker?: (recipe: Recipe) => void;
 }
 
 export const MealPlanner: React.FC<MealPlannerProps> = ({
   weeklyPlan,
   selectedDayIdx,
   setSelectedDayIdx,
+  customImages,
   onOpenMealPicker,
   onOpenAiForSlot,
   onOpenCookMode,
@@ -43,6 +46,7 @@ export const MealPlanner: React.FC<MealPlannerProps> = ({
   onToggleFastDay,
   onAutoGeneratePlan,
   onMealPrepTomorrow,
+  onOpenImagePicker,
 }) => {
   const [copiedSlot, setCopiedSlot] = useState<string | null>(null);
   const currentDay = weeklyPlan[selectedDayIdx] || weeklyPlan[0];
@@ -222,10 +226,17 @@ export const MealPlanner: React.FC<MealPlannerProps> = ({
                 {recipe ? (
                   <div className="pt-3.5 space-y-3">
                     <div className="flex items-start gap-3">
-                      <div className="w-13 h-13 rounded-xl overflow-hidden shrink-0 border border-slate-200/80 shadow-xs bg-slate-100">
+                      <div
+                        onClick={() => onOpenImagePicker && onOpenImagePicker(recipe)}
+                        className={`w-13 h-13 rounded-xl overflow-hidden shrink-0 border border-slate-200/80 shadow-xs bg-slate-100 ${
+                          onOpenImagePicker ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''
+                        }`}
+                        title={onOpenImagePicker ? 'Klicken zum Ändern des Fotos' : undefined}
+                      >
                         <RecipeImage
                           recipe={recipe}
                           aspectRatio="square"
+                          customImages={customImages}
                           className="w-full h-full object-cover"
                         />
                       </div>

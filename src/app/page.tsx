@@ -11,6 +11,7 @@ import { AiRecipeGeneratorModal } from '@/components/AiRecipeGeneratorModal';
 import { DocAnalyzerModal } from '@/components/DocAnalyzerModal';
 import { SettingsModal } from '@/components/SettingsModal';
 import { MealPickerModal } from '@/components/MealPickerModal';
+import { ImagePickerModal } from '@/components/ImagePickerModal';
 import { BottomNav } from '@/components/BottomNav';
 
 import { DayPlan, MealType, NutritionProfile, Recipe, ShoppingItem } from '@/lib/types';
@@ -23,6 +24,9 @@ import {
   loadFavoriteRecipeIds,
   loadProfile,
   loadRecipeNotes,
+  loadCustomImages,
+  saveCustomImage,
+  saveAllCustomImages,
   loadSettings,
   loadShoppingItems,
   loadWeeklyPlan,
@@ -34,6 +38,7 @@ import {
   saveShoppingItems,
   saveWeeklyPlan,
 } from '@/lib/storage';
+import { getRecipeImageUrl } from '@/lib/recipe-images';
 import { NICOLE_NUTRITION_PROFILE } from '@/lib/nutrition-profile';
 import { CURATED_NICOLE_RECIPES } from '@/lib/recipes-data';
 import {
@@ -56,6 +61,7 @@ export default function Home() {
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
   const [favorites, setFavorites] = useState<string[]>([]);
   const [recipeNotes, setRecipeNotes] = useState<Record<string, string>>({});
+  const [customImages, setCustomImages] = useState<Record<string, string>>({});
   const [isCloudActive, setIsCloudActive] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
 
@@ -65,6 +71,7 @@ export default function Home() {
   const [isDocAnalyzerOpen, setIsDocAnalyzerOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [cookModeRecipe, setCookModeRecipe] = useState<Recipe | null>(null);
+  const [imagePickerRecipe, setImagePickerRecipe] = useState<Recipe | null>(null);
   const [pickerState, setPickerState] = useState<{ isOpen: boolean; dayIdx: number; mealType: MealType }>({
     isOpen: false,
     dayIdx: 0,
@@ -81,6 +88,7 @@ export default function Home() {
     const initialShop = generateShoppingListFromPlan(loadedPlan, savedShop || undefined);
     const loadedFavs = loadFavoriteRecipeIds();
     const loadedNotes = loadRecipeNotes();
+    const loadedCustomImgs = loadCustomImages();
 
     setProfile(loadedProf);
     setRecipes(loadedRecs);
@@ -90,6 +98,7 @@ export default function Home() {
     saveShoppingItems(initialShop);
     setFavorites(loadedFavs);
     setRecipeNotes(loadedNotes);
+    setCustomImages(loadedCustomImgs);
     setMounted(true);
 
     // Realtime synchronization if Firebase is configured
@@ -111,6 +120,7 @@ export default function Home() {
             shoppingItems: initialShop,
             favorites: loadedFavs,
             recipeNotes: loadedNotes,
+            customImages: loadedCustomImgs,
           }).finally(() => setIsSyncing(false));
         }
 
@@ -129,6 +139,12 @@ export default function Home() {
         if (remoteData.recipeNotes) {
           if (isFromRemote) {
             setRecipeNotes(remoteData.recipeNotes);
+          }
+        }
+        if (remoteData.customImages) {
+          if (isFromRemote) {
+            setCustomImages(remoteData.customImages);
+            saveAllCustomImages(remoteData.customImages);
           }
         }
         if (remoteData.customRecipes && Array.isArray(remoteData.customRecipes)) {
@@ -197,6 +213,33 @@ export default function Home() {
     });
   };
 
+  const handleSaveCustomImage = (recipeId: string, imageUrl: string) => {
+    setCustomImages((prev) => {
+      const updated = { ...prev, [recipeId]: imageUrl };
+      saveCustomImage(recipeId, imageUrl);
+      if (isFirebaseConfigured()) {
+        setIsSyncing(true);
+        pushDataToCloud(getSavedHouseholdKey(), { customImages: updated })
+          .finally(() => setIsSyncing(false));
+      }
+      return updated;
+    });
+  };
+
+  const handleResetCustomImage = (recipeId: string) => {
+    setCustomImages((prev) => {
+      const updated = { ...prev };
+      delete updated[recipeId];
+      saveCustomImage(recipeId, '');
+      if (isFirebaseConfigured()) {
+        setIsSyncing(true);
+        pushDataToCloud(getSavedHouseholdKey(), { customImages: updated })
+          .finally(() => setIsSyncing(false));
+      }
+      return updated;
+    });
+  };
+
   const handleManualCloudSync = async () => {
     if (!isFirebaseConfigured()) return false;
     setIsSyncing(true);
@@ -206,6 +249,7 @@ export default function Home() {
         shoppingItems,
         favorites,
         recipeNotes,
+        customImages,
       });
     } finally {
       setIsSyncing(false);
@@ -371,6 +415,8 @@ export default function Home() {
               weeklyPlan={weeklyPlan}
               selectedDayIdx={selectedDayIdx}
               setSelectedDayIdx={setSelectedDayIdx}
+              customImages={customImages}
+              onOpenImagePicker={(recipe) => setImagePickerRecipe(recipe)}
               onOpenMealPicker={(dayIdx, mealType) => {
                 setPickerState({ isOpen: true, dayIdx, mealType });
               }}
@@ -392,6 +438,8 @@ export default function Home() {
           <RecipeCatalog
             recipes={recipes}
             favorites={favorites}
+            customImages={customImages}
+            onOpenImagePicker={(recipe) => setImagePickerRecipe(recipe)}
             onToggleFavorite={handleToggleFavorite}
             onOpenCookMode={(recipe) => setCookModeRecipe(recipe)}
             onAssignRecipeToDay={(recipe, dayIdx, slot) => {
@@ -440,6 +488,17 @@ export default function Home() {
         onClose={() => setCookModeRecipe(null)}
         recipeNote={cookModeRecipe ? recipeNotes[cookModeRecipe.id] || '' : ''}
         onSaveNote={handleSaveRecipeNote}
+        customImages={customImages}
+        onOpenImagePicker={(recipe) => setImagePickerRecipe(recipe)}
+      />
+
+      <ImagePickerModal
+        isOpen={!!imagePickerRecipe}
+        onClose={() => setImagePickerRecipe(null)}
+        recipe={imagePickerRecipe}
+        currentImageUrl={imagePickerRecipe ? getRecipeImageUrl(imagePickerRecipe, customImages) : ''}
+        onSaveImage={handleSaveCustomImage}
+        onResetImage={handleResetCustomImage}
       />
 
       <AiRecipeGeneratorModal

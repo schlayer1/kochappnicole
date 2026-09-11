@@ -1,26 +1,30 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Search, ChefHat, Clock, Sparkles, Plus, Check, ChevronDown, Heart } from 'lucide-react';
+import { Search, ChefHat, Clock, Sparkles, Plus, Check, ChevronDown, Heart, Camera } from 'lucide-react';
 import { Recipe, MealType } from '@/lib/types';
 import { RecipeImage } from './RecipeImage';
 
 interface RecipeCatalogProps {
   recipes: Recipe[];
   favorites?: string[];
+  customImages?: Record<string, string>;
   onToggleFavorite?: (recipeId: string) => void;
   onOpenCookMode: (recipe: Recipe) => void;
   onAssignRecipeToDay: (recipe: Recipe, dayIdx: number, slot: MealType) => void;
   onOpenAiGenerator: () => void;
+  onOpenImagePicker?: (recipe: Recipe) => void;
 }
 
 export const RecipeCatalog: React.FC<RecipeCatalogProps> = ({
   recipes,
   favorites = [],
+  customImages,
   onToggleFavorite,
   onOpenCookMode,
   onAssignRecipeToDay,
   onOpenAiGenerator,
+  onOpenImagePicker,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFilter, setSelectedFilter] = useState<string>('all');
@@ -137,6 +141,7 @@ export const RecipeCatalog: React.FC<RecipeCatalogProps> = ({
                   <RecipeImage
                     recipe={recipe}
                     aspectRatio="16/9"
+                    customImages={customImages}
                     className="w-full h-full group-hover:scale-105 transition-transform duration-500"
                   />
 
@@ -147,12 +152,25 @@ export const RecipeCatalog: React.FC<RecipeCatalogProps> = ({
                     </span>
                   </div>
 
-                  {/* Top Right: AI Badge & Favorite Heart */}
+                  {/* Top Right: AI Badge, Camera Button & Favorite Heart */}
                   <div className="absolute top-2.5 right-2.5 z-10 flex items-center gap-1.5">
                     {recipe.isAiGenerated && (
                       <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#FFD2C2]/95 backdrop-blur-md text-[#994931] font-bold flex items-center gap-1 shadow-xs border border-white/30">
                         <Sparkles className="w-2.5 h-2.5" /> KI
                       </span>
+                    )}
+
+                    {onOpenImagePicker && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onOpenImagePicker(recipe);
+                        }}
+                        className="p-1.5 rounded-full bg-black/45 backdrop-blur-md border border-white/25 hover:bg-black/65 text-white/90 hover:text-white transition-all active:scale-110 shadow-xs"
+                        title="Foto ändern / anpassen"
+                      >
+                        <Camera className="w-3.5 h-3.5" />
+                      </button>
                     )}
 
                     {onToggleFavorite && (

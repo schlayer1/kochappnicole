@@ -112,6 +112,7 @@ export interface CloudUserData {
   favorites?: string[];
   recipeNotes?: Record<string, string>;
   customRecipes?: any;
+  customImages?: Record<string, string>;
   updatedAt?: any;
 }
 
