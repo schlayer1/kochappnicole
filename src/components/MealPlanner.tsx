@@ -13,9 +13,9 @@ import {
   Copy,
   Check,
   Flame,
-  ArrowRight,
   Utensils,
-  Users
+  Users,
+  Shuffle
 } from 'lucide-react';
 import { DayPlan, MealType, Recipe } from '@/lib/types';
 import { RecipeImage } from './RecipeImage';
@@ -34,6 +34,7 @@ interface MealPlannerProps {
   onMealPrepTomorrow?: (dayIdx: number, recipe: Recipe) => void;
   onOpenImagePicker?: (recipe: Recipe) => void;
   onUpdateServings?: (dayIdx: number, slot: MealType, servings: number) => void;
+  onOpenSwapModal?: (dayIdx: number, slot: MealType, recipe: Recipe) => void;
 }
 
 export const MealPlanner: React.FC<MealPlannerProps> = ({
@@ -50,6 +51,7 @@ export const MealPlanner: React.FC<MealPlannerProps> = ({
   onMealPrepTomorrow,
   onOpenImagePicker,
   onUpdateServings,
+  onOpenSwapModal,
 }) => {
   const [copiedSlot, setCopiedSlot] = useState<string | null>(null);
   const currentDay = weeklyPlan[selectedDayIdx] || weeklyPlan[0];
@@ -392,12 +394,24 @@ export const MealPlanner: React.FC<MealPlannerProps> = ({
                     </span>
                   </div>
 
-                  <button
-                    onClick={() => onOpenCookMode(recipe)}
-                    className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-900 text-white hover:bg-slate-800 transition-all duration-150 active:scale-[0.98] shadow-xs"
-                  >
-                    <ChefHat className="w-3.5 h-3.5 text-[#FFD2C2]" /> Zubereiten
-                  </button>
+                  <div className="flex items-center gap-1.5">
+                    {onOpenSwapModal && (
+                      <button
+                        onClick={() => onOpenSwapModal(selectedDayIdx, slot.type, recipe)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-[#789A99] hover:text-white transition-all cursor-pointer shadow-xs active:scale-[0.98]"
+                        title="Alternative mit passenden Makros wählen"
+                      >
+                        <Shuffle className="w-3 h-3 text-[#789A99] group-hover:text-white" /> Tauschen
+                      </button>
+                    )}
+
+                    <button
+                      onClick={() => onOpenCookMode(recipe)}
+                      className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-900 text-white hover:bg-slate-800 transition-all duration-150 active:scale-[0.98] shadow-xs cursor-pointer"
+                    >
+                      <ChefHat className="w-3.5 h-3.5 text-[#FFD2C2]" /> Zubereiten
+                    </button>
+                  </div>
                 </div>
               )}
 

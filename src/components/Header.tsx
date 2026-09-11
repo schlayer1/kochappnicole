@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sparkles, FileText, Settings, ChefHat, Cloud, Utensils } from 'lucide-react';
+import { Sparkles, FileText, Settings, ChefHat, Cloud, Utensils, Camera } from 'lucide-react';
 import { NutritionProfile } from '@/lib/types';
 
 interface HeaderProps {
@@ -10,6 +10,7 @@ interface HeaderProps {
   onOpenDocAnalyzer: () => void;
   onOpenSettings: () => void;
   onOpenFridgeLeftovers?: () => void;
+  onOpenFoodScanner?: () => void;
   isCloudConnected?: boolean;
   isSyncing?: boolean;
 }
@@ -22,6 +23,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenDocAnalyzer,
   onOpenSettings,
   onOpenFridgeLeftovers,
+  onOpenFoodScanner,
   isCloudConnected = false,
   isSyncing = false,
 }) => {
@@ -81,6 +83,18 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Action CTAs */}
           <div className="flex items-center gap-2">
+            {/* Teller-Scan Foto Scanner Button */}
+            {onOpenFoodScanner && (
+              <button
+                onClick={onOpenFoodScanner}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#FAF5F2] hover:bg-[#F5ECE8] text-[#994931] border border-[#FFD2C2] transition-all cursor-pointer shadow-xs active:scale-95"
+                title="Teller fotografieren & Nährwerte prüfen"
+              >
+                <Camera className="w-3.5 h-3.5 text-[#994931]" />
+                <span className="hidden sm:inline">Teller-Scan</span>
+              </button>
+            )}
+
             {/* Resteverwerter Button */}
             {onOpenFridgeLeftovers && (
               <button

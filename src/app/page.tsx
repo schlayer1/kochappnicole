@@ -13,6 +13,8 @@ import { SettingsModal } from '@/components/SettingsModal';
 import { MealPickerModal } from '@/components/MealPickerModal';
 import { ImagePickerModal } from '@/components/ImagePickerModal';
 import { FridgeLeftoversModal } from '@/components/FridgeLeftoversModal';
+import { MealSwapModal } from '@/components/MealSwapModal';
+import { FoodScannerModal } from '@/components/FoodScannerModal';
 import { BottomNav } from '@/components/BottomNav';
 
 import { DayPlan, MealType, NutritionProfile, Recipe, ShoppingItem } from '@/lib/types';
@@ -74,6 +76,18 @@ export default function Home() {
   const [cookModeRecipe, setCookModeRecipe] = useState<Recipe | null>(null);
   const [imagePickerRecipe, setImagePickerRecipe] = useState<Recipe | null>(null);
   const [isFridgeModalOpen, setIsFridgeModalOpen] = useState(false);
+  const [isFoodScannerOpen, setIsFoodScannerOpen] = useState(false);
+  const [swapState, setSwapState] = useState<{
+    isOpen: boolean;
+    dayIdx: number;
+    slot: MealType;
+    recipe: Recipe | null;
+  }>({
+    isOpen: false,
+    dayIdx: 0,
+    slot: 'lunch',
+    recipe: null,
+  });
   const [aiInitialFridgeIngredients, setAiInitialFridgeIngredients] = useState('');
   const [pickerState, setPickerState] = useState<{ isOpen: boolean; dayIdx: number; mealType: MealType }>({
     isOpen: false,
@@ -326,6 +340,25 @@ export default function Home() {
     }
   };
 
+  const handleExecuteSwap = (newRecipe: Recipe) => {
+    handleAssignMeal(swapState.dayIdx, swapState.slot, newRecipe);
+  };
+
+  const handleLogScannedFood = (scannedRecipe: Recipe, slot: MealType) => {
+    saveCustomRecipe(scannedRecipe);
+    const updatedRecipes = [scannedRecipe, ...recipes.filter((r) => r.id !== scannedRecipe.id)];
+    setRecipes(updatedRecipes);
+    handleAssignMeal(selectedDayIdx, slot, scannedRecipe);
+    setActiveTab('plan');
+
+    if (isFirebaseConfigured()) {
+      setIsSyncing(true);
+      pushDataToCloud(getSavedHouseholdKey(), {
+        customRecipes: updatedRecipes.filter((r) => r.isAiGenerated),
+      }).finally(() => setIsSyncing(false));
+    }
+  };
+
   const handleRemoveMeal = (dayIdx: number, mealType: MealType) => {
     const updated = [...weeklyPlan];
     if (updated[dayIdx]) {
@@ -454,6 +487,7 @@ export default function Home() {
         onOpenDocAnalyzer={() => setIsDocAnalyzerOpen(true)}
         onOpenSettings={() => setIsSettingsOpen(true)}
         onOpenFridgeLeftovers={() => setIsFridgeModalOpen(true)}
+        onOpenFoodScanner={() => setIsFoodScannerOpen(true)}
         isCloudConnected={isCloudActive}
         isSyncing={isSyncing}
       />
@@ -490,6 +524,9 @@ export default function Home() {
               onAutoGeneratePlan={handleAutoGeneratePlan}
               onMealPrepTomorrow={handleMealPrepTomorrow}
               onUpdateServings={handleUpdateServings}
+              onOpenSwapModal={(dayIdx, slot, recipe) =>
+                setSwapState({ isOpen: true, dayIdx, slot, recipe })
+              }
             />
           </div>
         )}
@@ -587,6 +624,35 @@ export default function Home() {
         customImages={customImages}
         onOpenCookMode={(r) => setCookModeRecipe(r)}
         onGenerateAiWithIngredients={handleGenerateAiWithIngredients}
+      />
+
+      <MealSwapModal
+        isOpen={swapState.isOpen}
+        onClose={() => setSwapState((prev) => ({ ...prev, isOpen: false }))}
+        sourceRecipe={swapState.recipe}
+        dayName={weeklyPlan[swapState.dayIdx]?.dayName || 'Ausgewählter Tag'}
+        slotTitle={
+          swapState.slot === 'breakfast'
+            ? 'Frühstück'
+            : swapState.slot === 'lunch'
+            ? 'Mittagessen'
+            : swapState.slot === 'dinner'
+            ? 'Abendessen'
+            : 'Snack'
+        }
+        allRecipes={recipes}
+        customImages={customImages}
+        onExecuteSwap={handleExecuteSwap}
+      />
+
+      <FoodScannerModal
+        isOpen={isFoodScannerOpen}
+        onClose={() => setIsFoodScannerOpen(false)}
+        userApiKey={settings.apiKey}
+        groqApiKey={settings.groqApiKey}
+        geminiApiKey={settings.geminiApiKey}
+        aiProvider={settings.aiProvider}
+        onLogMeal={handleLogScannedFood}
       />
 
       <DocAnalyzerModal
