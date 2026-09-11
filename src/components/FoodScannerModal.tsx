@@ -14,7 +14,9 @@ import {
   PieChart,
   PlusCircle,
   RotateCcw,
-  Utensils
+  Utensils,
+  Zap,
+  Sliders
 } from 'lucide-react';
 import { MealType, Recipe } from '@/lib/types';
 
@@ -26,6 +28,7 @@ interface FoodScannerModalProps {
   geminiApiKey?: string;
   aiProvider?: 'groq' | 'gemini';
   onLogMeal?: (recipe: Recipe, slot: MealType) => void;
+  onOpenSettings?: () => void;
 }
 
 interface ScanResult {
@@ -56,10 +59,12 @@ export const FoodScannerModal: React.FC<FoodScannerModalProps> = ({
   geminiApiKey,
   aiProvider = 'groq',
   onLogMeal,
+  onOpenSettings,
 }) => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ScanResult | null>(null);
+  const [scanSource, setScanSource] = useState<string>('');
   const [errorMsg, setErrorMsg] = useState('');
   const [targetSlot, setTargetSlot] = useState<MealType>('lunch');
   const [isLogged, setIsLogged] = useState(false);
@@ -137,6 +142,7 @@ export const FoodScannerModal: React.FC<FoodScannerModalProps> = ({
       if (!res.ok) throw new Error(data.error || 'Fehler bei der Foto-Analyse');
 
       setResult(data.result);
+      setScanSource(data.source || '');
     } catch (err: any) {
       setErrorMsg(err.message || 'Verbindung zum Food-Scanner fehlgeschlagen.');
     } finally {
@@ -147,6 +153,7 @@ export const FoodScannerModal: React.FC<FoodScannerModalProps> = ({
   const handleReset = () => {
     setSelectedImage(null);
     setResult(null);
+    setScanSource('');
     setErrorMsg('');
     setIsLogged(false);
   };
@@ -321,6 +328,34 @@ export const FoodScannerModal: React.FC<FoodScannerModalProps> = ({
               {result && (
                 <div className="space-y-4 animate-in fade-in-50 duration-300">
                   
+                  {/* Engine Source Badge */}
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 p-2.5 rounded-2xl bg-slate-100/80 border border-slate-200/80">
+                    <div className="flex items-center gap-2">
+                      {scanSource.startsWith('groq') || scanSource.startsWith('gemini') ? (
+                        <span className="text-[11px] font-bold text-emerald-800 bg-emerald-100/90 px-2.5 py-0.5 rounded-full border border-emerald-300 flex items-center gap-1.5 shadow-xs">
+                          <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+                          Live-KI Vision ({scanSource.startsWith('groq') ? 'Groq Llama 3.2 Vision' : 'Gemini 1.5 Flash Vision'})
+                        </span>
+                      ) : (
+                        <span className="text-[11px] font-bold text-amber-900 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-300 flex items-center gap-1.5 shadow-xs">
+                          <Zap className="w-3.5 h-3.5 text-amber-600" />
+                          Smart-Heuristik Modus (Kein API-Key hinterlegt)
+                        </span>
+                      )}
+                    </div>
+
+                    {!scanSource.startsWith('groq') && !scanSource.startsWith('gemini') && onOpenSettings && (
+                      <button
+                        type="button"
+                        onClick={onOpenSettings}
+                        className="text-[11px] font-semibold text-[#789A99] hover:text-[#586F73] flex items-center gap-1 hover:underline cursor-pointer"
+                      >
+                        <Sliders className="w-3 h-3" />
+                        Kostenlosen Key hinterlegen für Live-KI &rarr;
+                      </button>
+                    )}
+                  </div>
+
                   {/* Dish Title & Suitability Badge */}
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3.5 bg-slate-50 rounded-2xl border border-slate-200">
                     <div>

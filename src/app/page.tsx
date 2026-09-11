@@ -653,6 +653,10 @@ export default function Home() {
         geminiApiKey={settings.geminiApiKey}
         aiProvider={settings.aiProvider}
         onLogMeal={handleLogScannedFood}
+        onOpenSettings={() => {
+          setIsFoodScannerOpen(false);
+          setIsSettingsOpen(true);
+        }}
       />
 
       <DocAnalyzerModal
