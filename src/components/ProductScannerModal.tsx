@@ -20,6 +20,8 @@ import {
 } from 'lucide-react';
 import { ProductNutrition, NicoleProductEvaluation, MealType, Recipe } from '@/lib/types';
 import { fetchProductByBarcode, searchProductsByName, evaluateNicoleMatch } from '@/lib/open-food-facts';
+import { decodeBarcodeFromCanvasOrImage } from '@/lib/barcode-decoder';
+import { SpeechInputButton } from './SpeechInputButton';
 
 interface ProductScannerModalProps {
   isOpen: boolean;
@@ -143,35 +145,54 @@ export const ProductScannerModal: React.FC<ProductScannerModalProps> = ({
   };
 
   const startBarcodeScanLoop = () => {
-    if (typeof window === 'undefined' || !('BarcodeDetector' in window)) return;
+    if (typeof window === 'undefined') return;
 
-    try {
-      // @ts-ignore
-      const detector = new window.BarcodeDetector({
-        formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'qr_code'],
-      });
+    const interval = setInterval(async () => {
+      if (!videoRef.current || !videoRef.current.videoWidth || !isOpen) {
+        clearInterval(interval);
+        return;
+      }
 
-      const interval = setInterval(async () => {
-        if (!videoRef.current || !videoRef.current.videoWidth || !isOpen) {
-          clearInterval(interval);
-          return;
+      try {
+        // 1. Native BarcodeDetector if available (e.g. Chrome, Android)
+        if ('BarcodeDetector' in window) {
+          try {
+            // @ts-ignore
+            const detector = new window.BarcodeDetector({
+              formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'qr_code'],
+            });
+            const barcodes = await detector.detect(videoRef.current);
+            if (barcodes.length > 0 && barcodes[0].rawValue) {
+              const detectedCode = barcodes[0].rawValue;
+              clearInterval(interval);
+              stopCamera();
+              lookupBarcode(detectedCode);
+              return;
+            }
+          } catch (e) {
+            // fallback to zxing below
+          }
         }
 
-        try {
-          const barcodes = await detector.detect(videoRef.current);
-          if (barcodes.length > 0 && barcodes[0].rawValue) {
-            const detectedCode = barcodes[0].rawValue;
+        // 2. Universal iOS Safari & PWA ZXing Decoder via Canvas frame
+        const canvas = canvasRef.current || document.createElement('canvas');
+        canvas.width = videoRef.current.videoWidth;
+        canvas.height = videoRef.current.videoHeight;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+          const zxingCode = await decodeBarcodeFromCanvasOrImage(canvas);
+          if (zxingCode) {
             clearInterval(interval);
             stopCamera();
-            lookupBarcode(detectedCode);
+            lookupBarcode(zxingCode);
+            return;
           }
-        } catch (e) {
-          // ignore scan frame errors
         }
-      }, 300);
-    } catch (e) {
-      console.warn('BarcodeDetector init error:', e);
-    }
+      } catch (e) {
+        // ignore scan frame errors
+      }
+    }, 280);
   };
 
   // Detect barcode from a captured photo file
@@ -190,6 +211,14 @@ export const ProductScannerModal: React.FC<ProductScannerModalProps> = ({
         if (ctx) {
           ctx.drawImage(img, 0, 0);
 
+          // 1. Universal ZXing 1D barcode decoding directly from photo
+          const zxingCode = await decodeBarcodeFromCanvasOrImage(canvas);
+          if (zxingCode) {
+            lookupBarcode(zxingCode);
+            return;
+          }
+
+          // 2. Native BarcodeDetector check if supported
           if (typeof window !== 'undefined' && 'BarcodeDetector' in window) {
             try {
               // @ts-ignore
@@ -206,7 +235,7 @@ export const ProductScannerModal: React.FC<ProductScannerModalProps> = ({
             }
           }
 
-          // Fallback: If barcode detector didn't find barcode, call OCR to read nutrition table
+          // 3. Fallback: If no barcode was detected, assume it's a nutrition table photo and call OCR
           const compressed = canvas.toDataURL('image/jpeg', 0.80);
           callOcrApi(compressed);
         }
@@ -439,22 +468,22 @@ export const ProductScannerModal: React.FC<ProductScannerModalProps> = ({
           </button>
         </div>
 
-        {/* Tab Navigation */}
-        <div className="p-2 bg-slate-100/70 border-b border-slate-200/70 flex items-center gap-1">
+        {/* Tab Navigation - Touch-Optimized for Mobile */}
+        <div className="p-1.5 bg-slate-100/80 border-b border-slate-200/80 grid grid-cols-3 gap-1">
           <button
             type="button"
             onClick={() => {
               setActiveTab('barcode');
               setErrorMsg('');
             }}
-            className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+            className={`py-2 px-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 min-h-[42px] cursor-pointer ${
               activeTab === 'barcode'
-                ? 'bg-white text-slate-900 shadow-xs'
+                ? 'bg-white text-slate-900 shadow-xs ring-1 ring-slate-200/60'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
             }`}
           >
-            <Barcode className="w-4 h-4 text-[#789A99]" />
-            Barcode-Scan
+            <Barcode className="w-4 h-4 text-[#789A99] shrink-0" />
+            <span className="truncate">Barcode</span>
           </button>
 
           <button
@@ -464,14 +493,15 @@ export const ProductScannerModal: React.FC<ProductScannerModalProps> = ({
               setActiveTab('ocr');
               setErrorMsg('');
             }}
-            className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+            className={`py-2 px-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 min-h-[42px] cursor-pointer ${
               activeTab === 'ocr'
-                ? 'bg-white text-slate-900 shadow-xs'
+                ? 'bg-white text-slate-900 shadow-xs ring-1 ring-slate-200/60'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
             }`}
           >
-            <Camera className="w-4 h-4 text-[#789A99]" />
-            Nährwerttabelle Foto
+            <Camera className="w-4 h-4 text-[#789A99] shrink-0" />
+            <span className="truncate hidden sm:inline">Nährwert-Foto</span>
+            <span className="truncate sm:hidden">Foto</span>
           </button>
 
           <button
@@ -481,14 +511,14 @@ export const ProductScannerModal: React.FC<ProductScannerModalProps> = ({
               setActiveTab('search');
               setErrorMsg('');
             }}
-            className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+            className={`py-2 px-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 min-h-[42px] cursor-pointer ${
               activeTab === 'search'
-                ? 'bg-white text-slate-900 shadow-xs'
+                ? 'bg-white text-slate-900 shadow-xs ring-1 ring-slate-200/60'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
             }`}
           >
-            <Search className="w-4 h-4 text-[#789A99]" />
-            Produktsuche
+            <Search className="w-4 h-4 text-[#789A99] shrink-0" />
+            <span className="truncate">Suche</span>
           </button>
         </div>
 
@@ -658,17 +688,24 @@ export const ProductScannerModal: React.FC<ProductScannerModalProps> = ({
           {activeTab === 'search' && !currentProduct && !isLoading && (
             <div className="space-y-4">
               <form onSubmit={handleSearchSubmit} className="flex items-center gap-2">
-                <input
-                  type="text"
-                  placeholder="Produktname (z. B. Alpro Soja, Exquisa Fitline, Skyr)..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="flex-1 px-3.5 py-2.5 text-xs bg-slate-50 focus:bg-white rounded-xl border border-slate-200 text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#789A99]"
-                />
+                <div className="relative flex-1">
+                  <input
+                    type="text"
+                    placeholder="Produktname (z. B. Alpro Soja, Exquisa, Skyr)..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-3.5 pr-10 py-2.5 text-xs bg-slate-50 focus:bg-white rounded-xl border border-slate-200 text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#789A99]"
+                  />
+                  <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
+                    <SpeechInputButton
+                      onTranscript={(txt) => setSearchQuery((prev) => (prev ? `${prev} ${txt}` : txt))}
+                    />
+                  </div>
+                </div>
                 <button
                   type="submit"
                   disabled={!searchQuery.trim() || isSearching}
-                  className="px-4 py-2.5 rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 disabled:opacity-50 cursor-pointer active:scale-95 transition-all flex items-center gap-1"
+                  className="px-4 py-2.5 rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 disabled:opacity-50 cursor-pointer active:scale-95 transition-all flex items-center gap-1 shrink-0"
                 >
                   {isSearching ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
                   Suchen

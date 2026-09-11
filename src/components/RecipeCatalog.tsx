@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Search, ChefHat, Clock, Sparkles, Plus, Check, ChevronDown, Heart, Camera } from 'lucide-react';
 import { Recipe, MealType } from '@/lib/types';
 import { RecipeImage } from './RecipeImage';
+import { SpeechInputButton } from './SpeechInputButton';
 
 interface RecipeCatalogProps {
   recipes: Recipe[];
@@ -94,8 +95,14 @@ export const RecipeCatalog: React.FC<RecipeCatalogProps> = ({
             placeholder="Zutat, Name oder Schlagwort suchen (z.B. Skyr, Lachs, Pute)..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 text-xs rounded-xl bg-white border border-[#E0EAE9] focus:outline-none focus:border-[#789A99] transition-colors"
+            className="w-full pl-10 pr-10 py-2 text-xs rounded-xl bg-white border border-[#E0EAE9] focus:outline-none focus:border-[#789A99] transition-colors"
           />
+          <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
+            <SpeechInputButton
+              size="sm"
+              onTranscript={(txt) => setSearchTerm((prev) => (prev ? `${prev} ${txt}` : txt))}
+            />
+          </div>
         </div>
 
         {/* Filter Pills */}

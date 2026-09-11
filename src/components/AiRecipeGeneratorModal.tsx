@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { X, Sparkles, Loader2, CheckCircle2, ArrowRight } from 'lucide-react';
 import { MealType, Recipe } from '@/lib/types';
 import { RecipeImage } from './RecipeImage';
+import { SpeechInputButton } from './SpeechInputButton';
 
 interface AiRecipeGeneratorModalProps {
   isOpen: boolean;
@@ -114,7 +115,7 @@ export const AiRecipeGeneratorModal: React.FC<AiRecipeGeneratorModalProps> = ({
             </div>
             <div>
               <h3 className="font-bold text-[#111C1E] text-base">KI-Rezept-Generator</h3>
-              <p className="text-xs text-[#586F73]">Strikt nach Nicoles Makro-Grenzwerten & Ernährungstipps</p>
+              <p className="text-xs text-[#586F73]">Strikt nach Deinen Makro-Grenzwerten & Ernährungstipps</p>
             </div>
           </div>
 
@@ -192,9 +193,15 @@ export const AiRecipeGeneratorModal: React.FC<AiRecipeGeneratorModalProps> = ({
                     <label className="block text-xs font-semibold text-[#111C1E]">
                       Welche Reste liegen noch im Kühlschrank?
                     </label>
-                    <span className="text-[10px] text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
-                      Zero-Waste
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <SpeechInputButton
+                        size="sm"
+                        onTranscript={(txt) => setFridgeIngredients((prev) => (prev ? `${prev}, ${txt}` : txt))}
+                      />
+                      <span className="text-[10px] text-[#3D5B5A] bg-[#EBF2F2] px-2 py-0.5 rounded-full border border-[#C5D8D7]">
+                        Reste-Retter
+                      </span>
+                    </div>
                   </div>
                   <textarea
                     rows={3}
@@ -223,10 +230,16 @@ export const AiRecipeGeneratorModal: React.FC<AiRecipeGeneratorModalProps> = ({
                 </div>
               ) : (
                 /* Creative Mode Input */
-                <div>
-                  <label className="block text-xs font-semibold text-[#111C1E] mb-1.5">
-                    Zutatenwünsche oder Idee (optional)
-                  </label>
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-semibold text-[#111C1E]">
+                      Zutatenwünsche oder Idee (optional)
+                    </label>
+                    <SpeechInputButton
+                      size="sm"
+                      onTranscript={(txt) => setPrompt((prev) => (prev ? `${prev} ${txt}` : txt))}
+                    />
+                  </div>
                   <textarea
                     rows={3}
                     value={prompt}
@@ -272,7 +285,7 @@ export const AiRecipeGeneratorModal: React.FC<AiRecipeGeneratorModalProps> = ({
             <div className="space-y-4 animate-in fade-in">
               <div className="flex items-center gap-1.5 text-xs text-emerald-700 font-semibold bg-emerald-50 p-2.5 rounded-xl border border-emerald-200">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                Erfolgreich nach Nicoles Makro-Limits generiert!
+                Erfolgreich nach Deinen Makro-Limits generiert!
               </div>
 
               {/* Recipe Photo Preview */}

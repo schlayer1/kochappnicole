@@ -181,7 +181,7 @@ export const FoodScannerModal: React.FC<FoodScannerModalProps> = ({
       },
       instructions: [
         'Dieses Gericht wurde per Foto-Food-Scanner erfasst und analysiert.',
-        result.tips ? `Ernährungs-Tipp: ${result.tips}` : 'Passend zu Nicoles Makro-Budget.',
+        result.tips ? `Ernährungs-Tipp: ${result.tips}` : 'Passend zu Deinem Makro-Budget.',
       ],
       isAiGenerated: true,
       image: selectedImage || undefined,

@@ -23,6 +23,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { Recipe, MealType } from '@/lib/types';
+import { SpeechInputButton } from './SpeechInputButton';
 import { RecipeImage } from './RecipeImage';
 
 interface FridgeScanRecipe {
@@ -333,7 +334,7 @@ export const FridgeLeftoversModal: React.FC<FridgeLeftoversModalProps> = ({
           <div>
             <div className="flex items-center gap-2">
               <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-[#FFD2C2]/20 text-[#FFD2C2] border border-[#FFD2C2]/30 flex items-center gap-1">
-                <ChefHat className="w-3 h-3" /> Zero-Waste Chef &amp; Foto-Scanner
+                <ChefHat className="w-3 h-3" /> Foto-Scanner &amp; Reste-Retter
               </span>
               <span className="text-xs text-slate-300">
                 160 Nicole-Rezepte + Live-Vision
@@ -652,17 +653,25 @@ export const FridgeLeftoversModal: React.FC<FridgeLeftoversModalProps> = ({
 
             {/* Custom Input */}
             <form onSubmit={handleAddCustom} className="flex items-center gap-2 pt-1">
-              <input
-                type="text"
-                placeholder="Andere Zutat eingeben (z. B. Bohnen, Quinoa, Apfel)..."
-                value={customInput}
-                onChange={(e) => setCustomInput(e.target.value)}
-                className="flex-1 px-3.5 py-2 text-xs bg-slate-50 focus:bg-white rounded-xl border border-slate-200 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#789A99]"
-              />
+              <div className="relative flex-1">
+                <input
+                  type="text"
+                  placeholder="Andere Zutat eingeben (z. B. Bohnen, Quinoa, Apfel)..."
+                  value={customInput}
+                  onChange={(e) => setCustomInput(e.target.value)}
+                  className="w-full pl-3.5 pr-9 py-2 text-xs bg-slate-50 focus:bg-white rounded-xl border border-slate-200 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#789A99]"
+                />
+                <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
+                  <SpeechInputButton
+                    size="sm"
+                    onTranscript={(txt) => setCustomInput((prev) => (prev ? `${prev}, ${txt}` : txt))}
+                  />
+                </div>
+              </div>
               <button
                 type="submit"
                 disabled={!customInput.trim()}
-                className="px-3.5 py-2 text-xs font-semibold rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 disabled:opacity-50 transition-colors cursor-pointer"
+                className="px-3.5 py-2 text-xs font-semibold rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 disabled:opacity-50 transition-colors cursor-pointer shrink-0"
               >
                 + Zutat
               </button>

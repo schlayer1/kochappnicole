@@ -22,9 +22,11 @@ import {
   ChevronDown,
   Plus,
   Trash2,
-  Compass
+  Compass,
+  Loader2
 } from 'lucide-react';
 import { ShoppingItem, DayPlan, Recipe } from '@/lib/types';
+import { SpeechInputButton } from './SpeechInputButton';
 
 interface ShoppingListProps {
   items: ShoppingItem[];
@@ -56,14 +58,104 @@ export const ShoppingList: React.FC<ShoppingListProps> = ({
   const [copied, setCopied] = useState(false);
   const [isRouteOrdered, setIsRouteOrdered] = useState(true);
 
-  // Haptic feedback function for mobile devices
+  // Tactile & Audio-Haptic Feedback (works on iPhone iOS Safari & Android)
   const triggerHaptic = (durationMs = 20) => {
+    // 1. Android & devices with Vibration API
     if (typeof window !== 'undefined' && 'navigator' in window && navigator.vibrate) {
       try {
         navigator.vibrate(durationMs);
       } catch (e) {
         // ignore vibrate errors if blocked
       }
+    }
+
+    // 2. iOS Safari Audio-Haptic Click (Micro-Pop synthesized via Web Audio API)
+    if (typeof window !== 'undefined') {
+      try {
+        const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+        if (AudioContext) {
+          const ctx = new AudioContext();
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(160, ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(35, ctx.currentTime + 0.03);
+          gain.gain.setValueAtTime(0.14, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.03);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.032);
+        }
+      } catch (e) {
+        // audio may require user gesture
+      }
+    }
+  };
+
+  // Dynamic Supermarket & Freshness AI Tip
+  const [customAiTip, setCustomAiTip] = useState<string | null>(null);
+  const [isLoadingAiTip, setIsLoadingAiTip] = useState(false);
+
+  const dynamicTip = useMemo(() => {
+    if (customAiTip) return customAiTip;
+
+    const unbought = items.filter((it) => !it.checked && !it.isPantry);
+    const itemNames = unbought.map((it) => it.name.toLowerCase()).join(' ');
+
+    if (itemNames.includes('kräuter') || itemNames.includes('petersilie') || itemNames.includes('koriander') || itemNames.includes('basilikum') || itemNames.includes('dill')) {
+      return '🌱 Frische Kräuter im Korb: Stelle die Stiele wie einen Blumenstrauß in ein kleines Glas Wasser auf die Küchentheke (oder wickle sie in ein feuchtes Küchentuch ins Gemüsefach). So bleiben sie 7–10 Tage knackig statt schlapp zu werden!';
+    }
+    if (itemNames.includes('beere') || itemNames.includes('himbeer') || itemNames.includes('heidelbeer') || itemNames.includes('erdbeer')) {
+      return '🫐 Frische Beeren: Erst unmittelbar vor dem Snacken waschen! Lege nach dem Einkauf ein Blatt Küchenrolle auf den Boden der Packung – das saugt Kondensfeuchtigkeit auf und verhindert Schimmelbildung zuverlässig.';
+    }
+    if (itemNames.includes('pute') || itemNames.includes('hähnchen') || itemNames.includes('hack') || itemNames.includes('lachs') || itemNames.includes('garnele')) {
+      return '🍗 Frisches Fleisch & Fisch: Immer ganz unten auf der Glasplatte direkt über dem Gemüsefach lagern – dort ist es mit 2–3°C am kältesten. Was du erst nach 3 Tagen zubereitest, direkt am Einkaufstag portionsweise einfrieren.';
+    }
+    if (itemNames.includes('spinat') || itemNames.includes('rucola') || itemNames.includes('salat') || itemNames.includes('feldsalat')) {
+      return '🥗 Salat & Blattspinat: Einen halben Apfel oder ein trockenes Küchenpapier in die Tüte geben und fest verschließen. Übrig gebliebene Spinatblätter kannst du im Zweifel sofort einfrieren und direkt in die Pfanne oder den Smoothie werfen.';
+    }
+    if (itemNames.includes('skyr') || itemNames.includes('quark') || itemNames.includes('cremefine') || itemNames.includes('feta')) {
+      return '🥛 Geöffnete Milchprodukte: Skyr & Magerquark mit einem Silikondeckel verschließen (hält 5–7 Tage). Angebrochenen Feta in ein Schraubglas mit leicht gesalzenem Wasser legen – so bleibt er bis zu 2 Wochen wunderbar frisch und cremig!';
+    }
+    if (itemNames.includes('brot') || itemNames.includes('toast') || itemNames.includes('vollkornbrot')) {
+      return '🍞 Frisches Vollkornbrot: Die halbe Packung direkt scheibenweise einfrieren. Die Scheiben lassen sich morgens in 60 Sekunden im Toaster aufbacken – schmeckt knusprig wie frisch aus der Bäckerei!';
+    }
+    return '💡 Smarter Einkaufs-Tipp: Kaufe gezielt nach deinem Wochenplan ein. Durch die abgestimmten Portionsgrößen verhinderst du angebrochene Reste im Kühlschrank und sparst bares Geld.';
+  }, [items, customAiTip]);
+
+  const handleRequestAiTip = async () => {
+    setIsLoadingAiTip(true);
+    try {
+      const topItems = items
+        .filter((it) => !it.checked && !it.isPantry)
+        .slice(0, 10)
+        .map((it) => it.name)
+        .join(', ');
+
+      if (!topItems) {
+        setCustomAiTip('Deine Einkaufsliste ist leer! Plane Mahlzeiten im Wochenplan, um smarte Frische-Tipps zu erhalten.');
+        setIsLoadingAiTip(false);
+        return;
+      }
+
+      const res = await fetch('/api/generate-recipe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: `Gib mir genau ZWEI kurze, geniale Küchen- und Frischetipps zur richtigen Lagerung, Haltbarkeit oder Restevermeidung für folgende Produkte aus meinem aktuellen Einkaufskorb: ${topItems}. Formatiere es als 2 knappe Sätze mit passendem Emoji.`,
+        }),
+      });
+      const data = await res.json();
+      if (data.recipe?.instructions && data.recipe.instructions.length > 0) {
+        setCustomAiTip(`✨ ${data.recipe.instructions.slice(0, 2).join(' ')}`);
+      } else {
+        setCustomAiTip('✨ Tipp: Frisches Gemüse und Kräuter immer trocken lagern und empfindliche Beeren erst kurz vor dem Essen waschen, um Schimmelbildung zu vermeiden.');
+      }
+    } catch (e) {
+      setCustomAiTip('✨ Tipp: Trenne Äpfel und Bananen von anderem Obst, da ihr Reifegas (Ethylen) anderes Gemüse schneller verderben lässt.');
+    } finally {
+      setIsLoadingAiTip(false);
     }
   };
 
@@ -343,15 +435,20 @@ export const ShoppingList: React.FC<ShoppingListProps> = ({
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-12 gap-2">
-              <div className="sm:col-span-5">
+              <div className="sm:col-span-5 relative">
                 <input
                   type="text"
                   placeholder="Artikelname (z. B. Mineralwasser, Spülmittel, Zahnpasta)..."
                   value={customName}
                   onChange={(e) => setCustomName(e.target.value)}
                   autoFocus
-                  className="w-full px-3 py-2 text-xs bg-white rounded-xl border border-slate-200 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#789A99]"
+                  className="w-full pl-3 pr-9 py-2 text-xs bg-white rounded-xl border border-slate-200 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#789A99]"
                 />
+                <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
+                  <SpeechInputButton
+                    onTranscript={(txt) => setCustomName((prev) => (prev ? `${prev} ${txt}` : txt))}
+                  />
+                </div>
               </div>
 
               <div className="sm:col-span-3">
@@ -465,8 +562,14 @@ export const ShoppingList: React.FC<ShoppingListProps> = ({
               placeholder="Zutat oder Gericht suchen..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-8 pr-3 py-1.5 bg-slate-50 hover:bg-slate-100/80 focus:bg-white text-xs rounded-xl border border-slate-200 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#789A99]"
+              className="w-full pl-8 pr-9 py-1.5 bg-slate-50 hover:bg-slate-100/80 focus:bg-white text-xs rounded-xl border border-slate-200 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#789A99]"
             />
+            <div className="absolute right-1 top-1/2 -translate-y-1/2">
+              <SpeechInputButton
+                size="sm"
+                onTranscript={(txt) => setSearchQuery((prev) => (prev ? `${prev} ${txt}` : txt))}
+              />
+            </div>
           </div>
 
         </div>
@@ -685,9 +788,9 @@ export const ShoppingList: React.FC<ShoppingListProps> = ({
                         }}
                         className="flex items-start gap-3 flex-1 text-left active:scale-[0.99] transition-transform cursor-pointer"
                       >
-                        <div className="pt-0.5 shrink-0">
+                        <div className="pt-0.5 shrink-0 active:scale-75 transition-transform duration-150">
                           {item.checked ? (
-                            <CheckSquare className="w-4 h-4 text-[#789A99]" />
+                            <CheckSquare className="w-4 h-4 text-[#789A99] animate-in zoom-in-75 duration-150" />
                           ) : (
                             <Square className="w-4 h-4 text-slate-300 group-hover:text-slate-400" />
                           )}
@@ -749,9 +852,11 @@ export const ShoppingList: React.FC<ShoppingListProps> = ({
                             )}
 
                             {item.recipeSource && (
-                              <div className="flex items-center gap-1 text-[10px] text-slate-400 truncate max-w-full">
-                                <ChefHat className="w-2.5 h-2.5 shrink-0 text-[#789A99]" />
-                                <span className="truncate">Für: {item.recipeSource}</span>
+                              <div className="flex items-start gap-1 text-[10px] text-slate-400 mt-0.5 max-w-full">
+                                <ChefHat className="w-2.5 h-2.5 shrink-0 text-[#789A99] mt-0.5" />
+                                <span className="break-words leading-tight whitespace-normal">
+                                  Für: {item.recipeSource}
+                                </span>
                               </div>
                             )}
                           </div>
@@ -800,19 +905,41 @@ export const ShoppingList: React.FC<ShoppingListProps> = ({
         </div>
       )}
 
-      {/* Helpful Discounter/REWE Shopping Tip */}
-      <div className="bg-[#FAF5F2] border border-[#FFD2C2]/60 rounded-2xl p-4 sm:p-5 flex items-start gap-3.5">
-        <div className="w-8 h-8 rounded-xl bg-white flex items-center justify-center text-[#994931] shrink-0 border border-[#FFD2C2]">
-          <Sparkles className="w-4 h-4" />
+      {/* Dynamic Supermarket & Freshness Tip */}
+      <div className="bg-[#FAF5F2] border border-[#FFD2C2]/60 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start justify-between gap-3.5">
+        <div className="flex items-start gap-3.5">
+          <div className="w-8 h-8 rounded-xl bg-white flex items-center justify-center text-[#994931] shrink-0 border border-[#FFD2C2] shadow-2xs">
+            <Sparkles className="w-4 h-4 text-[#994931]" />
+          </div>
+          <div className="space-y-1 text-xs text-slate-700">
+            <p className="font-semibold text-slate-900">
+              Smarter Supermarkt- &amp; Frische-Tipp:
+            </p>
+            <p className="text-slate-600 leading-relaxed">
+              {dynamicTip}
+            </p>
+          </div>
         </div>
-        <div className="space-y-1 text-xs text-slate-700">
-          <p className="font-semibold text-slate-900">
-            Nicole’s Zero-Waste Supermarkt-Tipp:
-          </p>
-          <p className="text-slate-600 leading-relaxed">
-            Geöffnete Skyr- und Magerquark-Becher halten sich 4–6 Tage im Kühlschrank. Durch die clevere Bündelung im Wochenplan kaufst du exakt die passenden 500g-Becher, sodass keine Reste verderben. Rama Cremefine 7% ersetzt 100% Sahne bei nur 7% Fett.
-          </p>
-        </div>
+
+        <button
+          type="button"
+          onClick={handleRequestAiTip}
+          disabled={isLoadingAiTip}
+          className="self-end sm:self-center shrink-0 px-3 py-1.5 rounded-xl text-xs font-semibold bg-white hover:bg-[#FFF4F0] text-[#994931] border border-[#FFD2C2] transition-all active:scale-95 shadow-2xs cursor-pointer flex items-center gap-1.5 disabled:opacity-60"
+          title="Erzeugt maßgeschneiderte Frische- und Lagerungstipps speziell für deinen aktuellen Korb"
+        >
+          {isLoadingAiTip ? (
+            <>
+              <Loader2 className="w-3 h-3 animate-spin text-[#994931]" />
+              <span>Analysiere Korb...</span>
+            </>
+          ) : (
+            <>
+              <Sparkles className="w-3 h-3 text-[#994931]" />
+              <span>KI-Frische-Tipp</span>
+            </>
+          )}
+        </button>
       </div>
 
     </div>

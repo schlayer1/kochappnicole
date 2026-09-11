@@ -235,19 +235,60 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               </span>
             </div>
 
-            <div>
-              <label className="text-[11px] text-slate-600 font-medium block mb-1">
-                Haushalts-Sync-Schlüssel (auf Handy &amp; Mac identisch eintragen):
-              </label>
-              <input
-                type="text"
-                value={householdKey}
-                onChange={(e) => setHouseholdKey(e.target.value)}
-                placeholder="z. B. nicole-keller"
-                className="w-full p-2.5 text-xs rounded-xl bg-white border border-slate-200 text-slate-900 font-mono focus:outline-none focus:border-[#789A99]"
-              />
-              <p className="text-[10px] text-slate-400 mt-1">
-                Alle Geräte (iPhone, Mac, iPad) mit diesem Schlüssel teilen denselben Wochenplan, Einkaufsliste und Favoriten.
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-[11px] text-slate-700 font-bold block">
+                  Aktives Profil / Haushalts-Schlüssel:
+                </label>
+                <span className="text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 font-mono">
+                  Eigene Datenbank
+                </span>
+              </div>
+
+              {/* Quick Profile Switcher */}
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setHouseholdKey('nicole-keller')}
+                  className={`p-2 rounded-xl text-xs font-semibold border text-left transition-all ${
+                    householdKey.trim().toLowerCase() === 'nicole-keller'
+                      ? 'bg-white border-[#789A99] ring-2 ring-[#789A99]/20 text-[#3D5B5A]'
+                      : 'bg-white/60 border-slate-200 text-slate-600 hover:bg-white'
+                  }`}
+                >
+                  <span className="block font-bold text-slate-900">Nicole Keller</span>
+                  <span className="text-[10px] text-slate-400">Hauptprofil</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setHouseholdKey('haushalt-2')}
+                  className={`p-2 rounded-xl text-xs font-semibold border text-left transition-all ${
+                    householdKey.trim().toLowerCase() === 'haushalt-2'
+                      ? 'bg-white border-[#789A99] ring-2 ring-[#789A99]/20 text-[#3D5B5A]'
+                      : 'bg-white/60 border-slate-200 text-slate-600 hover:bg-white'
+                  }`}
+                >
+                  <span className="block font-bold text-slate-900">Zweites Profil</span>
+                  <span className="text-[10px] text-slate-400">Eigener Wochenplan</span>
+                </button>
+              </div>
+
+              <div className="pt-1">
+                <label className="text-[10px] text-slate-500 block mb-1">
+                  Oder individuellen Schlüssel eingeben:
+                </label>
+                <input
+                  type="text"
+                  value={householdKey}
+                  onChange={(e) => setHouseholdKey(e.target.value)}
+                  placeholder="z. B. familie-keller oder person-2"
+                  className="w-full p-2 text-xs rounded-xl bg-white border border-slate-200 text-slate-900 font-mono focus:outline-none focus:border-[#789A99]"
+                />
+              </div>
+
+              <p className="text-[10px] text-slate-500 leading-relaxed bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                💡 <strong>Multi-User Info:</strong> Jeder Schlüssel steuert eine völlig unabhängige Datenbank-Partition in Firebase. Trage denselben Schlüssel auf Handy &amp; iPad ein, um den Plan zu teilen – oder einen neuen Schlüssel, damit eine andere Person ihren eigenen Plan hat.
               </p>
             </div>
 

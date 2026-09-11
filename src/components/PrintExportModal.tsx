@@ -11,7 +11,10 @@ import {
   Clock,
   Download,
   FileText,
-  Sparkles
+  Sparkles,
+  Share2,
+  Copy,
+  Check
 } from 'lucide-react';
 import { DayPlan, ShoppingItem } from '@/lib/types';
 
@@ -34,9 +37,7 @@ export const PrintExportModal: React.FC<PrintExportModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handleTriggerPrint = () => {
-    window.print();
-  };
+  const [copiedNotice, setCopiedNotice] = useState(false);
 
   // Group shopping items by category
   const categorizedShopping = shoppingItems
@@ -47,6 +48,89 @@ export const PrintExportModal: React.FC<PrintExportModalProps> = ({
       acc[cat].push(item);
       return acc;
     }, {} as Record<string, ShoppingItem[]>);
+
+  const handleShareOrCopy = async () => {
+    let textContent = '';
+    if (printMode === 'plan') {
+      textContent = `🗓️ WOCHEN-SPEISEPLAN • FIT & HEALTHY\nZiel: 1.508 kcal | 44g Fett | 103g Protein\n\n`;
+      weeklyPlan.forEach((d) => {
+        textContent += `📌 ${d.dayName.toUpperCase()}:\n`;
+        if (d.fastingMode === '16:8') {
+          textContent += `  • Frühstück: Gefastet (16:8)\n`;
+        } else if (d.breakfast) {
+          textContent += `  • Frühstück: ${d.breakfast.title}\n`;
+        }
+        if (d.lunch) textContent += `  • Mittag: ${d.lunch.title}\n`;
+        if (d.dinner) textContent += `  • Abend: ${d.dinner.title}\n`;
+        if (d.snack) textContent += `  • Snack: ${d.snack.title}\n`;
+        textContent += `\n`;
+      });
+    } else {
+      textContent = `🛒 EINKAUFSZETTEL • FIT & HEALTHY\n\n`;
+      Object.entries(categorizedShopping).forEach(([cat, its]) => {
+        textContent += `📦 ${cat.toUpperCase()}:\n`;
+        its.forEach((i) => {
+          textContent += `  [ ] ${i.amount ? `${i.amount} ` : ''}${i.name}\n`;
+        });
+        textContent += `\n`;
+      });
+    }
+
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      try {
+        await navigator.share({
+          title: printMode === 'plan' ? 'Wochen-Speiseplan' : 'Einkaufszettel',
+          text: textContent,
+        });
+        return;
+      } catch (e) {
+        // user cancelled or share failed, fallback to clipboard below
+      }
+    }
+
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      await navigator.clipboard.writeText(textContent);
+      setCopiedNotice(true);
+      setTimeout(() => setCopiedNotice(false), 2500);
+    }
+  };
+
+  const handleTriggerPrint = () => {
+    try {
+      window.print();
+    } catch (e) {
+      console.warn('window.print error:', e);
+    }
+
+    // Fallback for iOS Standalone PWA if window.print is silenced
+    const isStandalone = typeof window !== 'undefined' && ((window.navigator as any).standalone || window.matchMedia('(display-mode: standalone)').matches);
+    if (isStandalone) {
+      const printableElement = document.getElementById('printable-area');
+      if (printableElement) {
+        const printWin = window.open('', '_blank');
+        if (printWin) {
+          printWin.document.write(`
+            <html>
+              <head>
+                <title>${printMode === 'plan' ? 'Wochenplan' : 'Einkaufszettel'}</title>
+                <style>
+                  body { font-family: system-ui, -apple-system, sans-serif; padding: 20px; color: #111; }
+                  table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+                  th, td { border: 1px solid #ccc; padding: 8px 12px; text-align: left; }
+                  th { background: #f0f0f0; }
+                </style>
+              </head>
+              <body>
+                ${printableElement.innerHTML}
+                <script>window.onload = function() { window.print(); }</script>
+              </body>
+            </html>
+          `);
+          printWin.document.close();
+        }
+      }
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 bg-[#111C1E]/80 backdrop-blur-xs flex items-center justify-center p-4">
@@ -70,8 +154,26 @@ export const PrintExportModal: React.FC<PrintExportModalProps> = ({
 
           <div className="flex items-center gap-2">
             <button
+              onClick={handleShareOrCopy}
+              className="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold border border-white/20 flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all"
+              title="Per WhatsApp teilen oder als Text kopieren"
+            >
+              {copiedNotice ? (
+                <>
+                  <Check className="w-4 h-4 text-emerald-400" />
+                  <span className="hidden sm:inline">Kopiert!</span>
+                </>
+              ) : (
+                <>
+                  <Share2 className="w-4 h-4 text-[#FFD2C2]" />
+                  <span className="hidden sm:inline">Teilen</span>
+                </>
+              )}
+            </button>
+
+            <button
               onClick={handleTriggerPrint}
-              className="px-4 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-900 text-xs font-bold shadow-xs flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all"
+              className="px-3.5 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-900 text-xs font-bold shadow-xs flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all"
             >
               <Printer className="w-4 h-4 text-[#789A99]" />
               Drucken / PDF
@@ -116,7 +218,7 @@ export const PrintExportModal: React.FC<PrintExportModalProps> = ({
         </div>
 
         {/* Printable View Container */}
-        <div className="p-6 sm:p-8 overflow-y-auto flex-1 bg-slate-50 print:bg-white print:p-0 print:m-0">
+        <div id="printable-area" className="p-6 sm:p-8 overflow-y-auto flex-1 bg-slate-50 print:bg-white print:p-0 print:m-0">
           
           {/* Printable Wochenplan */}
           {printMode === 'plan' && (
