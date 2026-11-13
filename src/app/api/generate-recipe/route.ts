@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Recipe } from '@/lib/types';
+import { CANDIDATE_FREE_TIER_GEMINI_MODELS } from '@/lib/geminiModels';
 
 export async function POST(req: NextRequest) {
   try {
@@ -222,7 +223,7 @@ WICHTIG: Antworte NUR mit dem reinen JSON-Objekt, ohne Markdown-Fences (\`\`\`js
 
     // 2. GOOGLE GEMINI FLASH API
     if ((provider === 'gemini' || !effectiveGroqKey) && effectiveGeminiKey) {
-      const geminiModels = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+      const geminiModels = CANDIDATE_FREE_TIER_GEMINI_MODELS;
       for (const gModel of geminiModels) {
         try {
           const geminiRes = await fetch(

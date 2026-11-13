@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { CANDIDATE_FREE_TIER_GEMINI_MODELS } from '@/lib/geminiModels';
 
 export async function POST(req: NextRequest) {
   try {
@@ -64,12 +65,7 @@ Antworte NUR mit dem reinen JSON-Objekt ohne Markdown-Formatierung.`;
       parts.push({ text: `Dokumenten-Inhalt:\n${text}` });
     }
 
-    const modelsToTry = [
-      'gemini-2.5-flash',
-      'gemini-2.0-flash',
-      'gemini-1.5-flash',
-      'gemini-1.5-flash-latest'
-    ];
+    const modelsToTry = CANDIDATE_FREE_TIER_GEMINI_MODELS;
 
     let extracted: any = null;
     let lastError: any = null;

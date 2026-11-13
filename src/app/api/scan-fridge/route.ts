@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getGeminiCandidateModels } from '@/lib/geminiModels';
 
 let cachedWorkingGemini: string | null = null;
 
@@ -95,51 +96,7 @@ WICHTIG: Antworte NUR im reinen JSON-Format, ohne Markdown-Fences und ohne Begle
 
     // 1. GOOGLE GEMINI FLASH VISION
     if (effectiveGeminiKey) {
-      let modelsToTry: string[] = [];
-
-      if (cachedWorkingGemini) {
-        modelsToTry.push(cachedWorkingGemini);
-      }
-
-      try {
-        const listRes = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models?key=${effectiveGeminiKey}`
-        );
-        if (listRes.ok) {
-          const listData = await listRes.json();
-          if (Array.isArray(listData.models)) {
-            const available = listData.models
-              .filter(
-                (m: any) =>
-                  m.supportedGenerationMethods?.includes('generateContent') &&
-                  !m.name.includes('embedding') &&
-                  !m.name.includes('aqa') &&
-                  !m.name.includes('tts') &&
-                  !m.name.includes('imagen')
-              )
-              .map((m: any) => m.name.replace(/^models\//, ''));
-
-            available.sort((a: string, b: string) => {
-              const score = (name: string) => {
-                const lower = name.toLowerCase();
-                if (lower.includes('gemini') && lower.includes('flash')) return 100;
-                if (lower.includes('flash')) return 80;
-                if (lower.includes('gemini')) return 60;
-                return 10;
-              };
-              return score(b) - score(a);
-            });
-
-            modelsToTry = Array.from(new Set([...modelsToTry, ...available]));
-          }
-        }
-      } catch (err) {
-        console.warn('Gemini ListModels query failed:', err);
-      }
-
-      if (modelsToTry.length === 0) {
-        modelsToTry = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-flash-latest'];
-      }
+      const modelsToTry = await getGeminiCandidateModels(effectiveGeminiKey, cachedWorkingGemini);
 
       for (const model of modelsToTry) {
         try {
